@@ -3,560 +3,1102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TestoTitan | Doğal Testosteron Tavan Yapma Yeri</title>
+    <title>TestoTitan | Doğal Testosteron Optimizasyonu</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-        :root{
-            --gold:#F5A623;--gold-light:#FFD93D;--gold-dark:#C78200;
-            --bg:#0A0A0F;--card:#111118;--card2:#16161F;--input:#0D0D14;
-            --border:rgba(245,166,35,.08);--border-a:rgba(245,166,35,.25);
-            --t1:#F0F0F5;--t2:#7A7A90;--t3:#3A3A50;
-            --green:#00E676;--red:#FF5252;--blue:#448AFF;--purple:#B388FF;--cyan:#18FFFF;
-            --r:20px;--rs:14px
+        /* ========== GENEL AYARLAR ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        body{background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;padding-bottom:90px}
-        .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,.97);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-around;padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom));z-index:999}
-        .nav-i{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 14px;border-radius:14px;cursor:pointer;color:var(--t3);text-decoration:none;transition:.3s;position:relative}
-        .nav-i.on{color:var(--gold)}
-        .nav-i.on::before{content:'';position:absolute;top:-6px;width:18px;height:3px;background:var(--gold);border-radius:10px;animation:ndot .3s ease}
-        @keyframes ndot{from{width:0;opacity:0}to{width:18px;opacity:1}}
-        .nav-i i{font-size:21px;transition:.3s}
-        .nav-i span{font-size:9px;font-weight:600;letter-spacing:.3px}
-        .nav-i.on i{transform:translateY(-2px)}
-        .page{display:none;padding:0 16px;animation:pIn .45s ease}
-        .page.on{display:block}
-        @keyframes pIn{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
-        .hdr{padding:18px 16px 0;display:flex;align-items:center;gap:12px}
-        .hdr-logo{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#000}
-        .hdr h1{font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1.5px}
-        .hdr p{font-size:10px;color:var(--t2);margin-top:1px}
-        .c{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-bottom:14px;transition:.3s;position:relative;overflow:hidden}
-        .c:hover{border-color:var(--border-a)}
-        .c-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-        .c-icon{width:42px;height:42px;min-width:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px}
-        .c-icon.gold{background:rgba(245,166,35,.13);color:var(--gold)}
-        .c-icon.green{background:rgba(0,230,118,.1);color:var(--green)}
-        .c-icon.blue{background:rgba(68,138,255,.1);color:var(--blue)}
-        .c-icon.purple{background:rgba(179,136,255,.1);color:var(--purple)}
-        .c-icon.cyan{background:rgba(24,255,255,.1);color:var(--cyan)}
-        .c-icon.red{background:rgba(255,82,82,.1);color:var(--red)}
-        .c-t{font-size:15px;font-weight:700}
-        .c-s{font-size:11px;color:var(--t2);margin-top:2px}
-        .fg{margin-bottom:12px}
-        .fl{font-size:10px;font-weight:700;color:var(--t2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.6px}
-        .fi{width:100%;padding:13px 15px;background:var(--input);border:2px solid rgba(255,255,255,.04);border-radius:var(--rs);color:var(--t1);font-size:14px;font-weight:500;font-family:'Inter',sans-serif;transition:.3s;outline:none}
-        .fi:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(245,166,35,.08)}
-        .fi::placeholder{color:var(--t3)}
-        .fr{display:flex;gap:10px}
-        .fr>*{flex:1}
-        select.fi{-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237A7A90' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
-        textarea.fi{resize:none;min-height:70px}
-        .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-        .chip{padding:8px 15px;border-radius:30px;background:var(--input);border:1.5px solid rgba(255,255,255,.04);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;transition:.3s;user-select:none}
-        .chip.on{background:rgba(245,166,35,.13);border-color:var(--gold);color:var(--gold)}
-        .btn-g{width:100%;padding:16px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border:none;border-radius:var(--rs);color:#000;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;transition:.3s;position:relative;overflow:hidden;font-family:'Inter',sans-serif}
-        .btn-g:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(245,166,35,.25)}
-        .btn-g:active{transform:scale(.98)}
-        .btn-g .sh{position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:sh 3s infinite}
-        @keyframes sh{0%{left:-100%}50%,100%{left:100%}}
-        .btn-o{width:100%;padding:14px;background:0;border:2px solid rgba(245,166,35,.18);border-radius:var(--rs);color:var(--gold);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:.3s;font-family:'Inter',sans-serif}
-        .btn-o:hover{background:rgba(245,166,35,.06);border-color:var(--gold)}
-        .choice{display:flex;gap:12px;margin-bottom:20px}
-        .choice-card{flex:1;padding:28px 18px;background:var(--card);border:2px solid var(--border);border-radius:var(--r);text-align:center;cursor:pointer;transition:.35s}
-        .choice-card:hover{border-color:var(--border-a);transform:translateY(-4px);box-shadow:0 12px 35px rgba(0,0,0,.4)}
-        .choice-card:active{transform:scale(.97)}
-        .choice-card .ico{font-size:40px;margin-bottom:12px;display:block}
-        .choice-card .tit{font-size:14px;font-weight:800;margin-bottom:5px}
-        .choice-card .sub{font-size:11px;color:var(--t2);line-height:1.5}
-        .res-panel{display:none;animation:resIn .5s ease}
-        .res-panel.show{display:block}
-        @keyframes resIn{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-        .res-item{display:flex;gap:13px;padding:15px;background:rgba(245,166,35,.03);border:1px solid rgba(245,166,35,.07);border-radius:15px;margin-bottom:10px;animation:riIn .5s ease both}
-        .res-item:nth-child(1){animation-delay:.05s}.res-item:nth-child(2){animation-delay:.12s}.res-item:nth-child(3){animation-delay:.19s}.res-item:nth-child(4){animation-delay:.26s}.res-item:nth-child(5){animation-delay:.33s}.res-item:nth-child(6){animation-delay:.40s}.res-item:nth-child(7){animation-delay:.47s}.res-item:nth-child(8){animation-delay:.54s}
-        @keyframes riIn{from{opacity:0;transform:translateX(-15px)}to{opacity:1;transform:translateX(0)}}
-        .res-icon{width:40px;height:40px;min-width:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px}
-        .res-info{flex:1}
-        .res-name{font-size:13px;font-weight:700}
-        .res-desc{font-size:11px;color:var(--t2);margin-top:3px;line-height:1.55}
-        .res-dose{display:inline-block;margin-top:6px;padding:4px 11px;background:rgba(245,166,35,.1);border-radius:8px;font-size:10px;font-weight:700;color:var(--gold)}
-        .badge{padding:3px 9px;border-radius:7px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-left:6px;vertical-align:middle}
-        .badge-r{background:rgba(255,82,82,.12);color:var(--red)}
-        .badge-g{background:rgba(0,230,118,.1);color:var(--green)}
-        .badge-y{background:rgba(245,166,35,.12);color:var(--gold)}
-        .tip{padding:16px;border-radius:14px;margin-bottom:10px;border-left:4px solid;background:var(--input)}
-        .tip.t-green{border-color:var(--green)}.tip.t-blue{border-color:var(--blue)}.tip.t-gold{border-color:var(--gold)}.tip.t-red{border-color:var(--red)}.tip.t-purple{border-color:var(--purple)}
-        .tip .tt{font-size:13px;font-weight:700;margin-bottom:4px}
-        .tip .td{font-size:12px;color:var(--t2);line-height:1.6}
-        .recipe{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden;transition:.3s}
-        .recipe:hover{border-color:var(--border-a)}
-        .recipe-head{padding:18px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
-        .recipe-head .left{display:flex;align-items:center;gap:12px}
-        .recipe-head .emoji{font-size:28px}
-        .recipe-head .name{font-size:14px;font-weight:700}
-        .recipe-head .meta{font-size:10px;color:var(--t2);margin-top:2px}
-        .recipe-head .arrow{font-size:18px;color:var(--t3);transition:.3s}
-        .recipe.open .arrow{transform:rotate(180deg);color:var(--gold)}
-        .recipe-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
-        .recipe.open .recipe-body{max-height:800px}
-        .recipe-inner{padding:0 20px 20px}
-        .recipe-inner h6{font-size:12px;font-weight:700;color:var(--gold);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px}
-        .recipe-inner ul{list-style:none;padding:0}
-        .recipe-inner li{font-size:12px;color:var(--t2);padding:4px 0;padding-left:16px;position:relative;line-height:1.5}
-        .recipe-inner li::before{content:'•';position:absolute;left:0;color:var(--gold);font-weight:900}
-        .recipe-inner .steps{counter-reset:step}
-        .recipe-inner .steps li{counter-increment:step;padding-left:24px}
-        .recipe-inner .steps li::before{content:counter(step);background:rgba(245,166,35,.12);color:var(--gold);width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;position:absolute;left:0;top:4px}
-        .macro-row{display:flex;gap:8px;margin-top:10px}
-        .macro-pill{padding:5px 12px;border-radius:8px;font-size:10px;font-weight:700;background:var(--input)}
-        .macro-pill.p{color:var(--green)}.macro-pill.c{color:var(--blue)}.macro-pill.f{color:var(--gold)}.macro-pill.k{color:var(--purple)}
-        .about-hero{text-align:center;padding:40px 20px;background:linear-gradient(135deg,rgba(245,166,35,.08),rgba(245,166,35,.02));border:1px solid rgba(245,166,35,.1);border-radius:var(--r);margin-bottom:20px}
-        .about-hero .big{font-size:50px;margin-bottom:14px}
-        .about-hero h2{font-size:22px;font-weight:900;margin-bottom:6px}
-        .about-hero p{font-size:12px;color:var(--t2);line-height:1.7;max-width:340px;margin:0 auto}
-        .team-card{display:flex;align-items:center;gap:14px;padding:16px;background:var(--input);border-radius:16px;margin-bottom:10px}
-        .team-av{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#000}
-        .team-info .n{font-size:14px;font-weight:700}
-        .team-info .r{font-size:11px;color:var(--t2)}
-        .glow{height:2px;border-radius:10px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:25px 0;animation:gp 3s infinite}
-        @keyframes gp{0%,100%{opacity:.2}50%{opacity:.7}}
-        .footer{text-align:center;padding:20px;font-size:10px;color:var(--t3)}
-        .toast-c{position:fixed;top:16px;left:16px;right:16px;z-index:9999;pointer-events:none}
-        .toast{padding:14px 18px;border-radius:14px;background:var(--card);border:1px solid var(--border);box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;animation:tIn .4s ease,tOut .4s ease 2.6s forwards;margin-bottom:8px}
-        @keyframes tIn{from{opacity:0;transform:translateY(-20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes tOut{to{opacity:0;transform:translateY(-20px)}}
-        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:0}::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:10px}
-        @media(min-width:540px){body{max-width:500px;margin:0 auto}}
 
-        /* REKLAM ALANI */
-        .ad-banner{
-            width:100%;
-            min-height:90px;
-            background:var(--card);
-            border:1px dashed rgba(255,255,255,.06);
-            border-radius:14px;
-            margin:14px 0;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            overflow:hidden;
-            position:relative
+        :root {
+            /* Renkler */
+            --gold: #F5A623;
+            --gold-light: #FFD93D;
+            --gold-dark: #C78200;
+            --bg: #0A0A0F;
+            --card: #111118;
+            --input: #0D0D14;
+            --border: rgba(245,166,35,.08);
+            --text-primary: #F0F0F5;
+            --text-secondary: #7A7A90;
+            --green: #00E676;
+            --red: #FF5252;
+            --blue: #448AFF;
+            --purple: #B388FF;
+            
+            /* Boyutlar */
+            --radius: 20px;
+            --radius-sm: 14px;
         }
-        .ad-banner .ad-tag{
-            position:absolute;top:5px;right:8px;
-            font-size:7px;font-weight:700;
-            color:rgba(255,255,255,.12);
-            text-transform:uppercase;letter-spacing:1px
+
+        body {
+            background: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 90px;
         }
-        .ad-banner-lg{min-height:250px}
+
+        /* ========== NAVIGASYON ========== */
+        .nav-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10,10,15,.97);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,.04);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 999;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: .3s;
+        }
+
+        .nav-item.active {
+            color: var(--gold);
+        }
+
+        .nav-item i {
+            font-size: 22px;
+        }
+
+        .nav-item span {
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* ========== SAYFALAR ========== */
+        .page {
+            display: none;
+            padding: 0 16px;
+            animation: fadeIn .4s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== HEADER ========== */
+        .header {
+            padding: 20px 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+            color: #000;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* ========== KARTLAR ========== */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 14px;
+            transition: .3s;
+        }
+
+        .card:hover {
+            border-color: rgba(245,166,35,.25);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .icon-gold { background: rgba(245,166,35,.13); color: var(--gold); }
+        .icon-green { background: rgba(0,230,118,.1); color: var(--green); }
+        .icon-blue { background: rgba(68,138,255,.1); color: var(--blue); }
+        .icon-red { background: rgba(255,82,82,.1); color: var(--red); }
+        .icon-purple { background: rgba(179,136,255,.1); color: var(--purple); }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .card-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ========== FORM ELEMANLARI ========== */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--input);
+            border: 2px solid rgba(255,255,255,.04);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: .3s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(245,166,35,.08);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-row > * {
+            flex: 1;
+        }
+
+        select.form-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237A7A90' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        /* ========== BUTONLAR ========== */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: none;
+            border-radius: var(--radius-sm);
+            color: #000;
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: .3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245,166,35,.25);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 2px solid rgba(245,166,35,.18);
+            border-radius: var(--radius-sm);
+            color: var(--gold);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(245,166,35,.06);
+            border-color: var(--gold);
+        }
+
+        /* ========== TESTOSTERON SEVİYE GÖSTERGE ========== */
+        .testo-gauge {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .gauge-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gauge-bar {
+            position: relative;
+            height: 12px;
+            background: var(--input);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width .8s ease, background .5s ease;
+        }
+
+        .gauge-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .gauge-value {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .gauge-status {
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .status-low {
+            background: rgba(255,82,82,.12);
+            color: var(--red);
+        }
+
+        .status-normal {
+            background: rgba(0,230,118,.12);
+            color: var(--green);
+        }
+
+        .status-high {
+            background: rgba(245,166,35,.12);
+            color: var(--gold);
+        }
+
+        /* ========== SONUÇ PANELİ ========== */
+        .result-panel {
+            display: none;
+            animation: slideUp .5s ease;
+        }
+
+        .result-panel.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px;
+            background: rgba(245,166,35,.03);
+            border: 1px solid rgba(245,166,35,.07);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            animation: itemIn .4s ease both;
+        }
+
+        .result-item:nth-child(1) { animation-delay: .05s; }
+        .result-item:nth-child(2) { animation-delay: .1s; }
+        .result-item:nth-child(3) { animation-delay: .15s; }
+        .result-item:nth-child(4) { animation-delay: .2s; }
+        .result-item:nth-child(5) { animation-delay: .25s; }
+
+        @keyframes itemIn {
+            from {
+                opacity: 0;
+                transform: translateX(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .result-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .result-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .result-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        .result-dose {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 12px;
+            background: rgba(245,166,35,.1);
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-left: 6px;
+        }
+
+        .badge-critical { background: rgba(255,82,82,.15); color: var(--red); }
+        .badge-high { background: rgba(245,166,35,.15); color: var(--gold); }
+        .badge-medium { background: rgba(68,138,255,.15); color: var(--blue); }
+        .badge-low { background: rgba(0,230,118,.15); color: var(--green); }
+
+        /* ========== TOAST BİLDİRİMLER ========== */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 14px 18px;
+            border-radius: 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0,0,0,.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            animation: toastIn .4s ease, toastOut .4s ease 2.6s forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        /* ========== RESPONSİVE ========== */
+        @media (min-width: 540px) {
+            body {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="toast-c" id="toastC"></div>
+<!-- Toast Bildirimleri -->
+<div class="toast-container" id="toastContainer"></div>
 
-<div class="hdr">
-    <div class="hdr-logo">T</div>
+<!-- Header -->
+<div class="header">
+    <div class="header-logo">T</div>
     <div>
         <h1>TestoTitan</h1>
-        <p>Doğal Testosteron Tavan Yapma Yeri</p>
+        <p>Doğal Testosteron Optimizasyonu</p>
     </div>
 </div>
 
 <!-- ANA SAYFA -->
-<div class="page on" id="p-home">
-    <div style="padding:24px 0 10px">
-        <h2 style="font-size:21px;font-weight:900;margin-bottom:6px">Analiz Yönteminizi Seçin</h2>
-        <p style="font-size:12px;color:var(--t2);line-height:1.6">İki farklı yöntemle size özel doğal takviye reçetenizi oluşturuyoruz.</p>
+<div class="page active" id="homePage">
+    <div style="padding: 24px 0 16px">
+        <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 8px">Analiz Yöntemi Seçin</h2>
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.6">
+            Size özel doğal takviye reçetesi oluşturalım.
+        </p>
     </div>
 
-    <div class="choice">
-        <div class="choice-card" onclick="go('p-fizik')">
-            <span class="ico">🧬</span>
-            <div class="tit">Fiziksel Analiz</div>
-            <div class="sub">Boy, kilo, yaş ve semptomlarınıza göre tahmini takviye önerisi</div>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-gold">
+                <i class="bi bi-info-circle"></i>
+            </div>
+            <div>
+                <div class="card-title">Hangi Yöntemi Seçmeliyim?</div>
+                <div class="card-subtitle">İki farklı analiz türü</div>
+            </div>
         </div>
-        <div class="choice-card" onclick="go('p-kan')">
-            <span class="ico">🩸</span>
-            <div class="tit">Kan Testi Analizi</div>
-            <div class="sub">Gerçek kan değerlerinize göre bilimsel takviye reçetesi</div>
-        </div>
+        <button class="btn-primary" style="margin-bottom: 10px" onclick="changePage('physicalPage')">
+            <i class="bi bi-body-text"></i> &nbsp;Fiziksel Analiz
+        </button>
+        <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5">
+            Yaş, kilo ve semptomlarınıza göre tahmini takviye önerisi.
+        </p>
+        
+        <button class="btn-primary" onclick="changePage('bloodPage')">
+            <i class="bi bi-droplet-half"></i> &nbsp;Kan Testi Analizi
+        </button>
+        <p style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5">
+            Gerçek kan değerlerinize göre kişiselleştirilmiş reçete.
+        </p>
     </div>
 
-    <!-- REKLAM -->
-    <div class="ad-banner"><span class="ad-tag">Reklam</span></div>
-
-    <div class="c" style="border-color:rgba(245,166,35,.15);background:rgba(245,166,35,.03)">
-        <div class="c-row">
-            <div class="c-icon gold"><i class="bi bi-info-circle"></i></div>
-            <div><div class="c-t">Hangi Yöntemi Seçmeliyim?</div><div class="c-s">Karşılaştırmalı rehber</div></div>
+    <div class="card" style="border-color: rgba(0,230,118,.15)">
+        <div class="card-header">
+            <div class="card-icon icon-green">
+                <i class="bi bi-lightbulb"></i>
+            </div>
+            <div>
+                <div class="card-title">Neden Doğal Yollar?</div>
+                <div class="card-subtitle">Bilimsel yaklaşım</div>
+            </div>
         </div>
-        <div class="tip t-gold" style="margin-bottom:10px">
-            <div class="tt">🧬 Fiziksel Analiz</div>
-            <div class="td">Kan testi yaptırmadıysanız veya genel bir yol haritası istiyorsanız bu yöntemi seçin. Yaşınız, kilonuz ve yaşadığınız belirtilere göre <b>tahmini</b> takviye önerisi yapılır.</div>
-        </div>
-        <div class="tip t-green">
-            <div class="tt">🩸 Kan Testi Analizi</div>
-            <div class="td">Kan testi yaptırdıysanız bu yöntem çok daha <b>isabetli</b> sonuç verir. Gerçek vitamin ve hormon düzeylerinize göre kişiselleştirilmiş reçete oluşturulur.</div>
-        </div>
+        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
+            Doğru takviye, beslenme ve yaşam tarzı değişiklikleriyle testosteron seviyesi 
+            doğal yollarla <b>%30-50 artırılabilir</b> — hormon tedavisi olmadan.
+        </p>
     </div>
-
-    <div class="c">
-        <div class="c-row">
-            <div class="c-icon cyan"><i class="bi bi-lightbulb"></i></div>
-            <div><div class="c-t">Neden Doğal Optimizasyon?</div><div class="c-s">Bilimsel arka plan</div></div>
-        </div>
-        <div class="tip t-blue" style="margin-bottom:10px">
-            <div class="tt">📉 Modern Testosteron Krizi</div>
-            <div class="td">Son 40 yılda erkeklerin ortalama testosteron seviyesi %50 düştü. Hareketsizlik, kötü beslenme, uyku bozuklukları ve çevresel toksinler başlıca nedenlerdir.</div>
-        </div>
-        <div class="tip t-green">
-            <div class="tt">🌿 Doğal Yollarla %30-50 Artış</div>
-            <div class="td">Doğru takviye, beslenme ve yaşam tarzı değişiklikleriyle testosteron seviyesi doğal yollarla %30-50 artırılabilir — ilaç veya hormon tedavisi olmadan.</div>
-        </div>
-    </div>
-
-    <!-- REKLAM -->
-    <div class="ad-banner ad-banner-lg"><span class="ad-tag">Reklam</span></div>
 </div>
 
-<!-- FİZİKSEL ANALİZ -->
-<div class="page" id="p-fizik">
-    <div style="padding:20px 0 8px;display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(245,166,35,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--gold)" onclick="go('p-home')"><i class="bi bi-arrow-left"></i></div>
-        <div><h2 style="font-size:20px;font-weight:900">Fiziksel Analiz</h2><p style="font-size:11px;color:var(--t2)">Semptom ve vücut verilerine göre tahmini öneri</p></div>
+<!-- FİZİKSEL ANALİZ SAYFASI -->
+<div class="page" id="physicalPage">
+    <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
+        <button class="btn-secondary" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 900">Fiziksel Analiz</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Semptom bazlı öneri</p>
+        </div>
     </div>
 
-    <div class="c">
-        <div class="c-row">
-            <div class="c-icon gold"><i class="bi bi-person-bounding-box"></i></div>
-            <div><div class="c-t">Temel Bilgiler</div><div class="c-s">Fiziksel verileriniz</div></div>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-gold">
+                <i class="bi bi-person-bounding-box"></i>
+            </div>
+            <div>
+                <div class="card-title">Temel Bilgiler</div>
+                <div class="card-subtitle">Fiziksel verileriniz</div>
+            </div>
         </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Yaş</label><input type="number" class="fi" id="fAge" placeholder="Örn: 22"></div>
-            <div class="fg"><label class="fl">Boy (cm)</label><input type="number" class="fi" id="fHeight" placeholder="Örn: 175"></div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Yaş</label>
+                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Boy (cm)</label>
+                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175">
+            </div>
         </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Kilo (kg)</label><input type="number" class="fi" id="fWeight" placeholder="Örn: 68"></div>
-            <div class="fg"><label class="fl">Aktivite</label>
-                <select class="fi" id="fActivity">
-                    <option value="sedanter">Hareketsiz</option>
-                    <option value="hafif">Haftada 1-2 gün</option>
-                    <option value="orta" selected>Haftada 3-5 gün</option>
-                    <option value="yuksek">Haftada 6-7 gün</option>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Kilo (kg)</label>
+                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Aktivite Seviyesi</label>
+                <select class="form-input" id="inputActivity">
+                    <option value="1">Hareketsiz</option>
+                    <option value="2">Haftada 1-2 gün</option>
+                    <option value="3" selected>Haftada 3-5 gün</option>
+                    <option value="4">Haftada 6-7 gün</option>
                 </select>
             </div>
         </div>
-        <div class="fg"><label class="fl">Günlük güneş ışığı süresi</label>
-            <select class="fi" id="fSun">
-                <option value="yok">Neredeyse hiç çıkmıyorum</option>
-                <option value="az">15 dakikadan az</option>
-                <option value="orta" selected>15-30 dakika</option>
-                <option value="cok">30 dakikadan fazla</option>
-            </select>
-        </div>
-        <div class="fg"><label class="fl">Ortalama uyku süresi</label>
-            <select class="fi" id="fSleep">
-                <option value="az">6 saatten az</option>
-                <option value="orta">6-7 saat</option>
-                <option value="iyi" selected>7-8 saat</option>
-                <option value="cok">8+ saat</option>
-            </select>
-        </div>
     </div>
 
-    <!-- REKLAM -->
-    <div class="ad-banner"><span class="ad-tag">Reklam</span></div>
+    <button class="btn-primary" onclick="analyzePhysical()">
+        <i class="bi bi-cpu"></i> &nbsp;ANALİZ BAŞLAT
+    </button>
 
-    <div class="c">
-        <div class="c-row">
-            <div class="c-icon red"><i class="bi bi-clipboard2-pulse"></i></div>
-            <div><div class="c-t">Semptomlarınız</div><div class="c-s">Yaşadığınız belirtileri seçin</div></div>
-        </div>
-        <div class="chips" id="fChips">
-            <div class="chip" onclick="this.classList.toggle('on')">😴 Kronik Yorgunluk</div>
-            <div class="chip" onclick="this.classList.toggle('on')">📉 Motivasyon Düşüklüğü</div>
-            <div class="chip" onclick="this.classList.toggle('on')">🌙 Uyku Bozukluğu</div>
-            <div class="chip" onclick="this.classList.toggle('on')">💪 Kas Gelişimi Yavaş</div>
-            <div class="chip" onclick="this.classList.toggle('on')">🔴 Sivilce / Cilt Sorunları</div>
-            <div class="chip" onclick="this.classList.toggle('on')">🦴 Eklem / Kas Ağrısı</div>
-            <div class="chip" onclick="this.classList.toggle('on')">🧠 Konsantrasyon Eksikliği</div>
-            <div class="chip" onclick="this.classList.toggle('on')">💦 Aşırı Terleme</div>
-            <div class="chip" onclick="this.classList.toggle('on')">❤️ Libido Düşüklüğü</div>
-            <div class="chip" onclick="this.classList.toggle('on')">😰 Stres / Anksiyete</div>
-            <div class="chip" onclick="this.classList.toggle('on')">🍔 Aşırı İştah / Kilo Artışı</div>
-            <div class="chip" onclick="this.classList.toggle('on')">❄️ Eller/Ayaklar Soğuk</div>
-        </div>
-        <div class="fg"><label class="fl">Ek Notlar (opsiyonel)</label><textarea class="fi" id="fNote" placeholder="Başka belirtileriniz varsa buraya yazabilirsiniz..."></textarea></div>
-    </div>
-
-    <button class="btn-g" onclick="runFizik()"><span class="sh"></span><i class="bi bi-cpu"></i> &nbsp;TAHMİNİ ANALİZİ BAŞLAT</button>
-    <div class="res-panel" id="fizikResult"></div>
+    <div class="result-panel" id="physicalResult"></div>
 </div>
 
-<!-- KAN TESTİ ANALİZİ -->
-<div class="page" id="p-kan">
-    <div style="padding:20px 0 8px;display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(245,166,35,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--gold)" onclick="go('p-home')"><i class="bi bi-arrow-left"></i></div>
-        <div><h2 style="font-size:20px;font-weight:900">Kan Testi Analizi</h2><p style="font-size:11px;color:var(--t2)">Gerçek değerlerinize göre bilimsel reçete</p></div>
-    </div>
-
-    <div class="c" style="border-color:rgba(0,230,118,.15);background:rgba(0,230,118,.02)">
-        <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--green)">
-            <i class="bi bi-shield-check" style="font-size:18px"></i>
-            <span>Sadece bildiğiniz değerleri girin. Boş alanlar analiz dışı bırakılır.</span>
+<!-- KAN TESTİ ANALİZ SAYFASI -->
+<div class="page" id="bloodPage">
+    <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
+        <button class="btn-secondary" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 900">Kan Testi Analizi</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Bilimsel veri bazlı reçete</p>
         </div>
     </div>
 
-    <div class="c">
-        <div class="c-row">
-            <div class="c-icon red"><i class="bi bi-droplet-half"></i></div>
-            <div><div class="c-t">Hormon Paneli</div><div class="c-s">Hormonal değerler</div></div>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-red">
+                <i class="bi bi-droplet-half"></i>
+            </div>
+            <div>
+                <div class="card-title">Hormon Paneli</div>
+                <div class="card-subtitle">Sadece bildiğiniz değerleri girin</div>
+            </div>
         </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Total Testosteron (ng/dL)</label><input type="number" class="fi" id="kTesto" placeholder="250-1000"></div>
-            <div class="fg"><label class="fl">Serbest Testo (pg/mL)</label><input type="number" class="fi" id="kFree" placeholder="5-25"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Total Testosteron (ng/dL)</label>
+                <input type="number" class="form-input" id="inputTesto" placeholder="250-1000">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Serbest Testo (pg/mL)</label>
+                <input type="number" class="form-input" id="inputFreeTesto" placeholder="5-25">
+            </div>
         </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Kortizol (µg/dL)</label><input type="number" step=".1" class="fi" id="kCort" placeholder="5-25"></div>
-            <div class="fg"><label class="fl">SHBG (nmol/L)</label><input type="number" class="fi" id="kShbg" placeholder="10-70"></div>
-        </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Estradiol (pg/mL)</label><input type="number" class="fi" id="kE2" placeholder="10-40"></div>
-            <div class="fg"><label class="fl">TSH (mIU/L)</label><input type="number" step=".01" class="fi" id="kTsh" placeholder="0.4-4.0"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Kortizol (µg/dL)</label>
+                <input type="number" step="0.1" class="form-input" id="inputCortisol" placeholder="5-25">
+            </div>
+            <div class="form-group">
+                <label class="form-label">SHBG (nmol/L)</label>
+                <input type="number" class="form-input" id="inputSHBG" placeholder="10-70">
+            </div>
         </div>
     </div>
 
-    <!-- REKLAM -->
-    <div class="ad-banner"><span class="ad-tag">Reklam</span></div>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-blue">
+                <i class="bi bi-capsule"></i>
+            </div>
+            <div>
+                <div class="card-title">Vitamin & Mineral</div>
+                <div class="card-subtitle">Eksiklik tespiti</div>
+            </div>
+        </div>
 
-    <div class="c">
-        <div class="c-row">
-            <div class="c-icon blue"><i class="bi bi-capsule"></i></div>
-            <div><div class="c-t">Vitamin & Mineral Paneli</div><div class="c-s">Eksiklik tespiti</div></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">D Vitamini (ng/mL)</label>
+                <input type="number" class="form-input" id="inputVitD" placeholder="20-80">
+            </div>
+            <div class="form-group">
+                <label class="form-label">B12 (pg/mL)</label>
+                <input type="number" class="form-input" id="inputB12" placeholder="200-900">
+            </div>
         </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">D Vitamini (ng/mL)</label><input type="number" class="fi" id="kVitD" placeholder="20-80"></div>
-            <div class="fg"><label class="fl">B12 (pg/mL)</label><input type="number" class="fi" id="kB12" placeholder="200-900"></div>
-        </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Çinko (µg/dL)</label><input type="number" class="fi" id="kZn" placeholder="60-120"></div>
-            <div class="fg"><label class="fl">Magnezyum (mg/dL)</label><input type="number" step=".1" class="fi" id="kMg" placeholder="1.7-2.5"></div>
-        </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Demir (µg/dL)</label><input type="number" class="fi" id="kFe" placeholder="50-170"></div>
-            <div class="fg"><label class="fl">Ferritin (ng/mL)</label><input type="number" class="fi" id="kFerr" placeholder="20-300"></div>
-        </div>
-        <div class="fr">
-            <div class="fg"><label class="fl">Folat (ng/mL)</label><input type="number" class="fi" id="kFolat" placeholder="3-20"></div>
-            <div class="fg"><label class="fl">Selenyum (µg/L)</label><input type="number" class="fi" id="kSe" placeholder="70-150"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Çinko (µg/dL)</label>
+                <input type="number" class="form-input" id="inputZinc" placeholder="60-120">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Magnezyum (mg/dL)</label>
+                <input type="number" step="0.1" class="form-input" id="inputMg" placeholder="1.7-2.5">
+            </div>
         </div>
     </div>
 
-    <button class="btn-g" onclick="runKan()"><span class="sh"></span><i class="bi bi-search-heart"></i> &nbsp;KAN TESTİ ANALİZİNİ BAŞLAT</button>
-    <div class="res-panel" id="kanResult"></div>
+    <button class="btn-primary" onclick="analyzeBlood()">
+        <i class="bi bi-search-heart"></i> &nbsp;KAN ANALİZİ BAŞLAT
+    </button>
+
+    <div class="result-panel" id="bloodResult"></div>
 </div>
 
-<!-- TARİFLER -->
-<div class="page" id="p-tarif">
-    <div style="padding:20px 0 8px">
-        <h2 style="font-size:20px;font-weight:900">T-Boost Tarifler</h2>
-        <p style="font-size:12px;color:var(--t2)">Testosteron artırıcı bilimsel destekli yemek tarifleri</p>
-    </div>
-    <div id="recipeList"></div>
-</div>
-
-<!-- HAKKIMIZDA -->
-<div class="page" id="p-hakkimizda">
-    <div style="padding:20px 0 8px"></div>
-    <div class="about-hero">
-        <div class="big">⚡</div>
-        <h2>TestoTitan</h2>
-        <p>Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.</p>
-    </div>
-
-    <div class="c">
-        <div class="c-row"><div class="c-icon gold"><i class="bi bi-bullseye"></i></div><div><div class="c-t">Misyonumuz</div><div class="c-s">Ne yapıyoruz?</div></div></div>
-        <p style="font-size:12px;color:var(--t2);line-height:1.7">Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTitan, bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.</p>
-    </div>
-
-    <!-- REKLAM -->
-    <div class="ad-banner"><span class="ad-tag">Reklam</span></div>
-
-    <div class="c">
-        <div class="c-row"><div class="c-icon green"><i class="bi bi-shield-check"></i></div><div><div class="c-t">Bilimsel Kaynaklar</div><div class="c-s">Referans aldığımız çalışmalar</div></div></div>
-        <div class="tip t-green" style="margin-bottom:8px"><div class="tt">📄 D Vitamini & Testosteron</div><div class="td">Pilz S. et al. (2011) — Horm Metab Res.</div></div>
-        <div class="tip t-blue" style="margin-bottom:8px"><div class="tt">📄 Ashwagandha & Kortizol</div><div class="td">Chandrasekhar K. et al. (2012) — Indian J Psychol Med.</div></div>
-        <div class="tip t-gold" style="margin-bottom:8px"><div class="tt">📄 Çinko & Hormon Sentezi</div><div class="td">Prasad AS et al. (1996) — Nutrition.</div></div>
-        <div class="tip t-purple"><div class="tt">📄 Uyku & Testosteron</div><div class="td">Leproult R, Van Cauter E (2011) — JAMA.</div></div>
-    </div>
-
-    <div class="c">
-        <div class="c-row"><div class="c-icon purple"><i class="bi bi-people"></i></div><div><div class="c-t">Ekip</div><div class="c-s">Geliştirici</div></div></div>
-        <div class="team-card"><div class="team-av">M</div><div class="team-info"><div class="n">The Sensei</div><div class="r">Kurucu & Geliştirici</div></div></div>
-    </div>
-
-    <div class="c" style="border-color:rgba(255,82,82,.15);background:rgba(255,82,82,.02)">
-        <div class="c-row"><div class="c-icon red"><i class="bi bi-exclamation-triangle"></i></div><div><div class="c-t">Tıbbi Sorumluluk Reddi</div><div class="c-s">Lütfen dikkatle okuyun</div></div></div>
-        <p style="font-size:11px;color:var(--t2);line-height:1.7">TestoTitan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi <b>değildir</b>. Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.</p>
-    </div>
-
-    <div class="c" style="border-color:rgba(0,230,118,.15);background:rgba(0,230,118,.02)">
-        <div class="c-row"><div class="c-icon green"><i class="bi bi-lock"></i></div><div><div class="c-t">Gizlilik</div><div class="c-s">Veri güvenliği</div></div></div>
-        <p style="font-size:11px;color:var(--t2);line-height:1.7">Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır.</p>
-    </div>
-
-    <!-- REKLAM -->
-    <div class="ad-banner ad-banner-lg"><span class="ad-tag">Reklam</span></div>
-
-    <div class="glow"></div>
-    <div class="footer">
-        <p>TestoTitan v3.0 — Tüm hakları saklıdır © 2026</p>
-        <p style="margin-top:4px">Geliştiren: The Sensei</p>
-    </div>
-</div>
-
-<nav class="bottom-nav">
-    <a class="nav-i on" onclick="go('p-home',this)"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></a>
-    <a class="nav-i" onclick="go('p-fizik',this)"><i class="bi bi-body-text"></i><span>Fiziksel</span></a>
-    <a class="nav-i" onclick="go('p-kan',this)"><i class="bi bi-droplet-half"></i><span>Kan Testi</span></a>
-    <a class="nav-i" onclick="go('p-tarif',this)"><i class="bi bi-egg-fried"></i><span>Tarifler</span></a>
-    <a class="nav-i" onclick="go('p-hakkimizda',this)"><i class="bi bi-info-circle"></i><span>Hakkımızda</span></a>
+<!-- Alt Navigasyon -->
+<nav class="nav-bottom">
+    <a class="nav-item active" onclick="changePage('homePage')">
+        <i class="bi bi-house-door-fill"></i>
+        <span>Ana Sayfa</span>
+    </a>
+    <a class="nav-item" onclick="changePage('physicalPage')">
+        <i class="bi bi-body-text"></i>
+        <span>Fiziksel</span>
+    </a>
+    <a class="nav-item" onclick="changePage('bloodPage')">
+        <i class="bi bi-droplet-half"></i>
+        <span>Kan Testi</span>
+    </a>
 </nav>
 
 <script>
-function go(id,navEl){
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-    document.getElementById(id).classList.add('on');
-    if(navEl){document.querySelectorAll('.nav-i').forEach(n=>n.classList.remove('on'));navEl.classList.add('on')}
-    else{const map={'p-home':0,'p-fizik':1,'p-kan':2,'p-tarif':3,'p-hakkimizda':4};document.querySelectorAll('.nav-i').forEach((n,i)=>n.classList.toggle('on',i===map[id]))}
-    window.scrollTo({top:0,behavior:'smooth'});
-}
-function toast(msg,color){
-    const c=document.getElementById('toastC'),t=document.createElement('div');t.className='toast';
-    const colors={gold:'var(--gold)',green:'var(--green)',red:'var(--red)',blue:'var(--blue)',purple:'var(--purple)'};
-    t.style.borderLeft='4px solid '+(colors[color]||colors.gold);t.innerHTML=msg;c.appendChild(t);setTimeout(()=>t.remove(),3200);
-}
+// ========================================
+// YARDIMCI FONKSİYONLAR
+// ========================================
 
-function runFizik(){
-    const age=parseFloat(document.getElementById('fAge').value),height=parseFloat(document.getElementById('fHeight').value),weight=parseFloat(document.getElementById('fWeight').value);
-    const activity=document.getElementById('fActivity').value,sun=document.getElementById('fSun').value,sleep=document.getElementById('fSleep').value;
-    const symptoms=[...document.querySelectorAll('#fChips .chip.on')].map(c=>c.textContent.trim());
-    if(!age||!height||!weight){toast('⚠️ Lütfen yaş, boy ve kilo alanlarını doldurun.','red');return}
-    const sups=[],timeline={sabah:[],ogle:[],aksam:[],gece:[]},warnings=[],bmi=weight/((height/100)**2);
-
-    if(sun==='yok'||sun==='az'){sups.push({name:'D3 Vitamini + K2',desc:`Güneş ışığına maruziyetiniz çok düşük. D vitamini testosteron sentezinin temel yapı taşıdır.`,dose:sun==='yok'?'5000 IU D3 + 200mcg K2-MK7 / gün':'2000 IU D3 + 100mcg K2-MK7 / gün',icon:'☀️',color:'gold',p:'Yüksek'});timeline.sabah.push('D3+K2 (yağlı kahvaltıyla)')}
-    else{sups.push({name:'D3 Vitamini + K2',desc:'Profilaktik doz önerilir.',dose:'1000 IU D3 + 100mcg K2 / gün',icon:'☀️',color:'gold',p:'Düşük'});timeline.sabah.push('D3+K2 (sabah)')}
-
-    if(symptoms.some(s=>s.includes('Libido'))||symptoms.some(s=>s.includes('Sivilce'))||symptoms.some(s=>s.includes('Kas Gelişimi'))){sups.push({name:'Çinko Pikolinat',desc:'Bildirdiğiniz semptomlar çinko eksikliğiyle ilişkili olabilir.',dose:'30mg / gün (akşam yemeğiyle)',icon:'⚡',color:'blue',p:'Yüksek'});timeline.aksam.push('Çinko (akşam yemeğiyle)');warnings.push('Çinko ve demir takviyesini aynı anda almayın.')}
-    else{sups.push({name:'Çinko Pikolinat',desc:'Testosteron sentezi ve bağışıklık için temel mineral.',dose:'15mg / gün',icon:'⚡',color:'blue',p:'Orta'});timeline.aksam.push('Çinko (akşam)')}
-
-    if(symptoms.some(s=>s.includes('Uyku'))||symptoms.some(s=>s.includes('Kas Ağrısı'))||sleep==='az'){sups.push({name:'Magnezyum Bisglisinat',desc:'Magnezyum SHBG\'yi düşürerek serbest testosteronu artırır.',dose:'400mg (yatmadan 30dk önce)',icon:'🌙',color:'purple',p:'Yüksek'});timeline.gece.push('Magnezyum 400mg (yatmadan önce)')}
-    else{sups.push({name:'Magnezyum Bisglisinat',desc:'Kas fonksiyonu, sinir iletimi ve uyku kalitesi için gerekli.',dose:'200mg (yatmadan önce)',icon:'🌙',color:'purple',p:'Orta'});timeline.gece.push('Magnezyum 200mg')}
-
-    if(symptoms.some(s=>s.includes('Stres'))||symptoms.some(s=>s.includes('Motivasyon'))||symptoms.some(s=>s.includes('Yorgunluk'))){sups.push({name:'Ashwagandha KSM-66',desc:'Klinik çalışmalarda kortizolü %30 düşürmüş, testosteronu %17 artırmıştır.',dose:'600mg / gün (2×300mg sabah-akşam)',icon:'🌿',color:'green',p:'Yüksek'});timeline.sabah.push('Ashwagandha 300mg');timeline.aksam.push('Ashwagandha 300mg')}
-
-    sups.push({name:'Omega-3 (EPA/DHA)',desc:'Anti-inflamatuar etki ve hormonal denge için temel takviye.',dose:'2000mg (EPA+DHA toplam) / gün',icon:'🐟',color:'cyan',p:'Temel'});timeline.sabah.push('Omega-3 (kahvaltıyla)');
-
-    if(symptoms.some(s=>s.includes('Yorgunluk'))||symptoms.some(s=>s.includes('Konsantrasyon'))){sups.push({name:'B12 Vitamini (Metilkobalamin)',desc:'Enerji metabolizması ve sinir sistemi fonksiyonu için kritik.',dose:'1000mcg / gün (sabah aç karnına)',icon:'🔋',color:'green',p:'Orta'});timeline.sabah.push('B12 (aç karnına)')}
-    if(sleep==='az'&&!symptoms.some(s=>s.includes('Uyku'))){sups.push({name:'L-Teanin',desc:'Uyku kalitesini artırır, anksiyeteyi azaltır.',dose:'200mg (yatmadan 30dk önce)',icon:'😴',color:'purple',p:'Orta'});timeline.gece.push('L-Teanin 200mg')}
-    if(bmi<18.5){sups.push({name:'Kreatin Monohidrat',desc:`BMI'nız ${bmi.toFixed(1)} — düşük. Kas kütlesi ve güç için en çok araştırılmış takviye.`,dose:'5g / gün',icon:'💪',color:'red',p:'Yüksek'});timeline.sabah.push('Kreatin 5g')}
-    if(symptoms.some(s=>s.includes('Soğuk'))){sups.push({name:'Selenyum + İyot',desc:'Tiroid fonksiyon bozukluğuna işaret edebilir.',dose:'Selenyum 200mcg + İyot 150mcg / gün',icon:'🌡️',color:'red',p:'Orta'});timeline.sabah.push('Selenyum + İyot');warnings.push('Tiroid şikayetleriniz varsa TSH, T3, T4 ölçtürün.')}
-
-    warnings.push('Bu öneriler tahmini analiz sonucudur. Kesin sonuç için kan testi yaptırın.');
-    warnings.push('Herhangi bir takviyeye başlamadan önce doktorunuza danışın.');
-    warnings.push('Takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.');
-    renderResults('fizikResult',sups,timeline,warnings,bmi,'fizik');toast('🧬 Fiziksel analiz tamamlandı!','gold');
-}
-
-function runKan(){
-    const v=id=>parseFloat(document.getElementById(id).value)||0,has=id=>document.getElementById(id).value!=='';
-    const testo=v('kTesto'),cort=v('kCort'),shbg=v('kShbg'),e2=v('kE2'),tsh=v('kTsh');
-    const vitD=v('kVitD'),b12=v('kB12'),zn=v('kZn'),mg=v('kMg'),fe=v('kFe'),ferr=v('kFerr'),folat=v('kFolat'),se=v('kSe');
-    let entered=0;['kTesto','kFree','kCort','kShbg','kE2','kTsh','kVitD','kB12','kZn','kMg','kFe','kFerr','kFolat','kSe'].forEach(id=>{if(has(id))entered++});
-    if(entered<2){toast('⚠️ En az 2 kan değeri girmeniz gerekiyor.','red');return}
-    const sups=[],timeline={sabah:[],ogle:[],aksam:[],gece:[]},warnings=[];
-
-    if(has('kVitD')){if(vitD<20){sups.push({name:'D3 Vitamini + K2',desc:`Değeriniz: ${vitD} ng/mL → Ciddi eksiklik.`,dose:'5000 IU D3 + 200mcg K2-MK7 / gün',icon:'☀️',color:'gold',p:'Kritik'});timeline.sabah.push('D3+K2 5000IU')}else if(vitD<30){sups.push({name:'D3 Vitamini + K2',desc:`Değeriniz: ${vitD} ng/mL → Yetersiz.`,dose:'3000 IU D3 + 100mcg K2-MK7 / gün',icon:'☀️',color:'gold',p:'Yüksek'});timeline.sabah.push('D3+K2 3000IU')}else if(vitD<40){sups.push({name:'D3 Vitamini + K2',desc:`Değeriniz: ${vitD} ng/mL → Normal alt sınır.`,dose:'1000-2000 IU D3 + 100mcg K2 / gün',icon:'☀️',color:'gold',p:'Düşük'});timeline.sabah.push('D3+K2')}}
-    if(has('kB12')&&b12<300){sups.push({name:'B12 (Metilkobalamin)',desc:`Değeriniz: ${b12} pg/mL → Düşük.`,dose:b12<200?'2000mcg sublingual / gün':'1000mcg / gün',icon:'🔋',color:'green',p:b12<200?'Kritik':'Yüksek'});timeline.sabah.push('B12 (aç karnına)')}
-    if(has('kZn')&&zn<70){sups.push({name:'Çinko Pikolinat',desc:`Değeriniz: ${zn} µg/dL → Düşük.`,dose:zn<60?'30mg / gün':'15mg / gün',icon:'⚡',color:'blue',p:zn<60?'Kritik':'Yüksek'});timeline.aksam.push('Çinko (akşam yemeğiyle)');warnings.push('Çinko: Demir ile aynı anda almayın.')}
-    if(has('kMg')&&mg<2.0){sups.push({name:'Magnezyum Bisglisinat',desc:`Değeriniz: ${mg} mg/dL → Düşük.`,dose:mg<1.7?'400mg / gece':'200mg / gece',icon:'🌙',color:'purple',p:mg<1.7?'Kritik':'Yüksek'});timeline.gece.push('Magnezyum (yatmadan önce)')}
-    if(has('kFe')&&fe<60){sups.push({name:'Demir Bisglisinat',desc:`Değeriniz: ${fe} µg/dL → Düşük.`,dose:'25mg demir + 500mg C vitamini / gün',icon:'🩸',color:'red',p:'Yüksek'});timeline.ogle.push('Demir + C Vitamini');warnings.push('Demir: Çay, kahve ile almayın.')}
-    if(has('kFerr')&&ferr<30&&!sups.some(s=>s.name.includes('Demir'))){sups.push({name:'Demir Bisglisinat',desc:`Ferritin: ${ferr} ng/mL → Düşük.`,dose:'25mg demir + C vitamini / gün',icon:'🩸',color:'red',p:'Yüksek'});timeline.ogle.push('Demir')}
-    if(has('kCort')){if(cort>20){sups.push({name:'Ashwagandha KSM-66',desc:`Kortizol: ${cort} µg/dL → Yüksek.`,dose:'600mg / gün (2×300mg)',icon:'🌿',color:'green',p:'Kritik'});timeline.sabah.push('Ashwagandha 300mg');timeline.aksam.push('Ashwagandha 300mg')}else if(cort>16){sups.push({name:'Ashwagandha KSM-66',desc:`Kortizol: ${cort} µg/dL → Normal üst sınır.`,dose:'300mg / gün',icon:'🌿',color:'green',p:'Orta'});timeline.sabah.push('Ashwagandha 300mg')}}
-    if(has('kShbg')&&shbg>50){sups.push({name:'Boron (Bor Minerali)',desc:`SHBG: ${shbg} nmol/L → Yüksek.`,dose:'10mg / gün',icon:'💎',color:'cyan',p:'Yüksek'});timeline.sabah.push('Boron 10mg')}
-    if(has('kE2')&&e2>35){sups.push({name:'DIM (Diindolilmetan)',desc:`Estradiol: ${e2} pg/mL → Yüksek.`,dose:'200mg / gün',icon:'🥦',color:'green',p:'Yüksek'});timeline.sabah.push('DIM 200mg');warnings.push('E2 yüksekliği — endokrinolojiye danışın.')}
-    if(has('kTsh')){if(tsh>4.0){sups.push({name:'Selenyum + İyot',desc:`TSH: ${tsh} mIU/L → Yüksek.`,dose:'Selenyum 200mcg + İyot 150mcg / gün',icon:'🦋',color:'red',p:'Yüksek'});timeline.sabah.push('Selenyum + İyot');warnings.push('TSH yüksek: T3, T4, anti-TPO testleri yaptırın.')}else if(tsh<0.4){warnings.push(`TSH çok düşük (${tsh}). Endokrinolojiye başvurun.`)}}
-    if(has('kFolat')&&folat<5){sups.push({name:'Metilfolat (5-MTHF)',desc:`Folat: ${folat} ng/mL → Düşük.`,dose:'400-800mcg / gün',icon:'🧬',color:'green',p:'Orta'});timeline.sabah.push('Folat')}
-    if(has('kSe')&&se<70&&!sups.some(s=>s.name.includes('Selenyum'))){sups.push({name:'Selenyum',desc:`Selenyum: ${se} µg/L → Düşük.`,dose:'200mcg / gün',icon:'🛡️',color:'blue',p:'Orta'});timeline.sabah.push('Selenyum')}
-
-    sups.push({name:'Omega-3 (EPA/DHA)',desc:'Temel takviye. Anti-inflamatuar ve hormonal denge için.',dose:'2000-3000mg EPA+DHA / gün',icon:'🐟',color:'cyan',p:'Temel'});timeline.sabah.push('Omega-3 (kahvaltıyla)');
-
-    if(has('kTesto')&&testo<350){sups.push({name:'Tongkat Ali (Eurycoma)',desc:`Total T: ${testo} ng/dL → Düşük.`,dose:'200-400mg standardize ekstrakt / gün',icon:'🌱',color:'gold',p:'Yüksek'});timeline.sabah.push('Tongkat Ali');warnings.push('Testosteron düşüklüğü — ürolojiye başvurun.')}
-
-    warnings.push('Tüm takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.');
-    warnings.push('3 ay sonra kan testinizi tekrarlayın.');
-    warnings.push('Bu analiz tıbbi reçete yerine geçmez.');
-    renderResults('kanResult',sups,timeline,warnings,null,'kan');toast('🩸 Kan testi analizi tamamlandı!','green');
-}
-
-function renderResults(containerId,sups,timeline,warnings,bmi,type){
-    const panel=document.getElementById(containerId);
-    const prioColors={Kritik:'badge-r',Yüksek:'badge-r',Orta:'badge-y',Düşük:'badge-g',Temel:'badge-g'};
-    const timeLabels={sabah:'🌅 Sabah (07:00 - 09:00)',ogle:'☀️ Öğle (12:00 - 14:00)',aksam:'🌆 Akşam (18:00 - 20:00)',gece:'🌙 Gece (21:30 - 22:30)'};
-    const half=Math.ceil(sups.length/2),firstHalf=sups.slice(0,half),secondHalf=sups.slice(half);
-
-    let html=`<div style="margin-top:20px"></div>
-    <div class="c" style="border-color:rgba(245,166,35,.2);background:rgba(245,166,35,.03)">
-        <div class="c-row"><div class="c-icon gold"><i class="bi bi-stars"></i></div><div><div class="c-t">Kişisel Takviye Reçeteniz</div><div class="c-s">${sups.length} takviye önerildi — ${type==='kan'?'Kan değerlerinize':'Fiziksel verilerinize'} göre</div></div></div>
-        ${firstHalf.map(s=>`<div class="res-item"><div class="res-icon c-icon ${s.color}">${s.icon}</div><div class="res-info"><div class="res-name">${s.name} <span class="badge ${prioColors[s.p]||'badge-y'}">${s.p}</span></div><div class="res-desc">${s.desc}</div><div class="res-dose">💊 ${s.dose}</div></div></div>`).join('')}
-    </div>
-
-    <!-- REKLAM -->
-    <div class="ad-banner"><span class="ad-tag">Reklam</span></div>
-
-    ${secondHalf.length?`<div class="c" style="border-color:rgba(245,166,35,.1)">${secondHalf.map(s=>`<div class="res-item"><div class="res-icon c-icon ${s.color}">${s.icon}</div><div class="res-info"><div class="res-name">${s.name} <span class="badge ${prioColors[s.p]||'badge-y'}">${s.p}</span></div><div class="res-desc">${s.desc}</div><div class="res-dose">💊 ${s.dose}</div></div></div>`).join('')}</div>`:''}
-
-    <div class="c"><div class="c-row"><div class="c-icon blue"><i class="bi bi-clock-history"></i></div><div><div class="c-t">Günlük Kullanım Takvimi</div><div class="c-s">Optimum emilim zamanlaması</div></div></div>
-    ${Object.entries(timeline).filter(([,items])=>items.length).map(([key,items])=>`<div style="padding:12px;background:var(--input);border-radius:12px;margin-bottom:8px"><div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px">${timeLabels[key]}</div>${items.map(i=>`<div style="font-size:11px;color:var(--t2);padding:3px 0">• ${i}</div>`).join('')}</div>`).join('')}</div>
-
-    <div class="c" style="border-color:rgba(255,82,82,.12)"><div class="c-row"><div class="c-icon red"><i class="bi bi-exclamation-triangle"></i></div><div><div class="c-t">Önemli Uyarılar</div><div class="c-s">Dikkatle okuyun</div></div></div>
-    ${warnings.map(w=>`<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--red);min-width:18px">⚠️</span><span style="font-size:11px;color:var(--t2);line-height:1.6">${w}</span></div>`).join('')}</div>
-
-    ${bmi?`<div class="c"><div class="c-row"><div class="c-icon cyan"><i class="bi bi-bar-chart"></i></div><div><div class="c-t">Vücut Analizi</div><div class="c-s">BMI: ${bmi.toFixed(1)}</div></div></div>
-    <div class="tip ${bmi<18.5?'t-red':bmi<25?'t-green':'t-gold'}"><div class="tt">${bmi<18.5?'⚠️ Zayıf — Kilo Almalısınız':bmi<25?'✅ Normal Aralık':'📊 Kilolu — Yağ Oranını Düşürün'}</div><div class="td">${bmi<18.5?'BMI düşük. Kalori fazlası ve ağırlık antrenmanıyla kas kütlesi kazanın.':bmi<25?'BMI normal. Lean bulk ile kas kütlesi artışı hedefleyin.':'BMI yüksek. Hafif kalori açığı ve yüksek proteinle yağ oranını düşürün.'}</div></div></div>`:''}
-
-    <!-- REKLAM -->
-    <div class="ad-banner ad-banner-lg"><span class="ad-tag">Reklam</span></div>
-
-    <button class="btn-o" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-bottom:20px"><i class="bi bi-arrow-up"></i> &nbsp;BAŞA DÖN</button>`;
-
-    panel.innerHTML=html;panel.classList.add('show');
-    setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),200);
-}
-
-const recipes=[
-    {emoji:'🥚',name:'Testosteron Omleti',time:'10dk',cal:'480 kcal',p:35,c:12,f:32,k:480,ing:['4 yumurta (sarısını atmayın!)','30g ıspanak','2 diş sarımsak','50g mantar','1 yk zeytinyağı','Tuz, karabiber, zerdeçal'],steps:['Zeytinyağını tavada kızdırın.','Sarımsak ve mantarı 2dk kavurun.','Ispanağı ekleyip soldurulana kadar pişirin.','Yumurtaları çırpıp dökün, zerdeçal ekleyin.','Kısık ateşte 3-4dk pişirin.'],why:'Yumurta sarısı kolesterol → testosteron sentezinin hammaddesi. Sarımsak allisin → kortizolü düşürür.'},
-    {emoji:'🥩',name:'T-Boost Biftek Tabağı',time:'25dk',cal:'650 kcal',p:50,c:40,f:28,k:650,ing:['200g dana bonfile','200g tatlı patates','1 avuç brokoli','1 yk zeytinyağı','1 diş sarımsak','Biberiye, tuz, karabiber'],steps:['Bifteği oda sıcaklığına getirin.','Kızgın tavada her yüzünü 3-4dk pişirin.','Tatlı patatesi fırında 20dk pişirin.','Brokoliyi buharda 5dk haşlayın.','Tabağa dizin, zeytinyağı gezdirin.'],why:'Kırmızı et doğal çinko, demir ve B12 kaynağı. Brokoli DIM → östrojeni baskılar.'},
-    {emoji:'🥗',name:'Nar-Roka Salatası',time:'8dk',cal:'320 kcal',p:12,c:25,f:22,k:320,ing:['2 avuç roka','½ nar taneleri','30g ceviz','50g beyaz peynir','2 yk zeytinyağı','1 yk nar ekşisi'],steps:['Rokayı tabağa yayın.','Nar, ceviz ve peyniri ekleyin.','Zeytinyağı + nar ekşisi sosu gezdirin.'],why:'Nar tükürük testosteronunu %24 artırmış. Ceviz omega-3 kaynağı.'},
-    {emoji:'🍌',name:'Pre-Workout T-Shake',time:'3dk',cal:'420 kcal',p:35,c:50,f:10,k:420,ing:['1 scoop whey protein','1 muz','1 yk fıstık ezmesi','200ml süt','1 tk bal','5g kreatin','Buz'],steps:['Tüm malzemeleri blender\'a atın.','30 saniye karıştırın.','Antremandan 30dk önce için.'],why:'Muz potasyum + hızlı enerji. Kreatin güç ve kas hacmi artırır.'},
-    {emoji:'🐟',name:'Somon + Tatlı Patates',time:'30dk',cal:'580 kcal',p:42,c:45,f:22,k:580,ing:['200g somon fileto','200g tatlı patates','1 avuç kuşkonmaz','1 yk zeytinyağı','Limon, dereotu, tuz'],steps:['Somonu limon-dereotu ile marine edin.','Fırını 200°C\'ye ısıtın.','Tatlı patatesi dilimleyip yağlı kağıda dizin.','Somonu ekleyip 18-20dk pişirin.','Kuşkonmazı son 8dk\'da ekleyin.'],why:'Somon omega-3 EPA/DHA → inflamasyonu azaltır. D vitamini doğal kaynağı.'},
-    {emoji:'🧄',name:'Zencefilli Sarımsaklı Tavuk',time:'35dk',cal:'520 kcal',p:48,c:30,f:22,k:520,ing:['250g tavuk göğsü','3 diş sarımsak','Taze zencefil rendelenmiş','1 yk soya sosu','1 yk zeytinyağı','150g bulgur','Tuz, karabiber, pul biber'],steps:['Tavuğu dilimleyip sarımsak-zencefil-soya ile marine edin (15dk).','Zeytinyağında yüksek ateşte soteleyin.','Bulguru pişirin.','Tabağa alın, pul biber serpin.'],why:'Zencefil testosteronu %17 artırmış. Sarımsak allisin → LH salınımını artırır.'},
-    {emoji:'🥜',name:'Gece Kazein Bowl',time:'5dk',cal:'380 kcal',p:35,c:20,f:18,k:380,ing:['200g süzme peynir','20g ceviz','10g kuru üzüm','1 tk bal','1 tk tarçın'],steps:['Süzme peyniri kaseye alın.','Ceviz, kuru üzüm ve balı ekleyin.','Tarçın serpin. Yatmadan 1 saat önce tüketin.'],why:'Süzme peynir kazein → gece boyu yavaş aminoasit salınımı. Ceviz melatonin + omega-3.'},
-    {emoji:'🥦',name:'Anti-Östrojen Smoothie',time:'3dk',cal:'180 kcal',p:5,c:30,f:5,k:180,ing:['1 avuç brokoli filizi','½ avokado','1 yeşil elma','200ml su','½ limon suyu','Taze zencefil'],steps:['Tüm malzemeleri blender\'a atın.','1dk karıştırın.','Hemen için.'],why:'Brokoli DIM ve I3C → östrojen metabolizmasını düzenler. Avokado sağlıklı yağ + potasyum.'}
-];
-
-function initRecipes(){
-    let html='';
-    recipes.forEach((r,i)=>{
-        html+=`<div class="recipe" id="rec${i}"><div class="recipe-head" onclick="document.getElementById('rec${i}').classList.toggle('open')"><div class="left"><span class="emoji">${r.emoji}</span><div><div class="name">${r.name}</div><div class="meta">${r.time} · ${r.cal}</div></div></div><i class="bi bi-chevron-down arrow"></i></div><div class="recipe-body"><div class="recipe-inner"><div class="macro-row"><span class="macro-pill p">P: ${r.p}g</span><span class="macro-pill c">K: ${r.c}g</span><span class="macro-pill f">Y: ${r.f}g</span><span class="macro-pill k">${r.k} kcal</span></div><h6>Malzemeler</h6><ul>${r.ing.map(x=>`<li>${x}</li>`).join('')}</ul><h6>Yapılışı</h6><ul class="steps">${r.steps.map(s=>`<li>${s}</li>`).join('')}</ul><h6>Neden T-Boost?</h6><div class="tip t-gold" style="margin-top:6px"><div class="td">${r.why}</div></div></div></div></div>`;
-        if(i===2||i===5) html+=`<div class="ad-banner"><span class="ad-tag">Reklam</span></div>`;
+// Sayfa değiştirme
+function changePage(pageId) {
+    // Tüm sayfaları gizle
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
     });
-    html+=`<div class="ad-banner ad-banner-lg"><span class="ad-tag">Reklam</span></div>`;
-    document.getElementById('recipeList').innerHTML=html;
+    
+    // Seçilen sayfayı göster
+    document.getElementById(pageId).classList.add('active');
+    
+    // Navigasyon aktif durumunu güncelle
+    const pageMap = {
+        'homePage': 0,
+        'physicalPage': 1,
+        'bloodPage': 2
+    };
+    
+    document.querySelectorAll('.nav-item').forEach((item, index) => {
+        item.classList.toggle('active', index === pageMap[pageId]);
+    });
+    
+    // Sayfayı en üste kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-initRecipes();
+
+// Toast bildirimi göster
+function showToast(message, color) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    
+    const colors = {
+        gold: 'var(--gold)',
+        green: 'var(--green)',
+        red: 'var(--red)',
+        blue: 'var(--blue)'
+    };
+    
+    toast.style.borderLeft = `4px solid ${colors[color] || colors.gold}`;
+    toast.innerHTML = message;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 3200);
+}
+
+// ========================================
+// TESTOSTERON SEVİYE GÖSTERGESİ
+// ========================================
+function renderTestoGauge(testoValue) {
+    const minVal = 200;
+    const maxVal = 1000;
+    const normalMin = 350;
+    const normalMax = 800;
+    
+    let status, statusClass, color;
+    let percentage = ((testoValue - minVal) / (maxVal - minVal)) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
+    
+    if (testoValue < normalMin) {
+        status = 'DÜŞÜK';
+        statusClass = 'status-low';
+        color = '#FF5252';
+    } else if (testoValue >= normalMin && testoValue <= normalMax) {
+        status = 'NORMAL';
+        statusClass = 'status-normal';
+        color = '#00E676';
+    } else {
+        status = 'YÜKSEK';
+        statusClass = 'status-high';
+        color = '#F5A623';
+    }
+    
+    return `
+        <div class="testo-gauge">
+            <div class="gauge-title">🔬 Testosteron Seviyeniz</div>
+            <div class="gauge-bar">
+                <div class="gauge-fill" style="width: ${percentage}%; background: ${color}"></div>
+            </div>
+            <div class="gauge-markers">
+                <span>200</span>
+                <span>350</span>
+                <span>600</span>
+                <span>800</span>
+                <span>1000+</span>
+            </div>
+            <div class="gauge-value" style="color: ${color}">${testoValue}</div>
+            <div class="gauge-status ${statusClass}">${status}</div>
+        </div>
+    `;
+}
+
+// ========================================
+// FİZİKSEL ANALİZ
+// ========================================
+function analyzePhysical() {
+    const age = parseFloat(document.getElementById('inputAge').value);
+    const height = parseFloat(document.getElementById('inputHeight').value);
+    const weight = parseFloat(document.getElementById('inputWeight').value);
+    
+    if (!age || !height || !weight) {
+        showToast('⚠️ Lütfen tüm alanları doldurun', 'red');
+        return;
+    }
+    
+    const bmi = weight / ((height / 100) ** 2);
+    const supplements = [];
+    
+    // D Vitamini
+    supplements.push({
+        name: 'D3 Vitamini + K2',
+        icon: '☀️',
+        color: 'icon-gold',
+        desc: 'Testosteron sentezinin temel yapı taşı.',
+        dose: '2000 IU D3 + 100mcg K2 / gün',
+        priority: 'Yüksek',
+        badgeClass: 'badge-high'
+    });
+    
+    // Çinko
+    supplements.push({
+        name: 'Çinko Pikolinat',
+        icon: '⚡',
+        color: 'icon-blue',
+        desc: 'Testosteron sentezi ve bağışıklık için temel mineral.',
+        dose: '15mg / gün (akşam yemeğiyle)',
+        priority: 'Yüksek',
+        badgeClass: 'badge-high'
+    });
+    
+    // Magnezyum
+    supplements.push({
+        name: 'Magnezyum Bisglisinat',
+        icon: '🌙',
+        color: 'icon-purple',
+        desc: 'SHBG\'yi düşürerek serbest testosteronu artırır.',
+        dose: '200mg (yatmadan önce)',
+        priority: 'Orta',
+        badgeClass: 'badge-medium'
+    });
+    
+    // Omega-3
+    supplements.push({
+        name: 'Omega-3 (EPA/DHA)',
+        icon: '🐟',
+        color: 'icon-blue',
+        desc: 'Anti-inflamatuar ve hormonal denge.',
+        dose: '2000mg / gün',
+        priority: 'Temel',
+        badgeClass: 'badge-low'
+    });
+    
+    renderResults('physicalResult', supplements, null, bmi);
+    showToast('🧬 Fiziksel analiz tamamlandı!', 'gold');
+}
+
+// ========================================
+// KAN TESTİ ANALİZİ
+// ========================================
+function analyzeBlood() {
+    const testo = parseFloat(document.getElementById('inputTesto').value) || 0;
+    const cortisol = parseFloat(document.getElementById('inputCortisol').value) || 0;
+    const vitD = parseFloat(document.getElementById('inputVitD').value) || 0;
+    const b12 = parseFloat(document.getElementById('inputB12').value) || 0;
+    const zinc = parseFloat(document.getElementById('inputZinc').value) || 0;
+    const mg = parseFloat(document.getElementById('inputMg').value) || 0;
+    
+    const hasData = testo || cortisol || vitD || b12 || zinc || mg;
+    
+    if (!hasData) {
+        showToast('⚠️ En az 1 kan değeri girmeniz gerekiyor', 'red');
+        return;
+    }
+    
+    const supplements = [];
+    
+    // D Vitamini
+    if (vitD > 0) {
+        if (vitD < 20) {
+            supplements.push({
+                name: 'D3 Vitamini + K2',
+                icon: '☀️',
+                color: 'icon-gold',
+                desc: `Değeriniz: ${vitD} ng/mL → Ciddi eksiklik.`,
+                dose: '5000 IU D3 + 200mcg K2 / gün',
+                priority: 'Kritik',
+                badgeClass: 'badge-critical'
+            });
+        } else if (vitD < 30) {
+            supplements.push({
+                name: 'D3 Vitamini + K2',
+                icon: '☀️',
+                color: 'icon-gold',
+                desc: `Değeriniz: ${vitD} ng/mL → Yetersiz.`,
+                dose: '3000 IU D3 + 100mcg K2 / gün',
+                priority: 'Yüksek',
+                badgeClass: 'badge-high'
+            });
+        }
+    }
+    
+    // B12
+    if (b12 > 0 && b12 < 300) {
+        supplements.push({
+            name: 'B12 (Metilkobalamin)',
+            icon: '🔋',
+            color: 'icon-green',
+            desc: `Değeriniz: ${b12} pg/mL → Düşük.`,
+            dose: b12 < 200 ? '2000mcg / gün' : '1000mcg / gün',
+            priority: b12 < 200 ? 'Kritik' : 'Yüksek',
+            badgeClass: b12 < 200 ? 'badge-critical' : 'badge-high'
+        });
+    }
+    
+    // Çinko
+    if (zinc > 0 && zinc < 70) {
+        supplements.push({
+            name: 'Çinko Pikolinat',
+            icon: '⚡',
+            color: 'icon-blue',
+            desc: `Değeriniz: ${zinc} µg/dL → Düşük.`,
+            dose: zinc < 60 ? '30mg / gün' : '15mg / gün',
+            priority: zinc < 60 ? 'Kritik' : 'Yüksek',
+            badgeClass: zinc < 60 ? 'badge-critical' : 'badge-high'
+        });
+    }
+    
+    // Magnezyum
+    if (mg > 0 && mg < 2.0) {
+        supplements.push({
+            name: 'Magnezyum Bisglisinat',
+            icon: '🌙',
+            color: 'icon-purple',
+            desc: `Değeriniz: ${mg} mg/dL → Düşük.`,
+            dose: mg < 1.7 ? '400mg / gece' : '200mg / gece',
+            priority: mg < 1.7 ? 'Kritik' : 'Yüksek',
+            badgeClass: mg < 1.7 ? 'badge-critical' : 'badge-high'
+        });
+    }
+    
+    // Kortizol
+    if (cortisol > 0 && cortisol > 16) {
+        supplements.push({
+            name: 'Ashwagandha KSM-66',
+            icon: '🌿',
+            color: 'icon-green',
+            desc: `Kortizol: ${cortisol} µg/dL → ${cortisol > 20 ? 'Çok yüksek' : 'Normal üst sınır'}.`,
+            dose: cortisol > 20 ? '600mg / gün (2×300mg)' : '300mg / gün',
+            priority: cortisol > 20 ? 'Kritik' : 'Orta',
+            badgeClass: cortisol > 20 ? 'badge-critical' : 'badge-medium'
+        });
+    }
+    
+    // Omega-3 (temel)
+    supplements.push({
+        name: 'Omega-3 (EPA/DHA)',
+        icon: '🐟',
+        color: 'icon-blue',
+        desc: 'Temel takviye. Anti-inflamatuar ve hormonal denge.',
+        dose: '2000-3000mg / gün',
+        priority: 'Temel',
+        badgeClass: 'badge-low'
+    });
+    
+    renderResults('bloodResult', supplements, testo);
+    showToast('🩸 Kan testi analizi tamamlandı!', 'green');
+}
+
+// ========================================
+// SONUÇLARI GÖSTER
+// ========================================
+function renderResults(containerId, supplements, testoValue = null, bmi = null) {
+    const panel = document.getElementById(containerId);
+    
+    let html = `<div style="margin-top: 20px"></div>`;
+    
+    // Testosteron göstergesi (sadece kan testi için)
+    if (testoValue && testoValue > 0) {
+        html += renderTestoGauge(testoValue);
+    }
+    
+    // BMI göstergesi (sadece fiziksel analiz için)
+    if (bmi) {
+        let bmiStatus, bmiColor;
+        if (bmi < 18.5) {
+            bmiStatus = 'Zayıf';
+            bmiColor = 'var(--red)';
+        } else if (bmi < 25) {
+            bmiStatus = 'Normal';
+            bmiColor = 'var(--green)';
+        } else {
+            bmiStatus = 'Fazla Kilolu';
+            bmiColor = 'var(--gold)';
+        }
+        
+        html += `
+            <div class="card" style="border-color: rgba(68,138,255,.2)">
+                <div class="card-header">
+                    <div class="card-icon icon-blue">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+                    <div>
+                        <div class="card-title">Vücut Kitle İndeksi</div>
+                        <div class="card-subtitle">BMI: ${bmi.toFixed(1)}</div>
+                    </div>
+                </div>
+                <div style="text-align: center; padding: 12px 0">
+                    <div style="font-size: 28px; font-weight: 900; color: ${bmiColor}">${bmi.toFixed(1)}</div>
+                    <div style="font-size: 13px; color: ${bmiColor}; font-weight: 700; margin-top: 4px">${bmiStatus}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Takviye önerileri
+    html += `
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-gold">
+                    <i class="bi bi-stars"></i>
+                </div>
+                <div>
+                    <div class="card-title">Kişisel Takviye Reçeteniz</div>
+                    <div class="card-subtitle">${supplements.length} takviye önerildi</div>
+                </div>
+            </div>
+            
+            ${supplements.map(sup => `
+                <div class="result-item">
+                    <div class="result-icon ${sup.color}">${sup.icon}</div>
+                    <div>
+                        <div class="result-name">
+                            ${sup.name}
+                            <span class="badge ${sup.badgeClass}">${sup.priority}</span>
+                        </div>
+                        <div class="result-desc">${sup.desc}</div>
+                        <div class="result-dose">💊 ${sup.dose}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Uyarılar
+    html += `
+        <div class="card" style="border-color: rgba(255,82,82,.15); background: rgba(255,82,82,.02)">
+            <div class="card-header">
+                <div class="card-icon icon-red">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="card-title">Önemli Uyarılar</div>
+                    <div class="card-subtitle">Lütfen dikkatle okuyun</div>
+                </div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
+                <p style="margin-bottom: 10px">⚠️ Bu öneriler bilgilendirme amaçlıdır, tıbbi reçete yerine geçmez.</p>
+                <p style="margin-bottom: 10px">⚠️ Herhangi bir takviyeye başlamadan önce doktorunuza danışın.</p>
+                <p>⚠️ Tüm takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.</p>
+            </div>
+        </div>
+    `;
+    
+    html += `
+        <button class="btn-secondary" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top: 16px">
+            <i class="bi bi-arrow-up"></i> &nbsp;BAŞA DÖN
+        </button>
+    `;
+    
+    panel.innerHTML = html;
+    panel.classList.add('show');
+    
+    setTimeout(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+}
 </script>
+
 </body>
 </html>
