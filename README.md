@@ -8,6 +8,14 @@ We offer natural, safe, and alternative solutions to address the decline in test
 
 ---
 ![Linux](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white) ![macOS](https://img.shields.io/badge/platform-macOS-111111?logo=apple) ![Android](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white) ![iOS](https://img.shields.io/badge/platform-iOS-111111?logo=apple) ![Kurulum gerekmez](https://img.shields.io/badge/platform-web%20browser-00E676)
+
+![Dil](https://img.shields.io/badge/dil-T%C3%BCrk%C3%A7e-red)
+![Mobil](https://img.shields.io/badge/mobil-uyumlu-9C27B0)
+![Tema](https://img.shields.io/badge/tema-koyu-111111)
+![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
+![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
+![Testler](https://img.shields.io/badge/testler-27%20ge%C3%A7ti-brightgreen)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
 - **İki analiz yöntemi**
