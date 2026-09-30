@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         id: `content-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         type: input.type === 'recipe' ? 'recipe' : 'blog',
         category: clean(input.category, 60), title: clean(input.title, 100),
-        emoji: clean(input.emoji, 8) || '📝', time: clean(input.time, 30),
+        emoji: clean(input.emoji, 8), time: clean(input.time, 30),
         summary: clean(input.summary, 240), body: clean(input.body, 20000),
         ingredients: Array.isArray(input.ingredients) ? input.ingredients.map(x => clean(x, 200)).filter(Boolean).slice(0, 100) : [],
         translations: cleanTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url)
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
       const id = clean(req.query.id, 120);
       if (!id) return res.status(400).json({ error: 'İçerik kimliği gerekli.' });
       const input = req.body || {};
-      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8) || '📝', time: clean(input.time, 30), summary: clean(input.summary, 240), body: clean(input.body, 20000), ingredients: Array.isArray(input.ingredients) ? input.ingredients.map(x => clean(x, 200)).filter(Boolean).slice(0, 100) : [], translations: cleanTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url) };
+      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8), time: clean(input.time, 30), summary: clean(input.summary, 240), body: clean(input.body, 20000), ingredients: Array.isArray(input.ingredients) ? input.ingredients.map(x => clean(x, 200)).filter(Boolean).slice(0, 100) : [], translations: cleanTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url) };
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
       const [updated] = await sql`UPDATE content SET type=${item.type},category=${item.category},title=${item.title},emoji=${item.emoji},time_text=${item.time},summary=${item.summary},body=${item.body},ingredients=${JSON.stringify(item.ingredients)}::jsonb,translations=${JSON.stringify(item.translations)}::jsonb,cover_url=${item.cover_url},updated_at=NOW() WHERE id=${id} RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
       return updated ? res.status(200).json(updated) : res.status(404).json({ error: 'İçerik bulunamadı.' });

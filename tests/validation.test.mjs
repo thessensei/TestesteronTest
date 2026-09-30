@@ -12,7 +12,7 @@ new Function(source)();
 const V = globalThis.TestoValidation;
 
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const app = fs.readFileSync(path.join(root, 'js', 'app.0a806577.js'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'js', 'app.19bdd207.js'), 'utf8');
 
 test('validation API yüklenir', () => {
     assert.ok(V, 'TestoValidation global olarak tanımlanmalı');
@@ -113,7 +113,7 @@ test('index.html hata stillerini ve validation scriptini içerir', () => {
     assert.match(html, /\.form-input\.is-invalid/);
     assert.match(html, /\.form-error/);
     assert.match(html, /<script defer src="js\/validation\.69d286c8\.js"><\/script>/);
-    assert.match(html, /<script defer src="js\/app\.0a806577\.js"><\/script>/);
+    assert.match(html, /<script defer src="js\/app\.19bdd207\.js"><\/script>/);
 });
 
 test('sayısal alanlar min ve inputmode özniteliklerine sahip', () => {
