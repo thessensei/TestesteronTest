@@ -48,7 +48,9 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ├── index.html            # Ana SPA (analiz, blog, tarifler, hakkında)
 ├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
 ├── js/
-│   └── validation.js     # Ortak girdi doğrulama (tarayıcı + Node testleri)
+│   ├── validation.69d286c8.js # Ortak girdi doğrulama (tarayıcı + Node testleri)
+│   ├── app.0a806577.js        # İlk ekranda gereken analiz davranışları
+│   └── content.cdff6027.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
 ├── api/                  # Vercel serverless functions
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
@@ -101,6 +103,13 @@ npx vercel dev
 ```bash
 npm test
 ```
+
+## ⚡ PageSpeed yaklaşımı
+
+- İlk ekranda üçüncü taraf font veya ikon paketi çağrılmaz; sistem fontları ve yerel Unicode ikonları kullanılır.
+- Blog, içerik API çağrıları ve çeviri verisi yalnızca Blog sekmesi veya dil seçici kullanıldığında yüklenir.
+- `js/` altındaki sürümlenmiş (dosya adına hash eklenmiş) varlıklar Vercel üzerinde bir yıl `immutable` önbelleklenir. Bu dosyalardan birini değiştirirken dosya adını ve `index.html` içindeki referansını birlikte güncelleyin.
+- `npm test`, doğrulama mantığını ve kritik istemci giriş noktalarını denetler.
 
 ## 📡 API Overview
 
