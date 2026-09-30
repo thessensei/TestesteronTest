@@ -46,7 +46,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 
 ```
 ├── index.html            # Ana SPA (analiz, blog, tarifler, hakkında)
-├── admin/index.html      # Yönetim paneli (v2: görsel yükleme + kategori)
+├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
 ├── js/
 │   └── validation.js     # Ortak girdi doğrulama (tarayıcı + Node testleri)
 ├── api/                  # Vercel serverless functions

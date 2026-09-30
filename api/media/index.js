@@ -9,7 +9,7 @@ function db() {
 }
 
 /*
- * Panel v2 — görsel yükleme.
+ * Görsel yükleme.
  * POST /api/media  { mime: 'image/png', data: '<base64>' }  →  { url: '/api/media/<id>' }
  * Görsel Neon veritabanında saklanır ve /api/media/<id> üzerinden herkese açık sunulur.
  */

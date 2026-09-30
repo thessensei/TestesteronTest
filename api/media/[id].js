@@ -3,7 +3,7 @@ import { neon } from '@neondatabase/serverless';
 const ID_PATTERN = /^media-[A-Za-z0-9-]{6,80}$/;
 
 /*
- * Panel v2 — yüklenen görseli sunar.
+ * Yüklenen görseli sunar.
  * GET /api/media/media-<timestamp>-<rastgele>  →  görsel baytları (Content-Type: image/*)
  * Kimlikler benzersiz olduğu için yanıt bir yıl önbelleklenebilir.
  */
