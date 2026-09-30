@@ -22,7 +22,7 @@ export function clearSessionCookie() {
 
 export function isAdmin(req) {
   if (!secret()) return false;
-  const cookies = Object.fromEntries((req.headers.cookie || '').split(';').map(part => part.trim().split('=')));
+  const cookies = Object.fromEntries((req.headers.cookie || '').split(';').map(part => { const i=part.indexOf('='); return i<0?[part.trim(),'']:[part.slice(0,i).trim(),part.slice(i+1)]; }));
   const value = cookies[COOKIE_NAME];
   if (!value) return false;
   const [expires, received] = value.split('.');
