@@ -17,11 +17,24 @@ async function prepare(sql) {
     summary TEXT NOT NULL,
     body TEXT NOT NULL,
     ingredients JSONB NOT NULL DEFAULT '[]'::jsonb,
+    translations JSONB NOT NULL DEFAULT '{}'::jsonb,
     published_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
+  await sql`ALTER TABLE content ADD COLUMN IF NOT EXISTS translations JSONB NOT NULL DEFAULT '{}'::jsonb`;
 }
 
 const clean = (value, max) => String(value || '').trim().slice(0, max);
+function cleanTranslations(value) {
+  const result = {};
+  for (const lang of ['en', 'de', 'ja']) {
+    const item = value?.[lang] || {};
+    result[lang] = {
+      title: clean(item.title, 100), summary: clean(item.summary, 240),
+      body: clean(item.body, 20000), category: clean(item.category, 60)
+    };
+  }
+  return result;
+}
 
 export default async function handler(req, res) {
   try {
@@ -29,7 +42,7 @@ export default async function handler(req, res) {
     await prepare(sql);
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, type, category, title, emoji, time_text AS time, summary, body, ingredients, TO_CHAR(published_at, 'YYYY-MM-DD') AS date FROM content ORDER BY published_at DESC`;
+      const rows = await sql`SELECT id, type, category, title, emoji, time_text AS time, summary, body, ingredients, translations, TO_CHAR(published_at, 'YYYY-MM-DD') AS date FROM content ORDER BY published_at DESC`;
       return res.status(200).json(rows);
     }
 
@@ -43,10 +56,11 @@ export default async function handler(req, res) {
         category: clean(input.category, 60), title: clean(input.title, 100),
         emoji: clean(input.emoji, 8) || '📝', time: clean(input.time, 30),
         summary: clean(input.summary, 240), body: clean(input.body, 20000),
-        ingredients: Array.isArray(input.ingredients) ? input.ingredients.map(x => clean(x, 200)).filter(Boolean).slice(0, 100) : []
+        ingredients: Array.isArray(input.ingredients) ? input.ingredients.map(x => clean(x, 200)).filter(Boolean).slice(0, 100) : [],
+        translations: cleanTranslations(input.translations)
       };
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
-      const [created] = await sql`INSERT INTO content (id,type,category,title,emoji,time_text,summary,body,ingredients) VALUES (${item.id},${item.type},${item.category},${item.title},${item.emoji},${item.time},${item.summary},${item.body},${JSON.stringify(item.ingredients)}::jsonb) RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
+      const [created] = await sql`INSERT INTO content (id,type,category,title,emoji,time_text,summary,body,ingredients,translations) VALUES (${item.id},${item.type},${item.category},${item.title},${item.emoji},${item.time},${item.summary},${item.body},${JSON.stringify(item.ingredients)}::jsonb,${JSON.stringify(item.translations)}::jsonb) RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,translations,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
       return res.status(201).json(created);
     }
 
