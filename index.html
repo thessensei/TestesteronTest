@@ -2,11 +2,12 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- 🚀 Arama Motoru Optimizasyonu (SEO) Kalkanı -->
 
 <meta name="description" content="Ücretsiz ve anlık testosteron seviyesi hesaplama aracı. Belirtilerinize göre hormon durumunuzu analiz edin ve doğal artırma yollarını öğrenin.">
 <meta name="keywords" content="testosteron ölçme, testosteron hesaplama, doğal testosteron artırma, hormon analizi,testotest">
+<meta name="theme-color" content="#0A0A0F">
 <meta name="google-site-verification" content="ac-bJdohFXsUbq5bD8cVEip7Ryd_nEkaRhNenMmCi8M" />
 
 <meta name="google-site-verification" content="4SlBNFo5IoQK9Q3QIw99aX6nuEvpNMV2CRIrzGPMMqc" />
@@ -16,9 +17,7 @@
 <meta property="og:type" content="website">
 
     <title>TestoTavan | Doğal Testosteron  Optimizasyonu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    
+
     <style>
         /* ========== GENEL AYARLAR ========== */
         * {
@@ -40,12 +39,12 @@
             --input: #0D0D14;
             --border: rgba(245,166,35,.08);
             --text-primary: #F0F0F5;
-            --text-secondary: #7A7A90;
+            --text-secondary: #808096;
             --green: #00E676;
             --red: #FF5252;
             --blue: #448AFF;
             --purple: #B388FF;
-            
+
             /* Boyutlar */
             --radius: 20px;
             --radius-sm: 14px;
@@ -54,7 +53,7 @@
         body {
             background: var(--bg);
             color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             min-height: 100vh;
             padding-bottom: 90px;
         }
@@ -75,6 +74,10 @@
         }
 
         .nav-item {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            font: inherit;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -90,11 +93,28 @@
             color: var(--gold);
         }
 
-        .nav-item i {
-            font-size: 22px;
+        .skip-link {
+            position: fixed;
+            z-index: 3000;
+            top: 8px;
+            left: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: var(--gold);
+            color: #08080c;
+            font-size: 13px;
+            font-weight: 800;
+            transform: translateY(-160%);
         }
 
-        .nav-item span {
+        .skip-link:focus { transform: translateY(0); }
+
+        .nav-item .icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .nav-item span:not(.icon) {
             font-size: 10px;
             font-weight: 600;
         }
@@ -220,7 +240,7 @@
             border-radius: var(--radius-sm);
             color: var(--text-primary);
             font-size: 14px;
-            font-family: 'Inter', sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             transition: .3s;
             outline: none;
         }
@@ -316,7 +336,7 @@
             letter-spacing: 1.5px;
             cursor: pointer;
             transition: .3s;
-            font-family: 'Inter', sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .btn-primary:hover {
@@ -335,7 +355,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: .3s;
-            font-family: 'Inter', sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .btn-secondary:hover {
@@ -562,7 +582,7 @@
 
 
         .language-picker { margin-left:auto; position:relative; }
-        .language-select { appearance:none; background:var(--card); color:var(--text-primary); border:1px solid var(--border); border-radius:12px; padding:9px 27px 9px 10px; font:700 10px Inter,sans-serif; cursor:pointer; outline:none; }
+        .language-select { appearance:none; background:var(--card); color:var(--text-primary); border:1px solid var(--border); border-radius:12px; padding:9px 27px 9px 10px; font:700 10px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; cursor:pointer; outline:none; }
         .language-picker::after { content:"⌄"; position:absolute; right:9px; top:7px; color:var(--gold); pointer-events:none; }
 
         /* ========== BLOG & İÇERİK PANELİ ========== */
@@ -572,9 +592,10 @@
         .content-toolbar { display: flex; gap: 8px; margin: 14px 0; }
         .content-toolbar .form-input { padding: 12px 14px; }
         .filter-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .filter-chip { white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); border-radius: 999px; padding: 8px 12px; font: 700 10px Inter,sans-serif; cursor: pointer; }
+        .filter-chip { white-space: nowrap; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); border-radius: 999px; padding: 8px 12px; font: 700 10px Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; cursor: pointer; }
         .filter-chip.active { background: var(--gold); color: #08080c; border-color: var(--gold); }
-        .content-card { padding: 0; overflow: hidden; cursor: pointer; }
+        .content-card { width:100%; padding: 0; overflow: hidden; cursor: pointer; border: 1px solid var(--border); color: var(--text-primary); text-align:left; }
+        .content-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
         .content-cover { min-height: 112px; padding: 18px; background: linear-gradient(135deg, rgba(245,166,35,.18), rgba(179,136,255,.1)); background-size: cover; background-position: center; display: flex; justify-content: space-between; align-items: flex-start; }
         .content-cover.recipe { background: linear-gradient(135deg, rgba(0,230,118,.14), rgba(245,166,35,.13)); }
         .content-emoji { font-size: 42px; filter: drop-shadow(0 7px 14px rgba(0,0,0,.25)); }
@@ -599,6 +620,15 @@
         .ingredient-list li { padding:9px 10px; border-bottom:1px solid var(--border); font-size:12px; }
         @media (min-width:540px) { .content-modal { align-items:center; } .modal-sheet { border-radius:24px; } }
 
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -607,7 +637,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- Header -->
-<div class="header">
+<header class="header">
     <div class="header-logo">T</div>
     <div>
         <h1>TestoTavan</h1>
@@ -619,8 +649,10 @@
             <option value="tr">🇹🇷 TR</option><option value="en">🇬🇧 EN</option><option value="de">🇩🇪 DE</option><option value="ja">🇯🇵 日本語</option>
         </select>
     </div>
-</div>
+</header>
 
+<a class="skip-link" href="#main-content">Ana içeriğe geç</a>
+<main id="main-content" tabindex="-1">
 <!-- ANA SAYFA -->
 <div class="page active" id="homePage">
     <div style="padding: 24px 0 16px">
@@ -633,7 +665,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-gold">
-                <i class="bi bi-info-circle"></i>
+                <span class="icon" aria-hidden="true">ⓘ</span>
             </div>
             <div>
                 <div class="card-title">Hangi Yöntemi Seçmeliyim?</div>
@@ -641,14 +673,14 @@
             </div>
         </div>
         <button class="btn-primary" style="margin-bottom: 10px" onclick="changePage('physicalPage')">
-            <i class="bi bi-body-text"></i> &nbsp;Fiziksel Analiz
+            <span class="icon" aria-hidden="true">🧍</span> &nbsp;Fiziksel Analiz
         </button>
         <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5">
             Yaş, kilo ve semptomlarınıza göre tahmini takviye önerisi.
         </p>
-        
+
         <button class="btn-primary" onclick="changePage('bloodPage')">
-            <i class="bi bi-droplet-half"></i> &nbsp;Kan Testi Analizi
+            <span class="icon" aria-hidden="true">💧</span> &nbsp;Kan Testi Analizi
         </button>
         <p style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5">
             Gerçek kan değerlerinize göre kişiselleştirilmiş reçete.
@@ -658,7 +690,7 @@
     <div class="card" style="border-color: rgba(0,230,118,.15)">
         <div class="card-header">
             <div class="card-icon icon-green">
-                <i class="bi bi-lightbulb"></i>
+                <span class="icon" aria-hidden="true">💡</span>
             </div>
             <div>
                 <div class="card-title">Neden Doğal Yollar?</div>
@@ -666,7 +698,7 @@
             </div>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
-            Doğru takviye, beslenme ve yaşam tarzı değişiklikleriyle Testosteronseviyesi 
+            Doğru takviye, beslenme ve yaşam tarzı değişiklikleriyle Testosteronseviyesi
             doğal yollarla <b>%30-50 artırılabilir</b> — hormon tedavisi olmadan.
         </p>
     </div>
@@ -675,8 +707,8 @@
 <!-- FİZİKSEL ANALİZ SAYFASI -->
 <div class="page" id="physicalPage">
     <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
-        <button class="btn-secondary" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
-            <i class="bi bi-arrow-left"></i>
+        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <span class="icon" aria-hidden="true">←</span>
         </button>
         <div>
             <h2 style="font-size: 20px; font-weight: 900">Fiziksel Analiz</h2>
@@ -687,32 +719,32 @@
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-gold">
-                <i class="bi bi-person-bounding-box"></i>
+                <span class="icon" aria-hidden="true">🧍</span>
             </div>
             <div>
                 <div class="card-title">Temel Bilgiler</div>
                 <div class="card-subtitle">Fiziksel verileriniz</div>
             </div>
         </div>
-        
+
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Yaş</label>
+                <label class="form-label" for="inputAge">Yaş</label>
                 <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">Boy (cm)</label>
+                <label class="form-label" for="inputHeight">Boy (cm)</label>
                 <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Kilo (kg)</label>
+                <label class="form-label" for="inputWeight">Kilo (kg)</label>
                 <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">Aktivite Seviyesi</label>
+                <label class="form-label" for="inputActivity">Aktivite Seviyesi</label>
                 <select class="form-input" id="inputActivity">
                     <option value="1">Hareketsiz</option>
                     <option value="2">Haftada 1-2 gün</option>
@@ -724,7 +756,7 @@
     </div>
 
     <button class="btn-primary" onclick="analyzePhysical()">
-        <i class="bi bi-cpu"></i> &nbsp;ANALİZ BAŞLAT
+        <span class="icon" aria-hidden="true">⚙</span> &nbsp;ANALİZ BAŞLAT
     </button>
 
     <div class="result-panel" id="physicalResult"></div>
@@ -733,8 +765,8 @@
 <!-- KAN TESTİ ANALİZ SAYFASI -->
 <div class="page" id="bloodPage">
     <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
-        <button class="btn-secondary" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
-            <i class="bi bi-arrow-left"></i>
+        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <span class="icon" aria-hidden="true">←</span>
         </button>
         <div>
             <h2 style="font-size: 20px; font-weight: 900">Kan Testi Analizi</h2>
@@ -745,7 +777,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-red">
-                <i class="bi bi-droplet-half"></i>
+                <span class="icon" aria-hidden="true">💧</span>
             </div>
             <div>
                 <div class="card-title">Hormon Paneli</div>
@@ -755,22 +787,22 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Total Testosteron(ng/dL)</label>
+                <label class="form-label" for="inputTesto">Total Testosteron(ng/dL)</label>
                 <input type="number" class="form-input" id="inputTesto" placeholder="250-1000" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">Serbest Testo (pg/mL)</label>
+                <label class="form-label" for="inputFreeTesto">Serbest Testo (pg/mL)</label>
                 <input type="number" class="form-input" id="inputFreeTesto" placeholder="5-25" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Kortizol (µg/dL)</label>
+                <label class="form-label" for="inputCortisol">Kortizol (µg/dL)</label>
                 <input type="number" step="0.1" class="form-input" id="inputCortisol" placeholder="5-25" min="0.1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">SHBG (nmol/L)</label>
+                <label class="form-label" for="inputSHBG">SHBG (nmol/L)</label>
                 <input type="number" class="form-input" id="inputSHBG" placeholder="10-70" min="1" inputmode="decimal">
             </div>
         </div>
@@ -779,7 +811,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-blue">
-                <i class="bi bi-capsule"></i>
+                <span class="icon" aria-hidden="true">💊</span>
             </div>
             <div>
                 <div class="card-title">Vitamin & Mineral</div>
@@ -789,29 +821,29 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">D Vitamini (ng/mL)</label>
+                <label class="form-label" for="inputVitD">D Vitamini (ng/mL)</label>
                 <input type="number" class="form-input" id="inputVitD" placeholder="20-80" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">B12 (pg/mL)</label>
+                <label class="form-label" for="inputB12">B12 (pg/mL)</label>
                 <input type="number" class="form-input" id="inputB12" placeholder="200-900" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Çinko (µg/dL)</label>
+                <label class="form-label" for="inputZinc">Çinko (µg/dL)</label>
                 <input type="number" class="form-input" id="inputZinc" placeholder="60-120" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
-                <label class="form-label">Magnezyum (mg/dL)</label>
+                <label class="form-label" for="inputMg">Magnezyum (mg/dL)</label>
                 <input type="number" step="0.1" class="form-input" id="inputMg" placeholder="1.7-2.5" min="0.1" inputmode="decimal">
             </div>
         </div>
     </div>
 
     <button class="btn-primary" onclick="analyzeBlood()">
-        <i class="bi bi-search-heart"></i> &nbsp;KAN ANALİZİ BAŞLAT
+        <span class="icon" aria-hidden="true">🔎</span> &nbsp;KAN ANALİZİ BAŞLAT
     </button>
 
     <div class="result-panel" id="bloodResult"></div>
@@ -838,7 +870,7 @@
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-gold">
-                <i class="bi bi-bullseye"></i>
+                <span class="icon" aria-hidden="true">◎</span>
             </div>
             <div>
                 <div class="card-title">Misyonumuz</div>
@@ -846,7 +878,7 @@
             </div>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
-            Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan, 
+            Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,
             bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.
         </p>
     </div>
@@ -855,7 +887,7 @@
     <div class="card" style="border-color: rgba(68,138,255,.2)">
         <div class="card-header">
             <div class="card-icon icon-blue">
-                <i class="bi bi-book"></i>
+                <span class="icon" aria-hidden="true">📚</span>
             </div>
             <div>
                 <div class="card-title">Bilimsel Kaynaklar</div>
@@ -870,7 +902,7 @@
     <!-- ========================== -->
     <!-- KAYNAKÇA BÖLÜMÜ BURAYA -->
     <!-- ========================== -->
-    
+
     <!-- D Vitamini & Testosteron-->
     <div class="card" style="border-left: 4px solid var(--green); background: rgba(0,230,118,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
@@ -902,12 +934,12 @@
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Chandrasekhar K, Kapoor J, Anishetty S.</b><br>
-                    "A prospective, randomized double-blind, placebo-controlled study of safety and efficacy of a 
+                    "A prospective, randomized double-blind, placebo-controlled study of safety and efficacy of a
                     high-concentration full-spectrum extract of ashwagandha root in reducing stress and anxiety in adults"<br>
                     <i>Indian J Psychol Med.</i> 2012;34(3):255-262.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> 300 mg KSM-66 Ashwagandha ekstrakt (2x/gün) alan grupta 60 gün sonunda 
+                    <b>Özet:</b> 300 mg KSM-66 Ashwagandha ekstrakt (2x/gün) alan grupta 60 gün sonunda
                     serum kortizol seviyesi %27.9 azalmış. Stres skorları %44 düşmüş.
                 </div>
             </div>
@@ -928,7 +960,7 @@
                     <i>Nutrition.</i> 1996;12(5):344-348.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> Orta dereceli çinko eksikliği olan genç erkeklerde 20-40 mg/gün çinko takviyesi 
+                    <b>Özet:</b> Orta dereceli çinko eksikliği olan genç erkeklerde 20-40 mg/gün çinko takviyesi
                     6 ay sonunda serum Testosteronseviyesinde belirgin artış sağlamış.
                 </div>
             </div>
@@ -945,12 +977,12 @@
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Cinar V, Polat Y, Baltaci AK, Mogulkoc R.</b><br>
-                    "Effects of magnesium supplementation on testosterone levels of athletes and sedentary subjects 
+                    "Effects of magnesium supplementation on testosterone levels of athletes and sedentary subjects
                     at rest and after exhaustion"<br>
                     <i>Biol Trace Elem Res.</i> 2011;140(1):18-23.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> 10 mg/kg magnezyum sülfat takviyesi 4 hafta boyunca hem sedanter hem de aktif 
+                    <b>Özet:</b> 10 mg/kg magnezyum sülfat takviyesi 4 hafta boyunca hem sedanter hem de aktif
                     bireylerde serbest ve total Testosteronseviyelerinde artış sağlamış.
                 </div>
             </div>
@@ -988,12 +1020,12 @@
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Safarinejad MR, Hosseini SY, Dadkhah F, Asgari MA.</b><br>
-                    "Relationship of omega-3 and omega-6 fatty acids with semen characteristics, and anti-oxidant 
+                    "Relationship of omega-3 and omega-6 fatty acids with semen characteristics, and anti-oxidant
                     status of seminal plasma"<br>
                     <i>Andrologia.</i> 2010;42(2):91-98.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> Omega-3 takviyesi (1840 mg DHA) alan infertil erkeklerde 32 hafta sonunda 
+                    <b>Özet:</b> Omega-3 takviyesi (1840 mg DHA) alan infertil erkeklerde 32 hafta sonunda
                     sperm kalitesi artmış ve oksidatif stres belirteçleri azalmış.
                 </div>
             </div>
@@ -1010,12 +1042,12 @@
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Kreider RB, Kalman DS, Antonio J, et al.</b><br>
-                    "International Society of Sports Nutrition position stand: safety and efficacy of creatine 
+                    "International Society of Sports Nutrition position stand: safety and efficacy of creatine
                     supplementation in exercise, sport, and medicine"<br>
                     <i>J Int Soc Sports Nutr.</i> 2017;14:18.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> Kreatin monohidrat takviyesi (5g/gün) direnç antrenmanıyla birlikte kullanıldığında 
+                    <b>Özet:</b> Kreatin monohidrat takviyesi (5g/gün) direnç antrenmanıyla birlikte kullanıldığında
                     kas kütlesi ve güçte %5-15 artış sağlıyor. En çok araştırılmış spor takviyesi.
                 </div>
             </div>
@@ -1032,12 +1064,12 @@
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Wankhede S, Mohan V, Thakurdesai P.</b><br>
-                    "Beneficial effects of fenugreek glycoside supplementation in male subjects during resistance 
+                    "Beneficial effects of fenugreek glycoside supplementation in male subjects during resistance
                     training: A randomized controlled pilot study"<br>
                     <i>J Sport Health Sci.</i> 2016;5(2):176-182.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> 8 hafta boyunca 500 mg/gün fenugreek ekstrakt alan direnç antrenmanı yapan 
+                    <b>Özet:</b> 8 hafta boyunca 500 mg/gün fenugreek ekstrakt alan direnç antrenmanı yapan
                     erkeklerde serbest Testosteron%46 artmış, vücut yağ oranı azalmış.
                 </div>
             </div>
@@ -1052,7 +1084,7 @@
     <div class="card" style="margin-top: 20px">
         <div class="card-header">
             <div class="card-icon icon-purple">
-                <i class="bi bi-people"></i>
+                <span class="icon" aria-hidden="true">👥</span>
             </div>
             <div>
                 <div class="card-title">Ekip</div>
@@ -1074,7 +1106,7 @@
     <div class="card" style="border-color: rgba(255,82,82,.2); background: rgba(255,82,82,.02)">
         <div class="card-header">
             <div class="card-icon icon-red">
-                <i class="bi bi-exclamation-triangle"></i>
+                <span class="icon" aria-hidden="true">⚠</span>
             </div>
             <div>
                 <div class="card-title">Tıbbi Sorumluluk Reddi</div>
@@ -1082,8 +1114,8 @@
             </div>
         </div>
         <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
-            TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi <b>değildir</b>. 
-            Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın. 
+            TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi <b>değildir</b>.
+            Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.
             Bu platform sadece bilgilendirme amaçlıdır.
         </p>
     </div>
@@ -1092,7 +1124,7 @@
     <div class="card" style="border-color: rgba(0,230,118,.2); background: rgba(0,230,118,.02)">
         <div class="card-header">
             <div class="card-icon icon-green">
-                <i class="bi bi-lock"></i>
+                <span class="icon" aria-hidden="true">🔒</span>
             </div>
             <div>
                 <div class="card-title">Gizlilik & Veri Güvenliği</div>
@@ -1100,7 +1132,7 @@
             </div>
         </div>
         <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
-            Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar 
+            Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar
             tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.
         </p>
     </div>
@@ -1128,7 +1160,7 @@
         <p style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:8px;max-width:330px">Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.</p><div id="viewCounter" style="margin-top:12px;color:var(--gold);font-size:10px">Okunma sayısı yükleniyor...</div>
     </div>
     <div class="ad-slot" aria-label="Reklam alanı" data-ad-slot="content-top">Sponsorlu içerik</div>
-    <div class="content-toolbar"><input id="contentSearch" class="form-input" type="search" placeholder="Yazı veya tarif ara..." oninput="renderContent()"></div>
+    <div class="content-toolbar"><input id="contentSearch" aria-label="Yazı veya tarif ara" class="form-input" type="search" placeholder="Yazı veya tarif ara..." oninput="renderContent()"></div>
     <div class="filter-row" id="contentFilters">
         <button class="filter-chip active" data-filter="all" onclick="setContentFilter('all',this)">Tümü</button>
         <button class="filter-chip" data-filter="blog" onclick="setContentFilter('blog',this)">Blog Yazıları</button>
@@ -1136,649 +1168,21 @@
     </div>
     <div id="contentList"></div>
 </div>
+</main>
 
-<div class="content-modal" id="contentModal" onclick="closeContentModal(event)"><article class="modal-sheet" id="modalSheet"></article></div>
+<div class="content-modal" id="contentModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="closeContentModal(event)"><article class="modal-sheet" id="modalSheet"></article></div>
 
 <!-- Alt Navigasyon -->
-<nav class="nav-bottom">
-    <a class="nav-item active" onclick="changePage('homePage')"><i class="bi bi-house-door-fill"></i><span>Ana Sayfa</span></a>
-    <a class="nav-item" onclick="changePage('physicalPage')"><i class="bi bi-body-text"></i><span>Fiziksel</span></a>
-    <a class="nav-item" onclick="changePage('bloodPage')"><i class="bi bi-droplet-half"></i><span>Kan Testi</span></a>
-    <a class="nav-item" onclick="changePage('blogPage')"><i class="bi bi-journal-richtext"></i><span>Blog</span></a>
-    <a class="nav-item" onclick="changePage('aboutPage')"><i class="bi bi-info-circle"></i><span>Hakkımızda</span></a>
+<nav class="nav-bottom" aria-label="Ana navigasyon">
+    <button type="button" class="nav-item active" aria-current="page" aria-controls="homePage" onclick="changePage('homePage')"><span class="icon" aria-hidden="true">⌂</span><span>Ana Sayfa</span></button>
+    <button type="button" class="nav-item" aria-controls="physicalPage" onclick="changePage('physicalPage')"><span class="icon" aria-hidden="true">🧍</span><span>Fiziksel</span></button>
+    <button type="button" class="nav-item" aria-controls="bloodPage" onclick="changePage('bloodPage')"><span class="icon" aria-hidden="true">💧</span><span>Kan Testi</span></button>
+    <button type="button" class="nav-item" aria-controls="blogPage" onclick="changePage('blogPage')"><span class="icon" aria-hidden="true">📰</span><span>Blog</span></button>
+    <button type="button" class="nav-item" aria-controls="aboutPage" onclick="changePage('aboutPage')"><span class="icon" aria-hidden="true">ⓘ</span><span>Hakkımızda</span></button>
 </nav>
 
-<script src="js/validation.js"></script>
-<script>
-// ========================================
-// YARDIMCI FONKSİYONLAR
-// ========================================
-
-
-// ========================================
-// FORM DOĞRULAMA YARDIMCILARI
-// ========================================
-
-// Alanın altındaki hata kutusunu (yoksa oluşturarak) döndürür
-function getFieldErrorBox(input) {
-    if (!input) return null;
-    let box = document.getElementById('error-' + input.id);
-    if (!box) {
-        box = document.createElement('div');
-        box.className = 'form-error';
-        box.id = 'error-' + input.id;
-        box.setAttribute('role', 'alert');
-        input.insertAdjacentElement('afterend', box);
-    }
-    return box;
-}
-
-function setFieldError(inputId, message) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    const box = getFieldErrorBox(input);
-    input.classList.add('is-invalid');
-    input.setAttribute('aria-invalid', 'true');
-    input.setAttribute('aria-describedby', box.id);
-    box.textContent = message;
-    box.classList.add('visible');
-}
-
-function clearFieldError(inputId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.classList.remove('is-invalid');
-    input.removeAttribute('aria-invalid');
-    const box = document.getElementById('error-' + inputId);
-    if (box) {
-        box.textContent = '';
-        box.classList.remove('visible');
-    }
-}
-
-function readFieldValues(fields) {
-    const values = {};
-    fields.forEach(field => {
-        const input = document.getElementById(field.id);
-        values[field.id] = input ? input.value : '';
-    });
-    return values;
-}
-
-// Doğrulama sonucunu forma uygular; geçersizse analiz başlatılmaz
-function applyValidation(fields, result) {
-    fields.forEach(field => {
-        if (result.errors && result.errors[field.id]) {
-            setFieldError(field.id, result.errors[field.id]);
-        } else {
-            clearFieldError(field.id);
-        }
-    });
-
-    if (!result.ok) {
-        showToast('⚠️ ' + result.message, 'red');
-        const focusId = result.firstErrorId;
-        if (focusId) {
-            const input = document.getElementById(focusId);
-            if (input) input.focus();
-        }
-    }
-    return result.ok;
-}
-
-// Kullanıcı yazarken hatayı temizle
-function initFieldValidationListeners() {
-    if (!window.TestoValidation) return;
-    const all = TestoValidation.PHYSICAL_FIELDS.concat(TestoValidation.BLOOD_FIELDS);
-    all.forEach(field => {
-        const input = document.getElementById(field.id);
-        if (!input) return;
-        input.addEventListener('input', () => clearFieldError(field.id));
-        input.addEventListener('blur', () => {
-            const check = TestoValidation.validateField(input.value, field);
-            if (!check.ok) {
-                setFieldError(field.id, check.error);
-            } else {
-                clearFieldError(field.id);
-            }
-        });
-    });
-}
-
-document.addEventListener('DOMContentLoaded', initFieldValidationListeners);
-
-// Sayfa değiştirme
-function changePage(pageId) {
-    // Tüm sayfaları gizle
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    
-    // Seçilen sayfayı göster
-    document.getElementById(pageId).classList.add('active');
-    
-    // Navigasyon aktif durumunu güncelle
-   const pageMap = {
-    'homePage': 0,
-    'physicalPage': 1,
-    'bloodPage': 2,
-    'blogPage': 3,
-    'aboutPage': 4,
-    'adminPage': -1
-};
-    
-    document.querySelectorAll('.nav-item').forEach((item, index) => {
-        item.classList.toggle('active', index === pageMap[pageId]);
-    });
-    
-    if (pageId === 'blogPage') renderContent();
-    if (pageId === 'adminPage') renderAdmin();
-    requestAnimationFrame(applyTranslations);
-
-    // Sayfayı en üste kaydır
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Toast bildirimi göster
-function showToast(message, color) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    
-    const colors = {
-        gold: 'var(--gold)',
-        green: 'var(--green)',
-        red: 'var(--red)',
-        blue: 'var(--blue)'
-    };
-    
-    toast.style.borderLeft = `4px solid ${colors[color] || colors.gold}`;
-    toast.innerHTML = message;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => toast.remove(), 3200);
-}
-
-// ========================================
-// TestosteronSEVİYE GÖSTERGESİ
-// ========================================
-function renderTestoGauge(testoValue) {
-    const minVal = 200;
-    const maxVal = 1000;
-    const normalMin = 350;
-    const normalMax = 800;
-    
-    let status, statusClass, color;
-    let percentage = ((testoValue - minVal) / (maxVal - minVal)) * 100;
-    percentage = Math.max(0, Math.min(100, percentage));
-    
-    if (testoValue < normalMin) {
-        status = 'DÜŞÜK';
-        statusClass = 'status-low';
-        color = '#FF5252';
-    } else if (testoValue >= normalMin && testoValue <= normalMax) {
-        status = 'NORMAL';
-        statusClass = 'status-normal';
-        color = '#00E676';
-    } else {
-        status = 'YÜKSEK';
-        statusClass = 'status-high';
-        color = '#F5A623';
-    }
-    
-    return `
-        <div class="testo-gauge">
-            <div class="gauge-title">🔬 TestosteronSeviyeniz</div>
-            <div class="gauge-bar">
-                <div class="gauge-fill" style="width: ${percentage}%; background: ${color}"></div>
-            </div>
-            <div class="gauge-markers">
-                <span>200</span>
-                <span>350</span>
-                <span>600</span>
-                <span>800</span>
-                <span>1000+</span>
-            </div>
-            <div class="gauge-value" style="color: ${color}">${testoValue}</div>
-            <div class="gauge-status ${statusClass}">${status}</div>
-        </div>
-    `;
-}
-
-// ========================================
-// FİZİKSEL ANALİZ
-// ========================================
-function analyzePhysical() {
-    const fields = TestoValidation.PHYSICAL_FIELDS;
-    const result = TestoValidation.validatePhysical(readFieldValues(fields));
-
-    // 0, negatif veya boş değerlerde analiz başlatılmaz
-    if (!applyValidation(fields, result)) return;
-
-    const height = result.values.inputHeight;
-    const weight = result.values.inputWeight;
-
-    const bmi = weight / ((height / 100) ** 2);
-    const supplements = [];
-    
-    // D Vitamini
-    supplements.push({
-        name: 'D3 Vitamini + K2',
-        icon: '☀️',
-        color: 'icon-gold',
-        desc: 'Testosteronsentezinin temel yapı taşı.',
-        dose: '2000 IU D3 + 100mcg K2 / gün',
-        priority: 'Yüksek',
-        badgeClass: 'badge-high'
-    });
-    
-    // Çinko
-    supplements.push({
-        name: 'Çinko Pikolinat',
-        icon: '⚡',
-        color: 'icon-blue',
-        desc: 'Testosteronsentezi ve bağışıklık için temel mineral.',
-        dose: '15mg / gün (akşam yemeğiyle)',
-        priority: 'Yüksek',
-        badgeClass: 'badge-high'
-    });
-    
-    // Magnezyum
-    supplements.push({
-        name: 'Magnezyum Bisglisinat',
-        icon: '🌙',
-        color: 'icon-purple',
-        desc: 'SHBG\'yi düşürerek serbest testosteronu artırır.',
-        dose: '200mg (yatmadan önce)',
-        priority: 'Orta',
-        badgeClass: 'badge-medium'
-    });
-    
-    // Omega-3
-    supplements.push({
-        name: 'Omega-3 (EPA/DHA)',
-        icon: '🐟',
-        color: 'icon-blue',
-        desc: 'Anti-inflamatuar ve hormonal denge.',
-        dose: '2000mg / gün',
-        priority: 'Temel',
-        badgeClass: 'badge-low'
-    });
-    
-    renderResults('physicalResult', supplements, null, bmi);
-    showToast('🧬 Fiziksel analiz tamamlandı!', 'gold');
-}
-
-// ========================================
-// KAN TESTİ ANALİZİ
-// ========================================
-function analyzeBlood() {
-    const fields = TestoValidation.BLOOD_FIELDS;
-    const result = TestoValidation.validateBlood(readFieldValues(fields));
-
-    // 0, negatif veya geçersiz değerlerde analiz başlatılmaz
-    if (!applyValidation(fields, result)) return;
-
-    const testo = result.values.inputTesto || 0;
-    const cortisol = result.values.inputCortisol || 0;
-    const vitD = result.values.inputVitD || 0;
-    const b12 = result.values.inputB12 || 0;
-    const zinc = result.values.inputZinc || 0;
-    const mg = result.values.inputMg || 0;
-    
-    const supplements = [];
-    
-    // D Vitamini
-    if (vitD > 0) {
-        if (vitD < 20) {
-            supplements.push({
-                name: 'D3 Vitamini + K2',
-                icon: '☀️',
-                color: 'icon-gold',
-                desc: `Değeriniz: ${vitD} ng/mL → Ciddi eksiklik.`,
-                dose: '5000 IU D3 + 200mcg K2 / gün',
-                priority: 'Kritik',
-                badgeClass: 'badge-critical'
-            });
-        } else if (vitD < 30) {
-            supplements.push({
-                name: 'D3 Vitamini + K2',
-                icon: '☀️',
-                color: 'icon-gold',
-                desc: `Değeriniz: ${vitD} ng/mL → Yetersiz.`,
-                dose: '3000 IU D3 + 100mcg K2 / gün',
-                priority: 'Yüksek',
-                badgeClass: 'badge-high'
-            });
-        }
-    }
-    
-    // B12
-    if (b12 > 0 && b12 < 300) {
-        supplements.push({
-            name: 'B12 (Metilkobalamin)',
-            icon: '🔋',
-            color: 'icon-green',
-            desc: `Değeriniz: ${b12} pg/mL → Düşük.`,
-            dose: b12 < 200 ? '2000mcg / gün' : '1000mcg / gün',
-            priority: b12 < 200 ? 'Kritik' : 'Yüksek',
-            badgeClass: b12 < 200 ? 'badge-critical' : 'badge-high'
-        });
-    }
-    
-    // Çinko
-    if (zinc > 0 && zinc < 70) {
-        supplements.push({
-            name: 'Çinko Pikolinat',
-            icon: '⚡',
-            color: 'icon-blue',
-            desc: `Değeriniz: ${zinc} µg/dL → Düşük.`,
-            dose: zinc < 60 ? '30mg / gün' : '15mg / gün',
-            priority: zinc < 60 ? 'Kritik' : 'Yüksek',
-            badgeClass: zinc < 60 ? 'badge-critical' : 'badge-high'
-        });
-    }
-    
-    // Magnezyum
-    if (mg > 0 && mg < 2.0) {
-        supplements.push({
-            name: 'Magnezyum Bisglisinat',
-            icon: '🌙',
-            color: 'icon-purple',
-            desc: `Değeriniz: ${mg} mg/dL → Düşük.`,
-            dose: mg < 1.7 ? '400mg / gece' : '200mg / gece',
-            priority: mg < 1.7 ? 'Kritik' : 'Yüksek',
-            badgeClass: mg < 1.7 ? 'badge-critical' : 'badge-high'
-        });
-    }
-    
-    // Kortizol
-    if (cortisol > 0 && cortisol > 16) {
-        supplements.push({
-            name: 'Ashwagandha KSM-66',
-            icon: '🌿',
-            color: 'icon-green',
-            desc: `Kortizol: ${cortisol} µg/dL → ${cortisol > 20 ? 'Çok yüksek' : 'Normal üst sınır'}.`,
-            dose: cortisol > 20 ? '600mg / gün (2×300mg)' : '300mg / gün',
-            priority: cortisol > 20 ? 'Kritik' : 'Orta',
-            badgeClass: cortisol > 20 ? 'badge-critical' : 'badge-medium'
-        });
-    }
-    
-    // Omega-3 (temel)
-    supplements.push({
-        name: 'Omega-3 (EPA/DHA)',
-        icon: '🐟',
-        color: 'icon-blue',
-        desc: 'Temel takviye. Anti-inflamatuar ve hormonal denge.',
-        dose: '2000-3000mg / gün',
-        priority: 'Temel',
-        badgeClass: 'badge-low'
-    });
-    
-    renderResults('bloodResult', supplements, testo);
-    showToast('🩸 Kan testi analizi tamamlandı!', 'green');
-}
-
-// ========================================
-// SONUÇLARI GÖSTER
-// ========================================
-function renderResults(containerId, supplements, testoValue = null, bmi = null) {
-    const panel = document.getElementById(containerId);
-    
-    let html = `<div style="margin-top: 20px"></div>`;
-    
-    // Testosterongöstergesi (sadece kan testi için)
-    if (testoValue && testoValue > 0) {
-        html += renderTestoGauge(testoValue);
-    }
-    
-    // BMI göstergesi (sadece fiziksel analiz için)
-    if (bmi) {
-        let bmiStatus, bmiColor;
-        if (bmi < 18.5) {
-            bmiStatus = 'Zayıf';
-            bmiColor = 'var(--red)';
-        } else if (bmi < 25) {
-            bmiStatus = 'Normal';
-            bmiColor = 'var(--green)';
-        } else {
-            bmiStatus = 'Fazla Kilolu';
-            bmiColor = 'var(--gold)';
-        }
-        
-        html += `
-            <div class="card" style="border-color: rgba(68,138,255,.2)">
-                <div class="card-header">
-                    <div class="card-icon icon-blue">
-                        <i class="bi bi-bar-chart"></i>
-                    </div>
-                    <div>
-                        <div class="card-title">Vücut Kitle İndeksi</div>
-                        <div class="card-subtitle">BMI: ${bmi.toFixed(1)}</div>
-                    </div>
-                </div>
-                <div style="text-align: center; padding: 12px 0">
-                    <div style="font-size: 28px; font-weight: 900; color: ${bmiColor}">${bmi.toFixed(1)}</div>
-                    <div style="font-size: 13px; color: ${bmiColor}; font-weight: 700; margin-top: 4px">${bmiStatus}</div>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Takviye önerileri
-    html += `
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon icon-gold">
-                    <i class="bi bi-stars"></i>
-                </div>
-                <div>
-                    <div class="card-title">Kişisel Takviye Reçeteniz</div>
-                    <div class="card-subtitle">${supplements.length} takviye önerildi</div>
-                </div>
-            </div>
-            
-            ${supplements.map(sup => `
-                <div class="result-item">
-                    <div class="result-icon ${sup.color}">${sup.icon}</div>
-                    <div>
-                        <div class="result-name">
-                            ${sup.name}
-                            <span class="badge ${sup.badgeClass}">${sup.priority}</span>
-                        </div>
-                        <div class="result-desc">${sup.desc}</div>
-                        <div class="result-dose">💊 ${sup.dose}</div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    // Uyarılar
-    html += `
-        <div class="card" style="border-color: rgba(255,82,82,.15); background: rgba(255,82,82,.02)">
-            <div class="card-header">
-                <div class="card-icon icon-red">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <div>
-                    <div class="card-title">Önemli Uyarılar</div>
-                    <div class="card-subtitle">Lütfen dikkatle okuyun</div>
-                </div>
-            </div>
-            <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
-                <p style="margin-bottom: 10px">⚠️ Bu öneriler bilgilendirme amaçlıdır, tıbbi reçete yerine geçmez.</p>
-                <p style="margin-bottom: 10px">⚠️ Herhangi bir takviyeye başlamadan önce doktorunuza danışın.</p>
-                <p>⚠️ Tüm takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.</p>
-            </div>
-        </div>
-    `;
-    
-    html += `
-        <button class="btn-secondary" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top: 16px">
-            <i class="bi bi-arrow-up"></i> &nbsp;BAŞA DÖN
-        </button>
-    `; 
-
-    
-    panel.innerHTML = html;
-    panel.classList.add('show');
-    
-    setTimeout(() => {
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
-}
-
-// ========================================
-// BLOG, TARİFLER & YÖNETİM PANELİ
-// ========================================
-const seedContent = [
-    {id:'seed-1',type:'blog',category:'Hormon Sağlığı',title:'Testosteronu Destekleyen 7 Günlük Alışkanlık',emoji:'⚡',time:'6 dk',summary:'Uyku, direnç antrenmanı ve beslenme düzeninizi sürdürülebilir şekilde iyileştirmek için pratik bir başlangıç rehberi.',body:'Testosteron sağlığı tek bir takviyeden değil, tutarlı alışkanlıklardan etkilenir.\n\n1. Her gün aynı saatte uyuyup 7–9 saat uyumayı hedefleyin.\n2. Haftada 3 gün temel direnç egzersizleri uygulayın.\n3. Yeterli enerji, protein ve sağlıklı yağ alın.\n4. Alkol tüketimini sınırlayın.\n5. Gün ışığına çıkın ve D vitamini düzeyinizi doktorunuzla değerlendirin.\n6. Stresi nefes egzersizi veya yürüyüşle yönetin.\n7. İlerlemenizi haftalık olarak takip edin.\n\nBelirtileriniz varsa kendi kendinize tedavi uygulamak yerine bir sağlık profesyoneline başvurun.',date:'2026-09-30'},
-    {id:'seed-2',type:'recipe',category:'Yüksek Protein',title:'Proteinli Akdeniz Kasesi',emoji:'🥗',time:'20 dk',summary:'Tavuk, yoğurt ve renkli sebzelerle hazırlanan dengeli, yüksek proteinli bir ana öğün.',ingredients:['150 g tavuk göğsü','4 yemek kaşığı süzme yoğurt','1 su bardağı pişmiş bulgur','Domates, salatalık ve maydanoz','1 tatlı kaşığı zeytinyağı','Limon, kimyon ve karabiber'],body:'Tavuğu baharatlarla harmanlayıp tavada tamamen pişirin. Bulguru kaseye alın; doğranmış sebzeleri ve dilimlenmiş tavuğu üzerine yerleştirin. Yoğurt, limon ve zeytinyağını karıştırıp sos olarak ekleyin. Ilık veya soğuk servis edin.',date:'2026-09-29'},
-    {id:'seed-3',type:'blog',category:'Uyku',title:'Uyku ve Hormon Dengesi: Temel Rehber',emoji:'🌙',time:'4 dk',summary:'Gece rutininizi düzenleyerek toparlanmayı ve hormon sağlığını desteklemenin kanıta dayalı yolları.',body:'Kaliteli uyku, fiziksel toparlanma ve hormonal ritim için temeldir. Yatak odasını serin ve karanlık tutun. Uyumadan 60 dakika önce parlak ekranları azaltın. Kafeini öğleden sonra sınırlayın ve yoğun egzersizi yatış saatine çok yakın yapmayın.\n\nHorlamanız, nefes kesilmeniz veya gündüz aşırı uykululuğunuz varsa uyku apnesi açısından hekime danışın.',date:'2026-09-28'}
-];
-seedContent[0].translations={
- en:{category:'Hormone Health',title:'7 Daily Habits That Support Testosterone',summary:'A practical guide to sustainably improve sleep, resistance training and nutrition.',body:'Testosterone health is influenced by consistent habits, not a single supplement.\n\n1. Aim for 7–9 hours of sleep at consistent times.\n2. Do basic resistance exercises three days a week.\n3. Get enough energy, protein and healthy fats.\n4. Limit alcohol.\n5. Spend time in daylight and discuss vitamin D with your doctor.\n6. Manage stress with breathing exercises or walking.\n7. Track your progress weekly.\n\nIf you have symptoms, consult a healthcare professional instead of self-treating.'},
- de:{category:'Hormongesundheit',title:'7 tägliche Gewohnheiten zur Unterstützung des Testosterons',summary:'Ein praktischer Leitfaden zur nachhaltigen Verbesserung von Schlaf, Krafttraining und Ernährung.',body:'Die Testosterongesundheit wird durch beständige Gewohnheiten beeinflusst, nicht durch ein einzelnes Präparat.\n\n1. Streben Sie 7–9 Stunden Schlaf zu festen Zeiten an.\n2. Machen Sie dreimal pro Woche grundlegendes Krafttraining.\n3. Nehmen Sie genug Energie, Protein und gesunde Fette auf.\n4. Begrenzen Sie Alkohol.\n5. Nutzen Sie Tageslicht und besprechen Sie Vitamin D mit Ihrem Arzt.\n6. Reduzieren Sie Stress durch Atemübungen oder Spaziergänge.\n7. Verfolgen Sie Ihre Fortschritte wöchentlich.\n\nWenden Sie sich bei Beschwerden an medizinisches Fachpersonal.'},
- ja:{category:'ホルモン健康',title:'テストステロンを支える7つの習慣',summary:'睡眠、筋力トレーニング、栄養を持続的に改善するための実践ガイドです。',body:'テストステロンの健康は、1つのサプリではなく継続的な習慣に左右されます。\n\n1. 毎日同じ時間に7〜9時間眠りましょう。\n2. 週3回、基本的な筋力トレーニングを行いましょう。\n3. 十分なエネルギー、たんぱく質、良質な脂質を摂りましょう。\n4. 飲酒を控えましょう。\n5. 日光を浴び、ビタミンDについて医師に相談しましょう。\n6. 呼吸法や散歩でストレスを管理しましょう。\n7. 毎週進捗を確認しましょう。\n\n症状がある場合は、自己判断で治療せず医療専門家に相談してください。'}};
-seedContent[1].translations={
- en:{category:'High Protein',title:'Protein Mediterranean Bowl',summary:'A balanced, high-protein meal with chicken, yogurt and colorful vegetables.',body:'Season the chicken and cook it thoroughly in a pan. Put bulgur in a bowl, then add chopped vegetables and sliced chicken. Mix yogurt, lemon and olive oil for the dressing. Serve warm or cold.',ingredients:['150 g chicken breast','4 tbsp strained yogurt','1 cup cooked bulgur','Tomato, cucumber and parsley','1 tsp olive oil','Lemon, cumin and black pepper']},
- de:{category:'Proteinreich',title:'Proteinreiche mediterrane Bowl',summary:'Eine ausgewogene, proteinreiche Mahlzeit mit Hähnchen, Joghurt und buntem Gemüse.',body:'Hähnchen würzen und vollständig in der Pfanne garen. Bulgur in eine Schüssel geben, Gemüse und Hähnchen darauf verteilen. Joghurt, Zitrone und Olivenöl als Dressing mischen. Warm oder kalt servieren.',ingredients:['150 g Hähnchenbrust','4 EL stichfester Joghurt','1 Tasse gekochter Bulgur','Tomate, Gurke und Petersilie','1 TL Olivenöl','Zitrone, Kreuzkümmel und Pfeffer']},
- ja:{category:'高たんぱく',title:'地中海風プロテインボウル',summary:'鶏肉、ヨーグルト、彩り野菜を使ったバランスのよい高たんぱく料理です。',body:'鶏肉にスパイスを加え、フライパンで十分に加熱します。器にブルグル、刻んだ野菜、鶏肉を盛ります。ヨーグルト、レモン、オリーブオイルを混ぜてソースにし、温かいまま、または冷やしてどうぞ。',ingredients:['鶏むね肉 150g','水切りヨーグルト 大さじ4','調理済みブルグル 1カップ','トマト、きゅうり、パセリ','オリーブオイル 小さじ1','レモン、クミン、黒こしょう']}};
-seedContent[2].translations={
- en:{category:'Sleep',title:'Sleep and Hormone Balance: The Basics',summary:'Evidence-informed ways to support recovery and hormone health through a better night routine.',body:'Quality sleep is essential for physical recovery and hormonal rhythm. Keep your bedroom cool and dark. Reduce bright screens 60 minutes before bed. Limit caffeine in the afternoon and avoid intense exercise too close to bedtime.\n\nIf you snore, stop breathing during sleep or feel excessively sleepy in the daytime, ask a doctor about sleep apnea.'},
- de:{category:'Schlaf',title:'Schlaf und Hormonbalance: Grundlagen',summary:'Wissenschaftlich fundierte Wege, um Erholung und Hormongesundheit durch eine bessere Abendroutine zu unterstützen.',body:'Guter Schlaf ist wesentlich für körperliche Erholung und den Hormonrhythmus. Halten Sie das Schlafzimmer kühl und dunkel. Reduzieren Sie helle Bildschirme 60 Minuten vor dem Schlafen. Begrenzen Sie Koffein am Nachmittag.\n\nSprechen Sie bei Schnarchen, Atemaussetzern oder starker Tagesmüdigkeit mit einem Arzt über Schlafapnoe.'},
- ja:{category:'睡眠',title:'睡眠とホルモンバランス：基本ガイド',summary:'夜の習慣を整え、回復とホルモンの健康を支える科学的な方法です。',body:'質のよい睡眠は身体の回復とホルモンリズムに不可欠です。寝室を涼しく暗く保ち、就寝60分前から明るい画面を控えましょう。午後のカフェインを減らし、就寝直前の激しい運動を避けてください。\n\nいびき、睡眠中の呼吸停止、日中の強い眠気がある場合は、睡眠時無呼吸症候群について医師に相談してください。'}};
-let activeContentFilter = 'all';
-let sharedContent = [];
-let adminAuthenticated = false;
-function getCustomContent(){ return sharedContent; }
-function localizedContent(item){ const lang=localStorage.getItem('testotavan_language')||'tr'; const t=item.translations?.[lang]; return t?{...item,category:t.category||item.category,title:t.title||item.title,summary:t.summary||item.summary,body:t.body||item.body,ingredients:t.ingredients||item.ingredients}:item; }
-function getAllContent(){ return [...sharedContent, ...seedContent].map(localizedContent); }
-async function loadStats(){ try { const r=await fetch('/api/stats',{method:'POST'}); const j=await r.json(); const el=document.getElementById('viewCounter'); if(el)el.textContent=`Toplam ziyaret: ${Number(j.views||0).toLocaleString('tr-TR')}`; } catch(e) { const el=document.getElementById('viewCounter'); if(el)el.textContent=''; } }
-async function loadSharedContent(){ try { const response=await fetch('/api/content'); if(response.ok){ sharedContent=await response.json(); renderContent(); } } catch(e){ console.warn('İçerikler yüklenemedi',e); } }
-function escapeHTML(value=''){ const d=document.createElement('div'); d.textContent=value; return d.innerHTML; }
-function setContentFilter(filter,button){ activeContentFilter=filter; document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active')); button.classList.add('active'); renderContent(); }
-function renderContent(){
-    const list=document.getElementById('contentList'); if(!list)return;
-    const query=(document.getElementById('contentSearch')?.value||'').trim().toLocaleLowerCase('tr');
-    const items=getAllContent().filter(x=>(activeContentFilter==='all'||x.type===activeContentFilter)&&(!query||`${x.title} ${x.category} ${x.summary}`.toLocaleLowerCase('tr').includes(query)));
-    list.innerHTML=items.length?items.map(x=>`<article class="card content-card" onclick="showContent('${escapeHTML(x.id)}')"><div class="content-cover ${x.type}"${x.cover_url&&(/^https:\/\//i.test(x.cover_url)||/^\/api\/media\/[\w-]+$/i.test(x.cover_url))?` style="background-image:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,.05)),url('${escapeHTML(x.cover_url)}')"`:''}><span class="badge ${x.type==='recipe'?'badge-low':'badge-high'}">${x.type==='recipe'?'Yemek Tarifi':'Blog'}</span><span class="content-emoji">${escapeHTML(x.emoji||'📝')}</span></div><div class="content-body"><div class="eyebrow">${escapeHTML(x.category)}</div><h3 style="font-size:16px;margin-top:5px">${escapeHTML(x.title)}</h3><div class="content-meta"><span><i class="bi bi-clock"></i> ${escapeHTML(x.time)}</span><span><i class="bi bi-calendar3"></i> ${escapeHTML(x.date)}</span></div><p class="content-summary">${escapeHTML(x.summary)}</p></div></article>`).join(''):'<div class="empty-state"><div style="font-size:38px">🔎</div><p style="margin-top:10px">Aramanızla eşleşen içerik bulunamadı.</p></div>';
-}
-function showContent(id){
-    const x=getAllContent().find(i=>i.id===id); if(!x)return;
-    const ingredients=x.type==='recipe'&&x.ingredients?.length?`<h3 style="margin-top:20px">Malzemeler</h3><ul class="ingredient-list">${x.ingredients.map(i=>`<li>✓ ${escapeHTML(i)}</li>`).join('')}</ul><h3 style="margin:20px 0 10px">Hazırlanışı</h3>`:'';
-    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" onclick="closeContentModal()"><i class="bi bi-x-lg"></i></button><div style="font-size:45px;margin-bottom:12px">${escapeHTML(x.emoji||'📝')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${x.type==='recipe'?'Tarif':'Blog'}</div><h2 style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span><i class="bi bi-clock"></i> ${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div><div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
-    document.getElementById('contentModal').classList.add('show'); document.body.style.overflow='hidden';
-}
-function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
-function openAdmin(){ window.location.href='/admin/'; }
-function toggleRecipeFields(){ document.getElementById('recipeFields').style.display=document.getElementById('adminType').value==='recipe'?'block':'none'; }
-async function saveContent(event){
-    event.preventDefault(); const type=document.getElementById('adminType').value;
-    const item={type,category:document.getElementById('adminCategory').value.trim(),title:document.getElementById('adminTitle').value.trim(),emoji:document.getElementById('adminEmoji').value.trim()||(type==='recipe'?'🍽️':'📝'),time:document.getElementById('adminTime').value.trim(),summary:document.getElementById('adminSummary').value.trim(),body:document.getElementById('adminBody').value.trim()};
-    if(type==='recipe')item.ingredients=document.getElementById('adminIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean);
-    const response=await fetch('/api/content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)}); const result=await response.json();
-    if(!response.ok){showToast('⚠️ '+(result.error||'Yayınlanamadı'),'red');return;}
-    sharedContent.unshift(result); event.target.reset(); toggleRecipeFields(); renderAdmin(); renderContent(); showToast('✅ İçerik herkese açık olarak yayınlandı','green');
-}
-async function deleteContent(id){
-    if(!confirm('Bu içeriği silmek istediğinize emin misiniz?'))return;
-    const response=await fetch('/api/content?id='+encodeURIComponent(id),{method:'DELETE'}); if(!response.ok){showToast('İçerik silinemedi','red');return;}
-    sharedContent=sharedContent.filter(x=>x.id!==id); renderAdmin(); renderContent(); showToast('İçerik silindi','red');
-}
-function renderAdmin(){
-    const all=getAllContent(), custom=getCustomContent();
-    document.getElementById('statAll').textContent=all.length; document.getElementById('statBlog').textContent=all.filter(x=>x.type==='blog').length; document.getElementById('statRecipe').textContent=all.filter(x=>x.type==='recipe').length;
-    document.getElementById('adminContentList').innerHTML=custom.length?custom.map(x=>`<div class="admin-item"><div style="min-width:0"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(x.emoji)} ${escapeHTML(x.title)}</div><div class="card-subtitle">${x.type==='recipe'?'Tarif':'Blog'} · ${escapeHTML(x.category)}</div></div><button class="icon-btn" aria-label="Sil" onclick="deleteContent('${escapeHTML(x.id)}')"><i class="bi bi-trash3"></i></button></div>`).join(''):'<p class="card-subtitle" style="padding:18px 0">Henüz panelden eklenmiş içerik yok. Örnek içerikler silinemez.</p>';
-}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContentModal()});
-renderContent();
-loadSharedContent();
-loadStats();
-
-
-// ========================================
-// ÇOK DİLLİ ARAYÜZ (TR / EN / DE / JA)
-// ========================================
-const i18n = {
- en: {
-  'Ana Sayfa':'Home','Fiziksel':'Physical','Kan Testi':'Blood Test','Blog':'Blog','Hakkımızda':'About',
-  'Analiz Yöntemi Seçin':'Choose an Analysis','Size özel doğal takviye reçetesi oluşturalım.':'Let us create a personalized natural supplement plan for you.','Hangi Yöntemi Seçmeliyim?':'Which Method Should I Choose?','İki farklı analiz türü':'Two analysis methods','Fiziksel Analiz':'Physical Analysis','Kan Testi Analizi':'Blood Test Analysis','Semptom bazlı öneri':'Symptom-based recommendations','Bilimsel veri bazlı reçete':'Evidence-based plan','Temel Bilgiler':'Basic Information','Fiziksel verileriniz':'Your physical data','Yaş':'Age','Boy (cm)':'Height (cm)','Kilo (kg)':'Weight (kg)','Aktivite Seviyesi':'Activity Level','Hareketsiz':'Sedentary','Haftada 1-2 gün':'1–2 days a week','Haftada 3-5 gün':'3–5 days a week','Haftada 6-7 gün':'6–7 days a week','ANALİZ BAŞLAT':'START ANALYSIS','KAN ANALİZİ BAŞLAT':'START BLOOD ANALYSIS','Hormon Paneli':'Hormone Panel','Sadece bildiğiniz değerleri girin':'Enter only the values you know','Vitamin & Mineral':'Vitamins & Minerals','Eksiklik tespiti':'Deficiency screening','Neden Doğal Yollar?':'Why Natural Methods?','Bilimsel yaklaşım':'Scientific approach',
-  'Blog & Tarifler':'Blog & Recipes','Panel':'Dashboard','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'Practical knowledge for a stronger life.','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'Evidence-informed health articles and practical recipes for your goals.','Tümü':'All','Blog Yazıları':'Articles','Yemek Tarifleri':'Recipes','Yemek Tarifi':'Recipe','İçerik Paneli':'Content Dashboard','Yerel yönetim':'Local management','Toplam':'Total','Yazı':'Article','Tarif':'Recipe','Yeni içerik ekle':'Add new content','Blog yazısı veya yemek tarifi yayınlayın':'Publish an article or recipe','İçerik türü':'Content type','Blog yazısı':'Article','Kategori':'Category','Başlık':'Title','Emoji':'Emoji','Okuma / hazırlama':'Reading / prep time','Kısa açıklama':'Short description','Malzemeler':'Ingredients','İçerik / hazırlanış':'Content / directions','YAYINLA':'PUBLISH','Yayınlanan içerikler':'Published content','Hazırlanışı':'Directions',
-  'Misyonumuz':'Our Mission','Ne yapıyoruz?':'What do we do?','Bilimsel Kaynaklar':'Scientific Sources','Araştırma & Referanslar':'Research & References','Ekip':'Team','Geliştirici':'Developer','Kurucu & Geliştirici':'Founder & Developer','Tıbbi Sorumluluk Reddi':'Medical Disclaimer','Lütfen dikkatle okuyun':'Please read carefully','Gizlilik & Veri Güvenliği':'Privacy & Data Security','%100 güvenli':'100% secure','Önemli Uyarılar':'Important Warnings','BAŞA DÖN':'BACK TO TOP'
- },
- de: {
-  'Ana Sayfa':'Startseite','Fiziksel':'Körper','Kan Testi':'Bluttest','Blog':'Blog','Hakkımızda':'Über uns','Analiz Yöntemi Seçin':'Analysemethode wählen','Size özel doğal takviye reçetesi oluşturalım.':'Wir erstellen Ihren persönlichen natürlichen Ergänzungsplan.','Hangi Yöntemi Seçmeliyim?':'Welche Methode soll ich wählen?','İki farklı analiz türü':'Zwei Analysemethoden','Fiziksel Analiz':'Körperanalyse','Kan Testi Analizi':'Bluttestanalyse','Semptom bazlı öneri':'Symptombasierte Empfehlungen','Bilimsel veri bazlı reçete':'Wissenschaftlich fundierter Plan','Temel Bilgiler':'Grunddaten','Fiziksel verileriniz':'Ihre Körperdaten','Yaş':'Alter','Boy (cm)':'Größe (cm)','Kilo (kg)':'Gewicht (kg)','Aktivite Seviyesi':'Aktivitätsniveau','Hareketsiz':'Inaktiv','Haftada 1-2 gün':'1–2 Tage pro Woche','Haftada 3-5 gün':'3–5 Tage pro Woche','Haftada 6-7 gün':'6–7 Tage pro Woche','ANALİZ BAŞLAT':'ANALYSE STARTEN','KAN ANALİZİ BAŞLAT':'BLUTANALYSE STARTEN','Hormon Paneli':'Hormonprofil','Sadece bildiğiniz değerleri girin':'Nur bekannte Werte eingeben','Vitamin & Mineral':'Vitamine & Mineralstoffe','Eksiklik tespiti':'Mangel-Screening','Neden Doğal Yollar?':'Warum natürliche Methoden?','Bilimsel yaklaşım':'Wissenschaftlicher Ansatz',
-  'Blog & Tarifler':'Blog & Rezepte','Panel':'Dashboard','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'Praktisches Wissen für ein stärkeres Leben.','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'Wissenschaftliche Gesundheitsartikel und praktische Rezepte für Ihre Ziele.','Tümü':'Alle','Blog Yazıları':'Artikel','Yemek Tarifleri':'Rezepte','Yemek Tarifi':'Rezept','İçerik Paneli':'Inhaltsverwaltung','Yerel yönetim':'Lokale Verwaltung','Toplam':'Gesamt','Yazı':'Artikel','Tarif':'Rezept','Yeni içerik ekle':'Neuen Inhalt hinzufügen','Blog yazısı veya yemek tarifi yayınlayın':'Artikel oder Rezept veröffentlichen','İçerik türü':'Inhaltstyp','Blog yazısı':'Artikel','Kategori':'Kategorie','Başlık':'Titel','Emoji':'Emoji','Okuma / hazırlama':'Lese-/Zubereitungszeit','Kısa açıklama':'Kurzbeschreibung','Malzemeler':'Zutaten','İçerik / hazırlanış':'Inhalt / Zubereitung','YAYINLA':'VERÖFFENTLICHEN','Yayınlanan içerikler':'Veröffentlichte Inhalte','Hazırlanışı':'Zubereitung',
-  'Misyonumuz':'Unsere Mission','Ne yapıyoruz?':'Was tun wir?','Bilimsel Kaynaklar':'Wissenschaftliche Quellen','Araştırma & Referanslar':'Forschung & Referenzen','Ekip':'Team','Geliştirici':'Entwickler','Kurucu & Geliştirici':'Gründer & Entwickler','Tıbbi Sorumluluk Reddi':'Medizinischer Haftungsausschluss','Lütfen dikkatle okuyun':'Bitte sorgfältig lesen','Gizlilik & Veri Güvenliği':'Datenschutz & Datensicherheit','%100 güvenli':'100 % sicher','Önemli Uyarılar':'Wichtige Hinweise','BAŞA DÖN':'NACH OBEN'
- },
- ja: {
-  'Ana Sayfa':'ホーム','Fiziksel':'身体分析','Kan Testi':'血液検査','Blog':'ブログ','Hakkımızda':'概要','Analiz Yöntemi Seçin':'分析方法を選択','Size özel doğal takviye reçetesi oluşturalım.':'あなたに合った自然なサプリメントプランを作成します。','Hangi Yöntemi Seçmeliyim?':'どの方法を選びますか？','İki farklı analiz türü':'2種類の分析方法','Fiziksel Analiz':'身体分析','Kan Testi Analizi':'血液検査分析','Semptom bazlı öneri':'症状に基づく提案','Bilimsel veri bazlı reçete':'科学的根拠に基づくプラン','Temel Bilgiler':'基本情報','Fiziksel verileriniz':'身体データ','Yaş':'年齢','Boy (cm)':'身長 (cm)','Kilo (kg)':'体重 (kg)','Aktivite Seviyesi':'活動レベル','Hareketsiz':'運動なし','Haftada 1-2 gün':'週1〜2日','Haftada 3-5 gün':'週3〜5日','Haftada 6-7 gün':'週6〜7日','ANALİZ BAŞLAT':'分析を開始','KAN ANALİZİ BAŞLAT':'血液分析を開始','Hormon Paneli':'ホルモンパネル','Sadece bildiğiniz değerleri girin':'分かる数値だけ入力してください','Vitamin & Mineral':'ビタミン・ミネラル','Eksiklik tespiti':'不足の確認','Neden Doğal Yollar?':'なぜ自然な方法？','Bilimsel yaklaşım':'科学的アプローチ',
-  'Blog & Tarifler':'ブログ・レシピ','Panel':'管理画面','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'より健やかな生活のための実践的な知識。','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'科学的な健康記事と目標に合った実用的なレシピ。','Tümü':'すべて','Blog Yazıları':'記事','Yemek Tarifleri':'レシピ','Yemek Tarifi':'レシピ','İçerik Paneli':'コンテンツ管理','Yerel yönetim':'ローカル管理','Toplam':'合計','Yazı':'記事','Tarif':'レシピ','Yeni içerik ekle':'新しいコンテンツ','Blog yazısı veya yemek tarifi yayınlayın':'記事またはレシピを公開','İçerik türü':'コンテンツ種類','Blog yazısı':'記事','Kategori':'カテゴリー','Başlık':'タイトル','Emoji':'絵文字','Okuma / hazırlama':'読了・調理時間','Kısa açıklama':'短い説明','Malzemeler':'材料','İçerik / hazırlanış':'本文・作り方','YAYINLA':'公開する','Yayınlanan içerikler':'公開済みコンテンツ','Hazırlanışı':'作り方',
-  'Misyonumuz':'私たちの使命','Ne yapıyoruz?':'活動内容','Bilimsel Kaynaklar':'科学的資料','Araştırma & Referanslar':'研究・参考文献','Ekip':'チーム','Geliştirici':'開発者','Kurucu & Geliştirici':'創設者・開発者','Tıbbi Sorumluluk Reddi':'医療免責事項','Lütfen dikkatle okuyun':'よくお読みください','Gizlilik & Veri Güvenliği':'プライバシー・データ保護','%100 güvenli':'100%安全','Önemli Uyarılar':'重要な注意事項','BAŞA DÖN':'ページ上部へ'
- }
-};
-const aboutTranslations = {
- en:{
-  'TestoTavan projesi ve bilimsel kaynaklar':'The TestoTavan project and scientific sources',
-  'Doğal Testosteronoptimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'A personalized, evidence-informed supplement and nutrition guide for natural testosterone optimization.',
-  'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,':'Reliable information about men’s health is increasingly difficult to find. TestoTavan provides',
-  'bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'personalized natural supplement and nutrition guidance based on scientific research.',
-  'Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.':'All supplement recommendations are based on peer-reviewed scientific articles.',
-  'TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi':'TestoTavan is not a medical device, diagnostic tool or treatment.',
-  'Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.':'Always consult a healthcare professional before starting any supplement.',
-  'Bu platform sadece bilgilendirme amaçlıdır.':'This platform is for informational purposes only.',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar':'None of the health data you enter is stored or sent to a server. All calculations',
-  'tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'are performed instantly in your browser. Your data remains with you.'},
- de:{
-  'TestoTavan projesi ve bilimsel kaynaklar':'Das TestoTavan-Projekt und wissenschaftliche Quellen',
-  'Doğal Testosteronoptimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'Ein personalisierter, wissenschaftlich fundierter Leitfaden zu Nahrungsergänzung und Ernährung für eine natürliche Testosteronoptimierung.',
-  'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,':'Verlässliche Informationen zur Männergesundheit sind immer schwerer zu finden. TestoTavan bietet',
-  'bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'personalisierte natürliche Ergänzungs- und Ernährungsempfehlungen auf Grundlage wissenschaftlicher Forschung.',
-  'Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.':'Alle Empfehlungen basieren auf begutachteten wissenschaftlichen Artikeln.',
-  'TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi':'TestoTavan ist kein Medizinprodukt, Diagnoseinstrument oder Behandlungsverfahren.',
-  'Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.':'Konsultieren Sie vor der Einnahme von Nahrungsergänzungsmitteln medizinisches Fachpersonal.',
-  'Bu platform sadece bilgilendirme amaçlıdır.':'Diese Plattform dient ausschließlich Informationszwecken.',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar':'Ihre eingegebenen Gesundheitsdaten werden weder gespeichert noch an einen Server gesendet. Alle Berechnungen',
-  'tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'erfolgen direkt im Browser. Ihre Daten bleiben bei Ihnen.'},
- ja:{
-  'TestoTavan projesi ve bilimsel kaynaklar':'TestoTavanプロジェクトと科学的資料',
-  'Doğal Testosteronoptimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'自然なテストステロン最適化のための、科学的根拠に基づく個別サプリメント・栄養ガイドです。',
-  'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,':'男性の健康に関する信頼できる情報は、ますます見つけにくくなっています。TestoTavanは、',
-  'bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'科学的研究に基づいた個別の自然なサプリメント・栄養情報を提供します。',
-  'Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.':'すべてのサプリメント情報は、査読済みの科学論文に基づいています。',
-  'TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi':'TestoTavanは医療機器、診断ツール、治療法ではありません。',
-  'Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.':'サプリメントを始める前に、必ず医療専門家に相談してください。',
-  'Bu platform sadece bilgilendirme amaçlıdır.':'このプラットフォームは情報提供のみを目的としています。',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar':'入力した健康データは保存されず、サーバーにも送信されません。すべての計算は',
-  'tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'ブラウザ内で即時に行われ、データはご本人だけに保持されます。'}
-};
-Object.keys(aboutTranslations).forEach(lang=>Object.assign(i18n[lang],aboutTranslations[lang]));
-
-const placeholderI18n = {
- en:{'Yazı veya tarif ara...':'Search articles or recipes...','Örn: 25':'E.g. 25','Örn: 175':'E.g. 175','Örn: 70':'E.g. 70','İçerik başlığı':'Content title','Her satıra bir malzeme':'One ingredient per line','Detaylı içeriği yazın...':'Write the detailed content...'},
- de:{'Yazı veya tarif ara...':'Artikel oder Rezepte suchen...','Örn: 25':'Z. B. 25','Örn: 175':'Z. B. 175','Örn: 70':'Z. B. 70','İçerik başlığı':'Inhaltstitel','Her satıra bir malzeme':'Eine Zutat pro Zeile','Detaylı içeriği yazın...':'Ausführlichen Inhalt schreiben...'},
- ja:{'Yazı veya tarif ara...':'記事やレシピを検索...','Örn: 25':'例：25','Örn: 175':'例：175','Örn: 70':'例：70','İçerik başlığı':'タイトル','Her satıra bir malzeme':'1行に1つの材料','Detaylı içeriği yazın...':'詳細を入力してください...'}
-};
-let currentLanguage = localStorage.getItem('testotavan_language') || 'tr';
-function rememberOriginals(){
- document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.textContent.trim()).forEach(n=>{if(!n.__tr)n.__tr=n.textContent.trim()}); if(('placeholder' in el)&&el.placeholder&&!el.dataset.trPlaceholder)el.dataset.trPlaceholder=el.placeholder; });
-}
-function applyTranslations(){
- rememberOriginals(); const dict=i18n[currentLanguage]||{};
- document.documentElement.lang=currentLanguage;
- document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.__tr).forEach(n=>{const lead=n.textContent.match(/^\s*/)[0],tail=n.textContent.match(/\s*$/)[0];const translated=lead+(dict[n.__tr]||n.__tr)+tail;if(n.textContent!==translated)n.textContent=translated}); if(el.dataset.trPlaceholder)el.placeholder=(placeholderI18n[currentLanguage]||{})[el.dataset.trPlaceholder]||el.dataset.trPlaceholder; });
- const select=document.getElementById('languageSelect'); if(select)select.value=currentLanguage;
-}
-function setLanguage(lang){ currentLanguage=lang; localStorage.setItem('testotavan_language',lang); renderContent(); applyTranslations(); showToast(lang==='tr'?'🇹🇷 Dil Türkçe olarak ayarlandı':'🌐 Language updated','gold'); }
-applyTranslations();
-const i18nObserver=new MutationObserver(()=>{ if(!window.__translating){ window.__translating=true; requestAnimationFrame(()=>{applyTranslations();window.__translating=false}) } });
-i18nObserver.observe(document.body,{childList:true,subtree:true});
-
-</script>
+<script defer src="js/validation.69d286c8.js"></script>
+<script defer src="js/app.0a806577.js"></script>
 
 </body>
 </html>

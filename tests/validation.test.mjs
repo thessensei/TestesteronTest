@@ -6,12 +6,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// js/validation.js klasik bir script; Node tarafında değerlendirip API'yi alıyoruz
-const source = fs.readFileSync(path.join(root, 'js', 'validation.js'), 'utf8');
+// validation.69d286c8.js klasik bir script; Node tarafında değerlendirip API'yi alıyoruz
+const source = fs.readFileSync(path.join(root, 'js', 'validation.69d286c8.js'), 'utf8');
 new Function(source)();
 const V = globalThis.TestoValidation;
 
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'js', 'app.0a806577.js'), 'utf8');
 
 test('validation API yüklenir', () => {
     assert.ok(V, 'TestoValidation global olarak tanımlanmalı');
@@ -111,7 +112,8 @@ test('index.html koyu tema autofill düzeltmesini içerir', () => {
 test('index.html hata stillerini ve validation scriptini içerir', () => {
     assert.match(html, /\.form-input\.is-invalid/);
     assert.match(html, /\.form-error/);
-    assert.match(html, /<script src="js\/validation\.js"><\/script>/);
+    assert.match(html, /<script defer src="js\/validation\.69d286c8\.js"><\/script>/);
+    assert.match(html, /<script defer src="js\/app\.0a806577\.js"><\/script>/);
 });
 
 test('sayısal alanlar min ve inputmode özniteliklerine sahip', () => {
@@ -125,6 +127,6 @@ test('sayısal alanlar min ve inputmode özniteliklerine sahip', () => {
 });
 
 test('analiz fonksiyonları doğrulama başarısızsa erken çıkar', () => {
-    assert.match(html, /function analyzePhysical\(\) \{[\s\S]{0,400}if \(!applyValidation\(fields, result\)\) return;/);
-    assert.match(html, /function analyzeBlood\(\) \{[\s\S]{0,400}if \(!applyValidation\(fields, result\)\) return;/);
+    assert.match(app, /function analyzePhysical\(\) \{[\s\S]{0,400}if \(!applyValidation\(fields, result\)\) return;/);
+    assert.match(app, /function analyzeBlood\(\) \{[\s\S]{0,400}if \(!applyValidation\(fields, result\)\) return;/);
 });
