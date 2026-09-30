@@ -1,5 +1,5 @@
 /*
- * Panel v2 — medya yardımcıları (saf fonksiyonlar, Node testlerinde doğrulanır).
+ * Medya yardımcıları (saf fonksiyonlar, Node testlerinde doğrulanır).
  * Yalnızca API tarafında kullanılır; tarayıcıya çıkarılmaz.
  */
 
