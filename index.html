@@ -29,6 +29,8 @@
         }
 
         :root {
+            color-scheme: dark;
+
             /* Renkler */
             --gold: #F5A623;
             --gold-light: #FFD93D;
@@ -223,10 +225,66 @@
             outline: none;
         }
 
-        .form-input:focus {
+        .form-input:focus,
+        .form-input:focus-visible {
             border-color: var(--gold);
+            background: var(--input);
+            color: var(--text-primary);
             box-shadow: 0 0 0 4px rgba(245,166,35,.08);
+            outline: none;
         }
+
+        .form-input::placeholder { color: var(--text-secondary); opacity: 1; }
+
+        /* Tarayıcı autofill'inin beyaz arka planını koyu temaya sabitle */
+        .form-input:-webkit-autofill,
+        .form-input:-webkit-autofill:hover,
+        .form-input:-webkit-autofill:focus,
+        .form-input:-webkit-autofill:active,
+        input:-internal-autofill-selected {
+            -webkit-text-fill-color: var(--text-primary) !important;
+            caret-color: var(--text-primary);
+            -webkit-box-shadow: 0 0 0 1000px var(--input) inset !important;
+            box-shadow: 0 0 0 1000px var(--input) inset !important;
+            background-color: var(--input) !important;
+            background-image: none !important;
+            transition: background-color 9999s ease-in-out 0s;
+        }
+
+        .form-input:-moz-autofill,
+        .form-input:autofill {
+            -webkit-text-fill-color: var(--text-primary);
+            box-shadow: 0 0 0 1000px var(--input) inset;
+            background-color: var(--input);
+        }
+
+        /* Tarayıcı içi otomatik tamamlama / seçim renkleri */
+        .form-input::selection { background: rgba(245,166,35,.28); color: var(--text-primary); }
+
+        /* Sayı alanlarındaki açık temalı spinner görünümünü kaldır */
+        .form-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+        .form-input[type="number"]::-webkit-outer-spin-button,
+        .form-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* ========== FORM HATA DURUMU ========== */
+        .form-input.is-invalid,
+        .form-input.is-invalid:focus,
+        .form-input.is-invalid:-webkit-autofill {
+            border-color: var(--red);
+            box-shadow: 0 0 0 4px rgba(255,82,82,.12);
+            -webkit-box-shadow: 0 0 0 1000px var(--input) inset, 0 0 0 4px rgba(255,82,82,.12);
+        }
+
+        .form-error {
+            display: none;
+            margin-top: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--red);
+        }
+
+        .form-error.visible { display: block; }
 
         .form-row {
             display: flex;
@@ -640,18 +698,18 @@
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Yaş</label>
-                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25">
+                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">Boy (cm)</label>
-                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175">
+                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Kilo (kg)</label>
-                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70">
+                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">Aktivite Seviyesi</label>
@@ -698,22 +756,22 @@
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Total Testosteron(ng/dL)</label>
-                <input type="number" class="form-input" id="inputTesto" placeholder="250-1000">
+                <input type="number" class="form-input" id="inputTesto" placeholder="250-1000" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">Serbest Testo (pg/mL)</label>
-                <input type="number" class="form-input" id="inputFreeTesto" placeholder="5-25">
+                <input type="number" class="form-input" id="inputFreeTesto" placeholder="5-25" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Kortizol (µg/dL)</label>
-                <input type="number" step="0.1" class="form-input" id="inputCortisol" placeholder="5-25">
+                <input type="number" step="0.1" class="form-input" id="inputCortisol" placeholder="5-25" min="0.1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">SHBG (nmol/L)</label>
-                <input type="number" class="form-input" id="inputSHBG" placeholder="10-70">
+                <input type="number" class="form-input" id="inputSHBG" placeholder="10-70" min="1" inputmode="decimal">
             </div>
         </div>
     </div>
@@ -732,22 +790,22 @@
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">D Vitamini (ng/mL)</label>
-                <input type="number" class="form-input" id="inputVitD" placeholder="20-80">
+                <input type="number" class="form-input" id="inputVitD" placeholder="20-80" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">B12 (pg/mL)</label>
-                <input type="number" class="form-input" id="inputB12" placeholder="200-900">
+                <input type="number" class="form-input" id="inputB12" placeholder="200-900" min="1" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Çinko (µg/dL)</label>
-                <input type="number" class="form-input" id="inputZinc" placeholder="60-120">
+                <input type="number" class="form-input" id="inputZinc" placeholder="60-120" min="1" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label">Magnezyum (mg/dL)</label>
-                <input type="number" step="0.1" class="form-input" id="inputMg" placeholder="1.7-2.5">
+                <input type="number" step="0.1" class="form-input" id="inputMg" placeholder="1.7-2.5" min="0.1" inputmode="decimal">
             </div>
         </div>
     </div>
@@ -1090,10 +1148,104 @@
     <a class="nav-item" onclick="changePage('aboutPage')"><i class="bi bi-info-circle"></i><span>Hakkımızda</span></a>
 </nav>
 
+<script src="js/validation.js"></script>
 <script>
 // ========================================
 // YARDIMCI FONKSİYONLAR
 // ========================================
+
+
+// ========================================
+// FORM DOĞRULAMA YARDIMCILARI
+// ========================================
+
+// Alanın altındaki hata kutusunu (yoksa oluşturarak) döndürür
+function getFieldErrorBox(input) {
+    if (!input) return null;
+    let box = document.getElementById('error-' + input.id);
+    if (!box) {
+        box = document.createElement('div');
+        box.className = 'form-error';
+        box.id = 'error-' + input.id;
+        box.setAttribute('role', 'alert');
+        input.insertAdjacentElement('afterend', box);
+    }
+    return box;
+}
+
+function setFieldError(inputId, message) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const box = getFieldErrorBox(input);
+    input.classList.add('is-invalid');
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', box.id);
+    box.textContent = message;
+    box.classList.add('visible');
+}
+
+function clearFieldError(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.classList.remove('is-invalid');
+    input.removeAttribute('aria-invalid');
+    const box = document.getElementById('error-' + inputId);
+    if (box) {
+        box.textContent = '';
+        box.classList.remove('visible');
+    }
+}
+
+function readFieldValues(fields) {
+    const values = {};
+    fields.forEach(field => {
+        const input = document.getElementById(field.id);
+        values[field.id] = input ? input.value : '';
+    });
+    return values;
+}
+
+// Doğrulama sonucunu forma uygular; geçersizse analiz başlatılmaz
+function applyValidation(fields, result) {
+    fields.forEach(field => {
+        if (result.errors && result.errors[field.id]) {
+            setFieldError(field.id, result.errors[field.id]);
+        } else {
+            clearFieldError(field.id);
+        }
+    });
+
+    if (!result.ok) {
+        showToast('⚠️ ' + result.message, 'red');
+        const focusId = result.firstErrorId;
+        if (focusId) {
+            const input = document.getElementById(focusId);
+            if (input) input.focus();
+        }
+    }
+    return result.ok;
+}
+
+// Kullanıcı yazarken hatayı temizle
+function initFieldValidationListeners() {
+    if (!window.TestoValidation) return;
+    const all = TestoValidation.PHYSICAL_FIELDS.concat(TestoValidation.BLOOD_FIELDS);
+    all.forEach(field => {
+        const input = document.getElementById(field.id);
+        if (!input) return;
+        input.addEventListener('input', () => clearFieldError(field.id));
+        input.addEventListener('blur', () => {
+            const check = TestoValidation.validateField(input.value, field);
+            if (!check.ok) {
+                setFieldError(field.id, check.error);
+            } else {
+                clearFieldError(field.id);
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initFieldValidationListeners);
 
 // Sayfa değiştirme
 function changePage(pageId) {
@@ -1198,15 +1350,15 @@ function renderTestoGauge(testoValue) {
 // FİZİKSEL ANALİZ
 // ========================================
 function analyzePhysical() {
-    const age = parseFloat(document.getElementById('inputAge').value);
-    const height = parseFloat(document.getElementById('inputHeight').value);
-    const weight = parseFloat(document.getElementById('inputWeight').value);
-    
-    if (!age || !height || !weight) {
-        showToast('⚠️ Lütfen tüm alanları doldurun', 'red');
-        return;
-    }
-    
+    const fields = TestoValidation.PHYSICAL_FIELDS;
+    const result = TestoValidation.validatePhysical(readFieldValues(fields));
+
+    // 0, negatif veya boş değerlerde analiz başlatılmaz
+    if (!applyValidation(fields, result)) return;
+
+    const height = result.values.inputHeight;
+    const weight = result.values.inputWeight;
+
     const bmi = weight / ((height / 100) ** 2);
     const supplements = [];
     
@@ -1262,19 +1414,18 @@ function analyzePhysical() {
 // KAN TESTİ ANALİZİ
 // ========================================
 function analyzeBlood() {
-    const testo = parseFloat(document.getElementById('inputTesto').value) || 0;
-    const cortisol = parseFloat(document.getElementById('inputCortisol').value) || 0;
-    const vitD = parseFloat(document.getElementById('inputVitD').value) || 0;
-    const b12 = parseFloat(document.getElementById('inputB12').value) || 0;
-    const zinc = parseFloat(document.getElementById('inputZinc').value) || 0;
-    const mg = parseFloat(document.getElementById('inputMg').value) || 0;
-    
-    const hasData = testo || cortisol || vitD || b12 || zinc || mg;
-    
-    if (!hasData) {
-        showToast('⚠️ En az 1 kan değeri girmeniz gerekiyor', 'red');
-        return;
-    }
+    const fields = TestoValidation.BLOOD_FIELDS;
+    const result = TestoValidation.validateBlood(readFieldValues(fields));
+
+    // 0, negatif veya geçersiz değerlerde analiz başlatılmaz
+    if (!applyValidation(fields, result)) return;
+
+    const testo = result.values.inputTesto || 0;
+    const cortisol = result.values.inputCortisol || 0;
+    const vitD = result.values.inputVitD || 0;
+    const b12 = result.values.inputB12 || 0;
+    const zinc = result.values.inputZinc || 0;
+    const mg = result.values.inputMg || 0;
     
     const supplements = [];
     
