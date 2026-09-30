@@ -1,9 +1,9 @@
-## 🎯 Proje Hakkında
+## 🎯 About the Project
 
-**TestoTitan**, erkek sağlığı ve doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye önerileri sunan web tabanlı bir analiz platformudur.
+**TestoTitan** is a web-based analysis platform that provides personalized supplement recommendations based on registered data regarding men's health and natural testosterone support.
 
-### 🚀 Amaç
+### 🚀 Mission
 
-Modern yaşamda testosteron seviyelerinde görülen düşüşe karşı doğal, güvenli ve bilimsel temelli çözümler sunmak.
+We offer natural, safe, and alternative solutions to address the decline in testosterone levels observed in modern life.
 
 ---
