@@ -1514,8 +1514,11 @@ const seedContent = [
     {id:'seed-3',type:'blog',category:'Uyku',title:'Uyku ve Hormon Dengesi: Temel Rehber',emoji:'🌙',time:'4 dk',summary:'Gece rutininizi düzenleyerek toparlanmayı ve hormon sağlığını desteklemenin kanıta dayalı yolları.',body:'Kaliteli uyku, fiziksel toparlanma ve hormonal ritim için temeldir. Yatak odasını serin ve karanlık tutun. Uyumadan 60 dakika önce parlak ekranları azaltın. Kafeini öğleden sonra sınırlayın ve yoğun egzersizi yatış saatine çok yakın yapmayın.\n\nHorlamanız, nefes kesilmeniz veya gündüz aşırı uykululuğunuz varsa uyku apnesi açısından hekime danışın.',date:'2026-09-28'}
 ];
 let activeContentFilter = 'all';
-function getCustomContent(){ try{return JSON.parse(localStorage.getItem('testotavan_content')||'[]')}catch(e){return []} }
-function getAllContent(){ return [...getCustomContent(), ...seedContent]; }
+let sharedContent = [];
+let adminAuthenticated = false;
+function getCustomContent(){ return sharedContent; }
+function getAllContent(){ return [...sharedContent, ...seedContent]; }
+async function loadSharedContent(){ try { const response=await fetch('/api/content'); if(response.ok){ sharedContent=await response.json(); renderContent(); } } catch(e){ console.warn('İçerikler yüklenemedi',e); } }
 function escapeHTML(value=''){ const d=document.createElement('div'); d.textContent=value; return d.innerHTML; }
 function setContentFilter(filter,button){ activeContentFilter=filter; document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active')); button.classList.add('active'); renderContent(); }
 function renderContent(){
@@ -1531,15 +1534,29 @@ function showContent(id){
     document.getElementById('contentModal').classList.add('show'); document.body.style.overflow='hidden';
 }
 function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
-function openAdmin(){ changePage('adminPage'); }
-function toggleRecipeFields(){ document.getElementById('recipeFields').style.display=document.getElementById('adminType').value==='recipe'?'block':'none'; }
-function saveContent(event){
-    event.preventDefault(); const type=document.getElementById('adminType').value;
-    const item={id:'content-'+Date.now(),type,category:document.getElementById('adminCategory').value.trim(),title:document.getElementById('adminTitle').value.trim(),emoji:document.getElementById('adminEmoji').value.trim()||(type==='recipe'?'🍽️':'📝'),time:document.getElementById('adminTime').value.trim(),summary:document.getElementById('adminSummary').value.trim(),body:document.getElementById('adminBody').value.trim(),date:new Date().toLocaleDateString('tr-TR',{year:'numeric',month:'2-digit',day:'2-digit'}).split('.').reverse().join('-')};
-    if(type==='recipe')item.ingredients=document.getElementById('adminIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean);
-    const items=getCustomContent(); items.unshift(item); localStorage.setItem('testotavan_content',JSON.stringify(items)); event.target.reset(); toggleRecipeFields(); renderAdmin(); showToast('✅ İçerik başarıyla yayınlandı','green');
+async function openAdmin(){
+    try { const check=await fetch('/api/session'); adminAuthenticated=check.ok&&(await check.json()).authenticated; } catch(e){}
+    if(!adminAuthenticated){
+        const password=prompt('Yönetici şifresini girin:'); if(!password)return;
+        const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+        const result=await response.json(); if(!response.ok){showToast('🔒 '+(result.error||'Giriş başarısız'),'red');return;} adminAuthenticated=true;
+    }
+    changePage('adminPage');
 }
-function deleteContent(id){ if(!confirm('Bu içeriği silmek istediğinize emin misiniz?'))return; localStorage.setItem('testotavan_content',JSON.stringify(getCustomContent().filter(x=>x.id!==id))); renderAdmin(); showToast('İçerik silindi','red'); }
+function toggleRecipeFields(){ document.getElementById('recipeFields').style.display=document.getElementById('adminType').value==='recipe'?'block':'none'; }
+async function saveContent(event){
+    event.preventDefault(); const type=document.getElementById('adminType').value;
+    const item={type,category:document.getElementById('adminCategory').value.trim(),title:document.getElementById('adminTitle').value.trim(),emoji:document.getElementById('adminEmoji').value.trim()||(type==='recipe'?'🍽️':'📝'),time:document.getElementById('adminTime').value.trim(),summary:document.getElementById('adminSummary').value.trim(),body:document.getElementById('adminBody').value.trim()};
+    if(type==='recipe')item.ingredients=document.getElementById('adminIngredients').value.split('\n').map(x=>x.trim()).filter(Boolean);
+    const response=await fetch('/api/content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)}); const result=await response.json();
+    if(!response.ok){showToast('⚠️ '+(result.error||'Yayınlanamadı'),'red');return;}
+    sharedContent.unshift(result); event.target.reset(); toggleRecipeFields(); renderAdmin(); renderContent(); showToast('✅ İçerik herkese açık olarak yayınlandı','green');
+}
+async function deleteContent(id){
+    if(!confirm('Bu içeriği silmek istediğinize emin misiniz?'))return;
+    const response=await fetch('/api/content?id='+encodeURIComponent(id),{method:'DELETE'}); if(!response.ok){showToast('İçerik silinemedi','red');return;}
+    sharedContent=sharedContent.filter(x=>x.id!==id); renderAdmin(); renderContent(); showToast('İçerik silindi','red');
+}
 function renderAdmin(){
     const all=getAllContent(), custom=getCustomContent();
     document.getElementById('statAll').textContent=all.length; document.getElementById('statBlog').textContent=all.filter(x=>x.type==='blog').length; document.getElementById('statRecipe').textContent=all.filter(x=>x.type==='recipe').length;
@@ -1547,6 +1564,7 @@ function renderAdmin(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContentModal()});
 renderContent();
+loadSharedContent();
 
 
 // ========================================
