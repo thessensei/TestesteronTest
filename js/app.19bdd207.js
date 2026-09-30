@@ -1,6 +1,9 @@
 // ========================================
 // YARDIMCI FONKSİYONLAR
 // ========================================
+// Tek renkli, platformdan bağımsız SVG ikon üretici (emoji yerine stabil şekil)
+const IC = id => `<svg class="ic" aria-hidden="true"><use href="#${id}"></use></svg>`;
+
 
 
 // ========================================
@@ -64,7 +67,7 @@ function applyValidation(fields, result) {
     });
 
     if (!result.ok) {
-        showToast('⚠️ ' + result.message, 'red');
+        showToast(IC('i-warning') + ' ' + result.message, 'red');
         const focusId = result.firstErrorId;
         if (focusId) {
             const input = document.getElementById(focusId);
@@ -184,7 +187,7 @@ function renderTestoGauge(testoValue) {
 
     return `
         <div class="testo-gauge">
-            <div class="gauge-title">🔬 TestosteronSeviyeniz</div>
+            <div class="gauge-title">${IC('i-activity')}TestosteronSeviyeniz</div>
             <div class="gauge-bar">
                 <div class="gauge-fill" style="width: ${percentage}%; background: ${color}"></div>
             </div>
@@ -220,7 +223,7 @@ function analyzePhysical() {
     // D Vitamini
     supplements.push({
         name: 'D3 Vitamini + K2',
-        icon: '☀️',
+        icon: 'i-sun',
         color: 'icon-gold',
         desc: 'Testosteronsentezinin temel yapı taşı.',
         dose: '2000 IU D3 + 100mcg K2 / gün',
@@ -231,7 +234,7 @@ function analyzePhysical() {
     // Çinko
     supplements.push({
         name: 'Çinko Pikolinat',
-        icon: '⚡',
+        icon: 'i-bolt',
         color: 'icon-blue',
         desc: 'Testosteronsentezi ve bağışıklık için temel mineral.',
         dose: '15mg / gün (akşam yemeğiyle)',
@@ -242,7 +245,7 @@ function analyzePhysical() {
     // Magnezyum
     supplements.push({
         name: 'Magnezyum Bisglisinat',
-        icon: '🌙',
+        icon: 'i-moon',
         color: 'icon-purple',
         desc: 'SHBG\'yi düşürerek serbest testosteronu artırır.',
         dose: '200mg (yatmadan önce)',
@@ -253,7 +256,7 @@ function analyzePhysical() {
     // Omega-3
     supplements.push({
         name: 'Omega-3 (EPA/DHA)',
-        icon: '🐟',
+        icon: 'i-fish',
         color: 'icon-blue',
         desc: 'Anti-inflamatuar ve hormonal denge.',
         dose: '2000mg / gün',
@@ -262,7 +265,7 @@ function analyzePhysical() {
     });
 
     renderResults('physicalResult', supplements, null, bmi);
-    showToast('🧬 Fiziksel analiz tamamlandı!', 'gold');
+    showToast(IC('i-check') + ' Fiziksel analiz tamamlandı!', 'gold');
 }
 
 // ========================================
@@ -289,7 +292,7 @@ function analyzeBlood() {
         if (vitD < 20) {
             supplements.push({
                 name: 'D3 Vitamini + K2',
-                icon: '☀️',
+                icon: 'i-sun',
                 color: 'icon-gold',
                 desc: `Değeriniz: ${vitD} ng/mL → Ciddi eksiklik.`,
                 dose: '5000 IU D3 + 200mcg K2 / gün',
@@ -299,7 +302,7 @@ function analyzeBlood() {
         } else if (vitD < 30) {
             supplements.push({
                 name: 'D3 Vitamini + K2',
-                icon: '☀️',
+                icon: 'i-sun',
                 color: 'icon-gold',
                 desc: `Değeriniz: ${vitD} ng/mL → Yetersiz.`,
                 dose: '3000 IU D3 + 100mcg K2 / gün',
@@ -313,7 +316,7 @@ function analyzeBlood() {
     if (b12 > 0 && b12 < 300) {
         supplements.push({
             name: 'B12 (Metilkobalamin)',
-            icon: '🔋',
+            icon: 'i-battery',
             color: 'icon-green',
             desc: `Değeriniz: ${b12} pg/mL → Düşük.`,
             dose: b12 < 200 ? '2000mcg / gün' : '1000mcg / gün',
@@ -326,7 +329,7 @@ function analyzeBlood() {
     if (zinc > 0 && zinc < 70) {
         supplements.push({
             name: 'Çinko Pikolinat',
-            icon: '⚡',
+            icon: 'i-bolt',
             color: 'icon-blue',
             desc: `Değeriniz: ${zinc} µg/dL → Düşük.`,
             dose: zinc < 60 ? '30mg / gün' : '15mg / gün',
@@ -339,7 +342,7 @@ function analyzeBlood() {
     if (mg > 0 && mg < 2.0) {
         supplements.push({
             name: 'Magnezyum Bisglisinat',
-            icon: '🌙',
+            icon: 'i-moon',
             color: 'icon-purple',
             desc: `Değeriniz: ${mg} mg/dL → Düşük.`,
             dose: mg < 1.7 ? '400mg / gece' : '200mg / gece',
@@ -352,7 +355,7 @@ function analyzeBlood() {
     if (cortisol > 0 && cortisol > 16) {
         supplements.push({
             name: 'Ashwagandha KSM-66',
-            icon: '🌿',
+            icon: 'i-leaf',
             color: 'icon-green',
             desc: `Kortizol: ${cortisol} µg/dL → ${cortisol > 20 ? 'Çok yüksek' : 'Normal üst sınır'}.`,
             dose: cortisol > 20 ? '600mg / gün (2×300mg)' : '300mg / gün',
@@ -364,7 +367,7 @@ function analyzeBlood() {
     // Omega-3 (temel)
     supplements.push({
         name: 'Omega-3 (EPA/DHA)',
-        icon: '🐟',
+        icon: 'i-fish',
         color: 'icon-blue',
         desc: 'Temel takviye. Anti-inflamatuar ve hormonal denge.',
         dose: '2000-3000mg / gün',
@@ -373,7 +376,7 @@ function analyzeBlood() {
     });
 
     renderResults('bloodResult', supplements, testo);
-    showToast('🩸 Kan testi analizi tamamlandı!', 'green');
+    showToast(IC('i-check') + ' Kan testi analizi tamamlandı!', 'green');
 }
 
 // ========================================
@@ -407,7 +410,7 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
             <div class="card" style="border-color: rgba(68,138,255,.2)">
                 <div class="card-header">
                     <div class="card-icon icon-blue">
-                        <span class="icon" aria-hidden="true">▥</span>
+                        ${IC('i-grid')}
                     </div>
                     <div>
                         <div class="card-title">Vücut Kitle İndeksi</div>
@@ -427,7 +430,7 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
         <div class="card">
             <div class="card-header">
                 <div class="card-icon icon-gold">
-                    <span class="icon" aria-hidden="true">✦</span>
+                    ${IC('i-star')}
                 </div>
                 <div>
                     <div class="card-title">Kişisel Takviye Reçeteniz</div>
@@ -437,14 +440,14 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
 
             ${supplements.map(sup => `
                 <div class="result-item">
-                    <div class="result-icon ${sup.color}">${sup.icon}</div>
+                    <div class="result-icon ${sup.color}">${IC(sup.icon)}</div>
                     <div>
                         <div class="result-name">
                             ${sup.name}
                             <span class="badge ${sup.badgeClass}">${sup.priority}</span>
                         </div>
                         <div class="result-desc">${sup.desc}</div>
-                        <div class="result-dose">💊 ${sup.dose}</div>
+                        <div class="result-dose">${IC('i-pill')} ${sup.dose}</div>
                     </div>
                 </div>
             `).join('')}
@@ -456,7 +459,7 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
         <div class="card" style="border-color: rgba(255,82,82,.15); background: rgba(255,82,82,.02)">
             <div class="card-header">
                 <div class="card-icon icon-red">
-                    <span class="icon" aria-hidden="true">⚠</span>
+                    ${IC('i-warning')}
                 </div>
                 <div>
                     <div class="card-title">Önemli Uyarılar</div>
@@ -464,16 +467,16 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
                 </div>
             </div>
             <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
-                <p style="margin-bottom: 10px">⚠️ Bu öneriler bilgilendirme amaçlıdır, tıbbi reçete yerine geçmez.</p>
-                <p style="margin-bottom: 10px">⚠️ Herhangi bir takviyeye başlamadan önce doktorunuza danışın.</p>
-                <p>⚠️ Tüm takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.</p>
+                <p style="margin-bottom: 10px">${IC('i-warning')} Bu öneriler bilgilendirme amaçlıdır, tıbbi reçete yerine geçmez.</p>
+                <p style="margin-bottom: 10px">${IC('i-warning')} Herhangi bir takviyeye başlamadan önce doktorunuza danışın.</p>
+                <p>${IC('i-warning')} Tüm takviyeleri aynı anda başlatmayın — her hafta 1-2 yeni ürün ekleyin.</p>
             </div>
         </div>
     `;
 
     html += `
         <button class="btn-secondary" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top: 16px">
-            <span class="icon" aria-hidden="true">↑</span> &nbsp;BAŞA DÖN
+            ${IC('i-arrow-up')} &nbsp;BAŞA DÖN
         </button>
     `;
 
@@ -489,7 +492,7 @@ function renderResults(containerId, supplements, testoValue = null, bmi = null) 
 
 
 // Blog content, translations and their API requests are loaded only when a visitor needs them.
-const OPTIONAL_FEATURES_URL = 'js/content.cdff6027.js';
+const OPTIONAL_FEATURES_URL = 'js/content.291df0a1.js';
 let optionalFeaturesPromise;
 function loadOptionalFeatures(){
     if (window.__testoOptionalReady) return Promise.resolve();
