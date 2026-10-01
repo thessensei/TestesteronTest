@@ -1014,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', initAnalysisScreens);
 // ========================================
 // OPSİYONEL MODÜLLER (blog + çeviri)
 // ========================================
-const OPTIONAL_FEATURES_URL = 'js/content.291df0a1.js';
+const OPTIONAL_FEATURES_URL = 'js/content.e630d1c6.js';
 let optionalFeaturesPromise;
 function loadOptionalFeatures(){
     if (window.__testoOptionalReady) return Promise.resolve();

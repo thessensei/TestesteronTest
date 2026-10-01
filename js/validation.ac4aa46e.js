@@ -932,15 +932,13 @@
     ];
 
     var LOGISTICS = {
-        updatedAt: 'Ekim 2025',
         items: [
-            { label: 'Nerede yaptırılır', value: 'Herhangi bir özel laboratuvar veya devlet hastanesi; sevk gerekmez.' },
-            { label: 'Ücret kimde', value: 'Test ücreti kullanıcıya aittir. TestoTavan ücret almaz, laboratuvarla iş ortaklığı yoktur.' },
-            { label: 'Yaklaşık maliyet', value: 'Tek başına Total T için ~400–700 TL; geniş hormon paneli için ~1.500–2.500 TL (özel laboratuvar ortalaması).' },
+            { label: 'Nerede yaptırılır', value: 'Herhangi bir özel laboratuvar veya devlet hastanesi; özel bir sevk gerekmez.' },
+            { label: 'Ücret', value: 'Laboratuvarın işlem ücreti kullanıcıya aittir. TestoTavan ücret almaz, laboratuvarla iş ortaklığı yoktur.' },
             { label: 'Sonuç süresi', value: 'Hormon paneli genelde aynı gün – 2 iş günü içinde çıkar.' },
             { label: 'SGK kapsamı', value: 'Hekim istemi varsa devlet hastanesinde SGK kapsamındadır.' }
         ],
-        note: 'Fiyatlar ' + 'Ekim 2025' + ' itibarıyla kullanıcı bildirimlerine dayanan ortalamadır; işlem öncesi laboratuvardan teyit edin.'
+        note: 'Güncel ücret ve randevu koşulları laboratuvara göre değişir; işlem öncesi kurumdan teyit edin.'
     };
 
     var api = {

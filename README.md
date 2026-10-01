@@ -38,6 +38,9 @@ We offer natural, safe, and alternative solutions to address the decline in test
 - **Numune koşulları ve lojistik** — sabah 07:00–10:00, açlık, biotin kesme; nerede/kaça/kaç günde bilgisi
 - **Anlık sonuç raporu** ve doğal destek önerileri
 - **Blog & Tarifler** — admin panelinden yönetilen içerikler (blog yazıları ve tarifler; kategori, malzeme listesi, kapak görseli)
+- **Dört dilde içerik (TR/EN/DE/JA)** — admin panelinde başlık, özet, içerik ve kategorinin yanı sıra
+  **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
+  çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, SEO + Open Graph meta etiketleri, sitemap
@@ -59,13 +62,14 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ├── index.html            # Ana SPA (analiz, blog, tarifler, hakkında)
 ├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
 ├── js/
-│   ├── validation.67cdc051.js # Laboratuvar çekirdeği: referans aralıkları, birimler,
+│   ├── validation.ac4aa46e.js # Laboratuvar çekirdeği: referans aralıkları, birimler,
 │   │                          #   doğrulama/uyarı, tahmin motoru, tahlil metni okuma
-│   ├── app.fa557d17.js        # Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
-│   └── content.291df0a1.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
+│   ├── app.d0684203.js        # Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
+│   └── content.e630d1c6.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
 ├── api/                  # Vercel serverless functions
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
+│   ├── _content-shape.js #   Ortak: içerik/çeviri alan temizleme, süre yerelleştirme (private)
 │   ├── login.js          #   POST /api/login — admin girişi (IP bazlı rate limit)
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
