@@ -8,6 +8,8 @@
 <meta name="description" content="Ücretsiz ve anlık testosteron seviyesi hesaplama aracı. Belirtilerinize göre hormon durumunuzu analiz edin ve doğal artırma yollarını öğrenin.">
 <meta name="keywords" content="testosteron ölçme, testosteron hesaplama, doğal testosteron artırma, hormon analizi,testotest">
 <meta name="theme-color" content="#0A0A0F">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
 <meta name="google-site-verification" content="ac-bJdohFXsUbq5bD8cVEip7Ryd_nEkaRhNenMmCi8M" />
 
 <meta name="google-site-verification" content="4SlBNFo5IoQK9Q3QIw99aX6nuEvpNMV2CRIrzGPMMqc" />
@@ -167,14 +169,10 @@
         .header-logo {
             width: 44px;
             height: 44px;
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
             border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 20px;
-            color: #000;
+            display: block;
+            object-fit: cover;
+            box-shadow: 0 0 18px rgba(245, 166, 35, .2);
         }
 
         .header h1 {
@@ -905,7 +903,7 @@
 
 <!-- Header -->
 <header class="header">
-    <div class="header-logo">T</div>
+    <img class="header-logo" src="assets/logo.png" alt="TestoTavan logosu" width="44" height="44">
     <div>
         <h1>TestoTavan</h1>
         <p data-i18n="tagline">Doğal Testosteron Optimizasyonu</p>
