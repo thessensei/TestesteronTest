@@ -2,7 +2,8 @@
  * Kan testi formundaki satırları tek kaynaktan (validation çekirdeği) üretir.
  * Referans aralığı / geçerli giriş aralığı / birim listesi değiştiğinde:
  *   node tools/build-analysis-pages.mjs
- * komutuyla index.html içindeki ANALYSIS-PAGES bloğu yeniden yazılır.
+ * komutuyla src/index.html içindeki ANALYSIS-PAGES bloğu yeniden yazılır.
+ * Ardından yayın dosyalarını tazelemek için: npm run build:assets
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,10 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Hash'li dosya adını bul (tek sürüm bulunur)
-const jsDir = path.join(root, 'js');
-const validationFile = fs.readdirSync(jsDir).find(f => /^(_)?validation.*\.js$/.test(f));
-const source = fs.readFileSync(path.join(jsDir, validationFile), 'utf8');
+// Okunabilir kaynak (js/ altındakiler üretilmiş dosyalardır)
+const source = fs.readFileSync(path.join(root, 'src', 'js', 'validation.js'), 'utf8');
 new Function(source)();
 const V = globalThis.TestoValidation;
 
@@ -57,14 +56,14 @@ const pages = template
     .replace('{{VITAMIN_ROWS}}', vitaminRows)
     .trimEnd();
 
-const indexPath = path.join(root, 'index.html');
+const indexPath = path.join(root, 'src', 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
 
 const START = '<!-- ANALYSIS-PAGES:START (tools/build-analysis-pages.mjs tarafından üretilir) -->';
 const END = '<!-- ANALYSIS-PAGES:END -->';
 
 if (!html.includes(START)) {
-    throw new Error('index.html içinde ANALYSIS-PAGES bloğu bulunamadı.');
+    throw new Error('src/index.html içinde ANALYSIS-PAGES bloğu bulunamadı.');
 }
 
 const before = html.slice(0, html.indexOf(START) + START.length);
@@ -72,4 +71,4 @@ const after = html.slice(html.indexOf(END));
 html = `${before}\n${pages}\n${after}`;
 
 fs.writeFileSync(indexPath, html);
-console.log(`ANALYSIS-PAGES bloğu güncellendi (${HORMONES.length + VITAMINS.length} parametre).`);
+console.log(`ANALYSIS-PAGES bloğu güncellendi (${HORMONES.length + VITAMINS.length} parametre). Şimdi: npm run build:assets`);

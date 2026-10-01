@@ -58,14 +58,24 @@ We offer natural, safe, and alternative solutions to address the decline in test
 
 ## 📁 Project Structure
 
+> ⚠️ `index.html` ve `js/*.js` **üretilmiş** dosyalardır. Düzenleme her zaman `src/` altında yapılır,
+> ardından `npm run build:assets` çalıştırılır (`npm test` güncel olup olmadığını denetler).
+
 ```
-├── index.html            # Ana SPA (analiz, blog, tarifler, hakkında)
+├── src/                  # KAYNAKLAR (burayı düzenleyin)
+│   ├── index.html        #   Ana SPA (analiz, blog, tarifler, hakkında) — okunabilir CSS ile
+│   └── js/
+│       ├── validation.js #   Laboratuvar çekirdeği: referans aralıkları, birimler,
+│       │                 #     doğrulama/uyarı, tahmin motoru, tahlil metni okuma
+│       ├── app.js        #   Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
+│       └── content.js    #   Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
+├── index.html            # ÜRETİLMİŞ: stil bloğu küçültülmüş, script yolları hash'li
+├── js/                   # ÜRETİLMİŞ: küçültülmüş + içerik hash'li paketler
+├── assets/
+│   ├── logo.webp         # Arayüzde kullanılan logo (256 px, ~6 KB)
+│   ├── logo.png          # Favicon / apple-touch-icon ve WebP desteklemeyen tarayıcı yedeği (192 px)
+│   └── logo-source.png   # 1024 px kaynak görsel (yayına gönderilmez, yeni boyut üretmek için)
 ├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
-├── js/
-│   ├── validation.ac4aa46e.js # Laboratuvar çekirdeği: referans aralıkları, birimler,
-│   │                          #   doğrulama/uyarı, tahmin motoru, tahlil metni okuma
-│   ├── app.d0684203.js        # Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
-│   └── content.e630d1c6.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
 ├── api/                  # Vercel serverless functions
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
@@ -76,10 +86,12 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD)
 │   └── media/            #   Görsel yükleme ve sunma (/api/media/<id>)
 ├── tools/
+│   ├── build.mjs                     # src/ → yayın dosyaları (CSS/JS küçültme + hash)
 │   ├── analysis-pages.template.html  # Semptom + kan testi ekranlarının şablonu
 │   └── build-analysis-pages.mjs      # Form satırlarını referans aralıklarından üretir
-├── tests/                # node --test testleri (validation, media)
-├── vercel.json           # Güvenlik başlıkları
+├── tests/                # node --test testleri (validation, content, media, build)
+├── vercel.json           # Güvenlik başlıkları + önbellek politikası
+├── .vercelignore         # Kaynak/test dosyaları yayına gönderilmez
 ├── sitemap.xml           # SEO site haritası
 └── package.json
 ```
@@ -96,6 +108,19 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ```bash
 npm install
 ```
+
+### Build (yayın dosyalarını üret)
+
+`src/index.html` veya `src/js/*.js` değiştiğinde:
+
+```bash
+npm run build:assets   # index.html + js/<ad>.<hash>.js dosyalarını yeniden üretir
+npm run check:assets   # üretilmiş dosyalar güncel mi? (CI/test için)
+```
+
+Derleme yalnızca iki şey yapar: `<style>` bloğunu küçültür ve JS paketlerini
+(değişken adlarını **koruyarak**) küçültüp içerik hash'iyle adlandırır. HTML gövdesi
+karakteri karakterine aynı kalır — `npm test` bunu da denetler.
 
 ### Environment Variables
 
@@ -125,12 +150,26 @@ npm test
 
 ## ⚡ PageSpeed yaklaşımı
 
-- İlk ekranda üçüncü taraf font veya ikon paketi çağrılmaz; sistem fontları ve yerel Unicode ikonları kullanılır.
+- **Logo 1,73 MB → 6 KB.** Arayüzdeki logo 256 px WebP (`assets/logo.webp`), favicon/apple-touch-icon
+  192 px PNG (`assets/logo.png`). WebP desteklemeyen tarayıcılar `onerror` ile PNG'ye düşer.
+  1024 px kaynak `assets/logo-source.png` olarak durur; yeni boyut üretmek için:
+  `convert assets/logo-source.png -resize 256x256 -strip -quality 92 assets/logo.webp`
+- İlk ekranda üçüncü taraf font veya ikon paketi çağrılmaz; sistem fontları ve satır içi SVG ikonlar kullanılır.
+- CSS satır içi kalır (ek istek yok) ve derlemede küçültülür; JS paketleri yorum/boşluk temizlenerek küçültülür.
 - Blog, içerik API çağrıları ve çeviri verisi yalnızca Blog sekmesi veya dil seçici kullanıldığında yüklenir.
-- `js/` altındaki sürümlenmiş (dosya adına hash eklenmiş) varlıklar Vercel üzerinde bir yıl `immutable` önbelleklenir. Bu dosyalardan birini değiştirirken dosya adını ve `index.html` içindeki referansını birlikte güncelleyin.
-- `npm test`, doğrulama mantığını, laboratuvar aralıklarını, tahmin motorunu ve kritik istemci giriş noktalarını denetler.
+- `js/` altındaki hash'li paketler Vercel'de bir yıl `immutable`, `assets/` bir gün + `stale-while-revalidate`
+  önbelleklenir. Hash'li adlar `npm run build:assets` tarafından otomatik üretilir; elle güncellemek gerekmez.
+- `npm test`, doğrulama mantığını, laboratuvar aralıklarını, tahmin motorunu, kritik istemci giriş noktalarını
+  ve **üretilmiş dosyaların kaynaklarla güncelliğini** denetler.
 - Kan testi formundaki satırlar elle yazılmaz; referans aralıkları değişince `node tools/build-analysis-pages.mjs`
-  komutu `index.html` içindeki `ANALYSIS-PAGES` bloğunu yeniden üretir.
+  komutu `src/index.html` içindeki `ANALYSIS-PAGES` bloğunu yeniden üretir (sonrasında `npm run build:assets`).
+
+| İlk yükleme (gzip) | Önce | Sonra |
+| --- | --- | --- |
+| index.html | 19,9 KB | 18,4 KB |
+| validation + app | 22,7 KB | 18,3 KB |
+| logo | 1.731 KB | 6 KB (+14 KB favicon) |
+| **Toplam** | **~1.774 KB** | **~57 KB** |
 
 ## 📡 API Overview
 

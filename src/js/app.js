@@ -1030,7 +1030,8 @@ window.addEventListener('testo-language-change', () => {
 // ========================================
 // OPSİYONEL MODÜLLER (blog + çeviri)
 // ========================================
-const OPTIONAL_FEATURES_URL = 'js/content.9282211a.js';
+// Derleme sırasında (tools/build.mjs) hash'li dosya adıyla değiştirilir.
+const OPTIONAL_FEATURES_URL = 'js/content.js';
 let optionalFeaturesPromise;
 function loadOptionalFeatures(){
     if (window.__testoOptionalReady) return Promise.resolve();

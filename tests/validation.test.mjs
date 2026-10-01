@@ -6,16 +6,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// validation.*.js klasik bir script; Node tarafında değerlendirip API'yi alıyoruz
-const jsDir = path.join(root, 'js');
-const validationFile = fs.readdirSync(jsDir).find(f => /^validation\..*\.js$/.test(f));
-const appFile = fs.readdirSync(jsDir).find(f => /^app\..*\.js$/.test(f));
-const source = fs.readFileSync(path.join(jsDir, validationFile), 'utf8');
+// validation.js klasik bir script; Node tarafında değerlendirip API'yi alıyoruz
+// (js/ altındaki dosyalar üretilmiştir, testler kaynakları okur)
+const srcJsDir = path.join(root, 'src', 'js');
+const source = fs.readFileSync(path.join(srcJsDir, 'validation.js'), 'utf8');
 new Function(source)();
 const V = globalThis.TestoValidation;
 
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const app = fs.readFileSync(path.join(jsDir, appFile), 'utf8');
+const html = fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8');
+const app = fs.readFileSync(path.join(srcJsDir, 'app.js'), 'utf8');
 
 // ---------------------------------------------------------------- temel API
 
@@ -286,8 +285,9 @@ test('index.html hata/uyarı stillerini ve scriptleri içerir', () => {
     assert.match(html, /\.form-input\.is-invalid/);
     assert.match(html, /\.form-error/);
     assert.match(html, /\.form-warning/);
-    assert.ok(html.includes(`<script defer src="js/${validationFile}"></script>`), 'validation script etiketi güncel değil');
-    assert.ok(html.includes(`<script defer src="js/${appFile}"></script>`), 'app script etiketi güncel değil');
+    // hash'li script yollarının doğruluğu tests/build.test.mjs içinde denetlenir
+    assert.match(html, /<script defer src="js\/validation[^"]*\.js"><\/script>/);
+    assert.match(html, /<script defer src="js\/app[^"]*\.js"><\/script>/);
 });
 
 test('fiziksel alanlar min/max ve inputmode özniteliklerine sahip', () => {
