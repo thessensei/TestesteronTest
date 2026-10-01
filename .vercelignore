@@ -1,0 +1,6 @@
+# Yayına gitmesi gerekmeyen geliştirme dosyaları
+# (js/ ve index.html bu kaynaklardan üretilir — bkz. tools/build.mjs)
+src/
+tools/
+tests/
+assets/logo-source.png

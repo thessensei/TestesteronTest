@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 import { cleanTranslations, localizeDuration } from '../api/_content-shape.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const jsDir = path.join(root, 'js');
-const contentFile = fs.readdirSync(jsDir).find(f => /^content\..*\.js$/.test(f));
-const contentSource = fs.readFileSync(path.join(jsDir, contentFile), 'utf8');
+// Testler her zaman okunabilir kaynakları denetler (js/ altındakiler üretilmiş dosyalardır)
+const srcJsDir = path.join(root, 'src', 'js');
+const contentSource = fs.readFileSync(path.join(srcJsDir, 'content.js'), 'utf8');
 const adminHtml = fs.readFileSync(path.join(root, 'admin', 'index.html'), 'utf8');
-const indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const indexHtml = fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8');
 
 // İçerik modülünü tarayıcı stub'larıyla Node'da değerlendirip API'sini alıyoruz
 function loadContentModule() {
@@ -160,7 +160,7 @@ test('analiz alt açıklamaları ve erişilebilir etiketleri tüm dillerde çevr
     assert.equal(api.i18n.de['Sağlık verisi açık rızası'], 'Einwilligung für Gesundheitsdaten');
     assert.equal(api.i18n.ja['Ana navigasyon'], 'メインナビゲーション');
 
-    const appSource = fs.readFileSync(path.join(jsDir, fs.readdirSync(jsDir).find(f => /^app\..*\.js$/.test(f))), 'utf8');
+    const appSource = fs.readFileSync(path.join(srcJsDir, 'app.js'), 'utf8');
     assert.match(appSource, /window\.addEventListener\('testo-language-change'/, 'dinamik alt metinler dil değişiminde yeniden çizilmeli');
     assert.match(appSource, /const T = text => window\.translateUi/, 'dinamik metinler ortak çeviri yardımcısını kullanmalı');
 });
@@ -202,7 +202,7 @@ test('tarifler API tarafında da en az bir malzeme gerektirir', () => {
 test('sitede fiyat bilgisi gösterilmez', () => {
     assert.ok(!/\bTL\b/.test(indexHtml), 'index.html fiyat içermemeli');
     assert.ok(!/maliyet/i.test(indexHtml), 'index.html maliyet satırı içermemeli');
-    const core = fs.readFileSync(path.join(jsDir, fs.readdirSync(jsDir).find(f => /^validation\./.test(f))), 'utf8');
+    const core = fs.readFileSync(path.join(srcJsDir, 'validation.js'), 'utf8');
     assert.ok(!/\bTL\b/.test(core), 'validation çekirdeği fiyat içermemeli');
     assert.match(indexHtml, /Sonuç süresi/, 'lojistik bilgisi korunmalı');
 });
