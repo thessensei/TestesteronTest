@@ -545,10 +545,15 @@
             margin-left: 6px;
         }
 
-        .badge-critical { background: rgba(255,82,82,.15); color: var(--red); }
-        .badge-high { background: rgba(245,166,35,.15); color: var(--gold); }
-        .badge-medium { background: rgba(68,138,255,.15); color: var(--blue); }
-        .badge-low { background: rgba(0,230,118,.15); color: var(--green); }
+        /* Ortak rozet dili: kırmızı > altın > mor > mavi > yeşil.
+           Aynı renkler hem tahmin kartlarında hem kan testi tablosunda kullanılır. */
+        .badge-critical   { background: rgba(255,82,82,.15);  color: var(--red); }
+        .badge-low        { background: rgba(245,166,35,.15); color: var(--gold); }
+        .badge-high       { background: rgba(179,136,255,.15); color: var(--purple); }
+        .badge-borderline { background: rgba(68,138,255,.15); color: var(--blue); }
+        .badge-normal     { background: rgba(0,230,118,.15);  color: var(--green); }
+        .badge-unknown    { background: rgba(128,128,150,.15); color: var(--text-secondary); }
+        .badge-medium     { background: rgba(68,138,255,.15); color: var(--blue); }
 
         /* ========== TOAST BİLDİRİMLER ========== */
         .toast-container {
@@ -647,6 +652,202 @@
         .ingredient-list li { padding:9px 10px; border-bottom:1px solid var(--border); font-size:12px; }
         @media (min-width:540px) { .content-modal { align-items:center; } .modal-sheet { border-radius:24px; } }
 
+        /* ========== ADIM GÖSTERGESİ ========== */
+        .stepper { display:flex; align-items:center; gap:6px; margin:4px 0 12px; }
+        .step { display:flex; align-items:center; gap:7px; color:var(--text-secondary); font-size:11px; font-weight:700; }
+        .step-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+                    font-size:10px; font-weight:800; background:var(--input); border:1px solid var(--border); color:var(--text-secondary); }
+        .step.active .step-dot { background:var(--gold); border-color:var(--gold); color:#08080c; }
+        .step.active { color:var(--text-primary); }
+        .step.done .step-dot { background:rgba(0,230,118,.14); border-color:rgba(0,230,118,.35); color:var(--green); }
+        .step.done { color:var(--green); }
+        .step-dot .ic { width:12px; height:12px; }
+        .step-line { flex:1; height:1px; background:var(--border); }
+
+        /* ========== İLERLEME YÜZDESİ ========== */
+        .progress-wrap { margin-bottom:16px; }
+        .progress-head { display:flex; justify-content:space-between; align-items:baseline; font-size:11px;
+                         color:var(--text-secondary); font-weight:700; margin-bottom:6px; }
+        .progress-pct { color:var(--gold); font-weight:900; }
+        .progress-track { height:6px; border-radius:20px; background:var(--input); overflow:hidden; }
+        .progress-fill { height:100%; border-radius:20px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); transition:width .5s ease; }
+
+        /* ========== SEMPTOM SEÇİMİ ========== */
+        .symptom-grid { display:flex; flex-wrap:wrap; gap:8px; }
+        .symptom-chip { display:inline-flex; align-items:center; gap:7px; padding:10px 12px; border-radius:999px;
+                        border:1px solid var(--border); background:var(--input); color:var(--text-secondary);
+                        font-size:11.5px; font-weight:600; cursor:pointer; transition:.2s; }
+        .symptom-chip input { appearance:none; width:14px; height:14px; border-radius:5px; border:1.5px solid rgba(255,255,255,.2);
+                              background:transparent; flex:none; position:relative; cursor:pointer; }
+        .symptom-chip input:checked { background:var(--gold); border-color:var(--gold); }
+        .symptom-chip input:checked::after { content:""; position:absolute; left:4px; top:1px; width:4px; height:8px;
+                                             border:solid #08080c; border-width:0 2px 2px 0; transform:rotate(42deg); }
+        .symptom-chip:has(input:checked) { border-color:var(--gold); color:var(--text-primary); background:rgba(245,166,35,.07); }
+        .symptom-chip input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+        .hint-line { font-size:11px; color:var(--text-secondary); line-height:1.6; margin-top:12px; }
+
+        /* ========== TAHMİN KARTI (nokta değer + güven aralığı) ========== */
+        .estimate-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--status,var(--gold));
+                         border-radius:var(--radius); padding:20px; margin-bottom:14px; }
+        .estimate-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+        .estimate-title { font-size:15px; font-weight:800; margin-top:2px; }
+        .estimate-value { font-size:40px; font-weight:900; line-height:1.1; margin:10px 0 2px; color:var(--status,var(--gold)); }
+        .estimate-value .unit, .lab-card-value .unit, .lab-table .unit { font-size:13px; font-weight:700; color:var(--text-secondary); margin-left:5px; }
+        .estimate-ci { font-size:11.5px; color:var(--text-secondary); margin-bottom:14px; }
+        .estimate-note { font-size:10.5px; color:var(--text-secondary); line-height:1.6; margin-top:12px; }
+        .estimate-note .ic { color:var(--blue); }
+
+        .ci-track { position:relative; height:14px; background:var(--input); border-radius:20px; margin-top:6px; overflow:hidden; }
+        .ci-track.slim { height:10px; }
+        .ci-ref { position:absolute; top:0; bottom:0; background:rgba(0,230,118,.14); border-left:1px dashed rgba(0,230,118,.45);
+                  border-right:1px dashed rgba(0,230,118,.45); }
+        .ci-band { position:absolute; top:3px; bottom:3px; border-radius:20px; background:var(--status,var(--gold)); opacity:.45; }
+        .ci-track.slim .ci-band { top:2px; bottom:2px; }
+        .ci-point { position:absolute; top:50%; width:3px; height:18px; margin-left:-1.5px; transform:translateY(-50%);
+                    background:var(--status,var(--gold)); border-radius:2px; box-shadow:0 0 0 2px rgba(10,10,15,.9); }
+        .ci-scale { display:flex; justify-content:space-between; font-size:9px; color:var(--text-secondary); margin-top:6px; }
+        .ci-legend { display:flex; flex-wrap:wrap; gap:12px; font-size:10px; color:var(--text-secondary); margin-top:8px; }
+        .ci-legend .dot { display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+        .ci-legend .dot.ref { background:rgba(0,230,118,.4); }
+        .ci-legend .dot.band { background:var(--status,var(--gold)); opacity:.6; }
+
+        /* ========== BÖLÜM BAŞLIĞI ========== */
+        .section-title { margin:22px 0 10px; }
+        .section-title h3 { font-size:14px; font-weight:800; }
+        .section-title p { font-size:10.5px; color:var(--text-secondary); margin-top:3px; }
+
+        /* ========== DEĞER KARTI ========== */
+        .lab-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--status,var(--gold));
+                    border-radius:var(--radius-sm); padding:16px; margin-bottom:10px; }
+        .lab-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+        .lab-card-title { font-size:13px; font-weight:800; line-height:1.4; }
+        .lab-card-sub { font-size:10px; color:var(--text-secondary); margin-top:3px; }
+        .lab-card-value { margin:10px 0 4px; }
+        .lab-card-value strong { font-size:24px; font-weight:900; color:var(--status,var(--gold)); }
+        .lab-card-ci { font-size:10px; color:var(--text-secondary); margin-left:8px; }
+        .lab-card-ref { font-size:10.5px; color:var(--text-secondary); margin-top:8px; }
+        .lab-card-ref b { color:var(--text-primary); }
+        .lab-card-explain { font-size:11px; color:var(--text-secondary); line-height:1.6; margin-top:6px; }
+
+        /* ========== BULANIK PLAN ÖNİZLEMESİ ========== */
+        .preview-card { position:relative; overflow:hidden; border-radius:var(--radius); border:1px solid var(--border);
+                        background:var(--card); padding:18px; margin:16px 0; }
+        .preview-blur { filter:blur(5px); opacity:.55; pointer-events:none; }
+        .preview-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .pr-ic { width:30px; height:30px; border-radius:9px; background:rgba(245,166,35,.25); flex:none; }
+        .pr-bar { height:9px; border-radius:6px; background:rgba(255,255,255,.14); }
+        .pr-bar.w55 { width:55%; } .pr-bar.w70 { width:70%; } .pr-bar.w80 { width:80%; } .pr-bar.w90 { width:90%; }
+        .pr-chip { width:46px; height:14px; border-radius:6px; background:rgba(0,230,118,.22); margin-left:auto; flex:none; }
+        .preview-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+                           text-align:center; padding:16px; background:linear-gradient(180deg,rgba(10,10,15,.55),rgba(10,10,15,.85)); }
+        .preview-lock { color:var(--gold); font-size:22px; line-height:1; margin-bottom:8px; }
+        .preview-lock .ic { width:22px; height:22px; }
+        .preview-title { font-size:13px; font-weight:800; }
+        .preview-sub { font-size:10.5px; color:var(--text-secondary); margin-top:4px; max-width:260px; line-height:1.6; }
+
+        /* ========== CTA ========== */
+        .cta-block { margin-top:16px; }
+        .btn-ghost { width:100%; padding:13px; background:transparent; border:1px solid rgba(255,255,255,.1);
+                     border-radius:var(--radius-sm); color:var(--text-secondary); font-size:12.5px; font-weight:700;
+                     cursor:pointer; margin-top:9px; transition:.25s; font-family:inherit; }
+        .btn-ghost:hover { color:var(--text-primary); border-color:rgba(255,255,255,.22); }
+        .trust-line { text-align:center; font-size:10.5px; color:var(--text-secondary); margin-top:10px; }
+        .trust-line .ic { color:var(--green); margin-right:3px; }
+        .link-btn { background:none; border:0; color:var(--gold); font:700 12px inherit; cursor:pointer;
+                    text-decoration:underline; text-underline-offset:3px; padding:6px 0; font-family:inherit; }
+
+        /* ========== KAN TESTİ FORMU ========== */
+        .segmented { display:flex; gap:8px; }
+        .segmented button { flex:1; padding:11px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+                            background:var(--input); color:var(--text-secondary); font:700 11.5px inherit; cursor:pointer; font-family:inherit; }
+        .segmented button.active { border-color:var(--gold); background:rgba(245,166,35,.08); color:var(--text-primary); }
+
+        .lab-row { padding:13px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+        .lab-row:last-child { border-bottom:0; }
+        .lab-row.autofilled { background:rgba(0,230,118,.03); border-radius:10px; padding-left:8px; padding-right:8px; }
+        .lab-row-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:7px; }
+        .lab-name { font-size:12px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px; }
+        .lab-accept { font-size:9.5px; color:var(--text-secondary); }
+        .chip { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 7px; border-radius:5px; }
+        .chip-req { background:rgba(245,166,35,.15); color:var(--gold); }
+        .chip-opt { background:rgba(128,128,150,.14); color:var(--text-secondary); }
+        .lab-inputs { display:flex; gap:8px; }
+        .lab-inputs .form-input { padding:12px 14px; }
+        .unit-select { width:118px; flex:none; font-size:12px; padding-right:28px !important; }
+        .lab-hint { font-size:10px; color:var(--text-secondary); line-height:1.55; margin-top:6px; }
+        .lab-hint b { color:var(--text-primary); }
+
+        .form-input.is-warning, .form-input.is-warning:focus { border-color:var(--gold); box-shadow:0 0 0 4px rgba(245,166,35,.1); }
+        .form-warning { display:none; margin-top:6px; font-size:10px; font-weight:600; line-height:1.5; color:var(--gold); }
+        .form-warning.visible { display:block; }
+
+        .upload-drop { border:1.5px dashed rgba(245,166,35,.35); border-radius:var(--radius-sm); padding:18px; text-align:center;
+                       background:rgba(245,166,35,.03); }
+        .upload-drop .ic { width:26px; height:26px; color:var(--gold); }
+        .upload-title { font-size:13px; font-weight:800; margin:8px 0 4px; }
+        .upload-sub { font-size:10.5px; color:var(--text-secondary); line-height:1.6; margin-bottom:12px; }
+        .upload-status { display:none; margin-top:10px; font-size:10.5px; line-height:1.6; padding:10px 12px; border-radius:10px; }
+        .upload-status.ok { display:block; background:rgba(0,230,118,.07); color:var(--green); }
+        .upload-status.warn { display:block; background:rgba(245,166,35,.07); color:var(--gold); }
+        .upload-status.busy { display:block; background:rgba(68,138,255,.07); color:var(--blue); }
+        .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+        .consent-box { display:flex; gap:10px; align-items:flex-start; padding:14px; border-radius:var(--radius-sm);
+                       background:var(--input); border:1px solid var(--border); }
+        .consent-box input { appearance:none; width:18px; height:18px; border-radius:6px; border:1.5px solid rgba(255,255,255,.22);
+                             flex:none; margin-top:1px; position:relative; cursor:pointer; }
+        .consent-box input:checked { background:var(--gold); border-color:var(--gold); }
+        .consent-box input:checked::after { content:""; position:absolute; left:6px; top:2px; width:4px; height:9px;
+                                            border:solid #08080c; border-width:0 2px 2px 0; transform:rotate(42deg); }
+        .consent-box label { font-size:11px; color:var(--text-secondary); line-height:1.65; cursor:pointer; }
+        .consent-error { display:none; margin-top:8px; font-size:10.5px; font-weight:700; color:var(--red); }
+        .consent-error.visible { display:block; }
+
+        .plain-list { list-style:none; font-size:11px; color:var(--text-secondary); line-height:1.75; }
+        .plain-list li { padding-left:14px; position:relative; margin-bottom:6px; }
+        .plain-list li::before { content:""; position:absolute; left:0; top:8px; width:5px; height:5px; border-radius:50%; background:var(--gold); }
+        .plain-list b { color:var(--text-primary); }
+        .muted { font-size:10px; color:var(--text-secondary); line-height:1.65; margin-top:10px; opacity:.85; }
+        .warn-card { border-color:rgba(245,166,35,.22); }
+        .danger-card { border-color:rgba(255,82,82,.18); background:rgba(255,82,82,.02); }
+
+        details.info-accordion { border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--input); padding:12px 14px; }
+        details.info-accordion summary { font-size:12px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; }
+        details.info-accordion summary::-webkit-details-marker { display:none; }
+        details.info-accordion summary .ic { color:var(--gold); }
+        details.info-accordion[open] summary { margin-bottom:10px; }
+
+        /* ========== SKOR KARTI ========== */
+        .score-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:14px; }
+        .score-head { display:flex; justify-content:space-between; align-items:flex-start; }
+        .score-head h3 { font-size:15px; font-weight:800; margin-top:2px; }
+        .info-btn { width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--input);
+                    color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .info-btn:hover { color:var(--gold); border-color:rgba(245,166,35,.3); }
+        .score-value { font-size:38px; font-weight:900; color:var(--gold); margin:10px 0 8px; }
+        .score-track { height:8px; border-radius:20px; background:var(--input); overflow:hidden; }
+        .score-fill { height:100%; border-radius:20px; background:linear-gradient(90deg,var(--red),var(--gold),var(--green)); }
+        .score-sub { font-size:10.5px; color:var(--text-secondary); margin-top:8px; }
+        .tooltip-panel { margin-top:12px; padding:13px; border-radius:12px; background:var(--input); border:1px solid var(--border);
+                         font-size:10.5px; color:var(--text-secondary); line-height:1.7; }
+        .score-breakdown { list-style:none; margin-top:10px; }
+        .score-breakdown li { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:5px 0;
+                              border-top:1px solid rgba(255,255,255,.04); }
+        .compare-line { margin-top:12px; font-size:11px; color:var(--text-secondary); line-height:1.6; }
+        .compare-line b { color:var(--text-primary); }
+
+        /* ========== SONUÇ TABLOSU ========== */
+        .table-wrap { overflow-x:auto; }
+        .lab-table { width:100%; border-collapse:collapse; font-size:11px; }
+        .lab-table th, .lab-table td { padding:9px 8px; text-align:left; border-bottom:1px solid rgba(255,255,255,.05); }
+        .lab-table thead th { font-size:9px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); font-weight:800; }
+        .lab-table tbody th { font-weight:700; border-left:2px solid var(--status,transparent); padding-left:10px; }
+        .lab-table .num { font-variant-numeric:tabular-nums; font-weight:700; }
+        .lab-table .ref { color:var(--text-secondary); font-weight:600; }
+
+        .result-body { flex:1; }
+        .result-item { border-left:3px solid var(--status,var(--gold)); }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: .01ms !important;
@@ -739,17 +940,17 @@
             </div>
         </div>
         <button class="btn-primary" style="margin-bottom: 10px" onclick="changePage('physicalPage')">
-            <svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg> &nbsp;Fiziksel Analiz
+            <svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg> &nbsp;Semptom Analizi
         </button>
         <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5">
-            Yaş, kilo ve semptomlarınıza göre tahmini takviye önerisi.
+            Semptomlarınızdan tahmini bir değer ve güven aralığı üretiriz — 2 dakika sürer.
         </p>
 
-        <button class="btn-primary" onclick="changePage('bloodPage')">
-            <svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg> &nbsp;Kan Testi Analizi
+        <button class="btn-ghost" onclick="changePage('bloodPage')">
+            <svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg> &nbsp;Elimde kan testi var, doğrudan doğrulayayım
         </button>
         <p style="font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5">
-            Gerçek kan değerlerinize göre kişiselleştirilmiş reçete.
+            Tahlil PDF’inizi yükleyin; değerleri okuyup referans aralıklarıyla karşılaştıralım.
         </p>
     </div>
 
@@ -764,23 +965,28 @@
             </div>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
-            Doğru takviye, beslenme ve yaşam tarzı değişiklikleriyle Testosteronseviyesi
-            doğal yollarla <b>%30-50 artırılabilir</b> — hormon tedavisi olmadan.
+            Uyku, kilo, antrenman ve eksik mikro besinlerin düzeltilmesi hormonal dengeyi destekler.
+            Kişiden kişiye değiştiği için size sayısal bir artış vaadi vermiyoruz; önce ölçer, sonra kontrol ederiz.
         </p>
     </div>
 </div>
 
-<!-- FİZİKSEL ANALİZ SAYFASI -->
+<!-- ANALYSIS-PAGES:START (tools/build-analysis-pages.mjs tarafından üretilir) -->
+<!-- FİZİKSEL (SEMPTOM) ANALİZ SAYFASI -->
 <div class="page" id="physicalPage">
-    <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
+    <div style="padding: 20px 0 12px; display: flex; align-items: center; gap: 10px">
         <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
             <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
         </button>
         <div>
-            <h2 style="font-size: 20px; font-weight: 900">Fiziksel Analiz</h2>
-            <p style="font-size: 11px; color: var(--text-secondary)">Semptom bazlı öneri</p>
+            <h2 style="font-size: 20px; font-weight: 900">Semptom Analizi</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Tahmini hormon değerleriniz</p>
         </div>
     </div>
+
+    <!-- Adım göstergesi: Semptom → Tahmin → Doğrulama -->
+    <div class="stepper" data-stepper aria-label="Analiz adımları"></div>
+    <div class="progress-wrap" data-progress role="status" aria-live="polite"></div>
 
     <div class="card">
         <div class="card-header">
@@ -789,25 +995,25 @@
             </div>
             <div>
                 <div class="card-title">Temel Bilgiler</div>
-                <div class="card-subtitle">Fiziksel verileriniz</div>
+                <div class="card-subtitle">Tahmin modelinin girdileri</div>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="inputAge">Yaş</label>
-                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="1" inputmode="decimal">
+                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="16" max="100" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label" for="inputHeight">Boy (cm)</label>
-                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="1" inputmode="decimal">
+                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="120" max="240" inputmode="decimal">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="inputWeight">Kilo (kg)</label>
-                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="1" inputmode="decimal">
+                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="35" max="300" inputmode="decimal">
             </div>
             <div class="form-group">
                 <label class="form-label" for="inputActivity">Aktivite Seviyesi</label>
@@ -819,101 +1025,390 @@
                 </select>
             </div>
         </div>
-    </div>
 
-    <button class="btn-primary" onclick="analyzePhysical()">
-        <svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg> &nbsp;ANALİZ BAŞLAT
-    </button>
-
-    <div class="result-panel" id="physicalResult"></div>
-</div>
-
-<!-- KAN TESTİ ANALİZ SAYFASI -->
-<div class="page" id="bloodPage">
-    <div style="padding: 20px 0 16px; display: flex; align-items: center; gap: 10px">
-        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
-            <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
-        </button>
-        <div>
-            <h2 style="font-size: 20px; font-weight: 900">Kan Testi Analizi</h2>
-            <p style="font-size: 11px; color: var(--text-secondary)">Bilimsel veri bazlı reçete</p>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="inputSleep">Ortalama Uyku</label>
+                <select class="form-input" id="inputSleep">
+                    <option value="5">5 saat ve altı</option>
+                    <option value="6">6 saat</option>
+                    <option value="7" selected>7 saat</option>
+                    <option value="8">8 saat ve üzeri</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="inputStress">Stres Düzeyi</label>
+                <select class="form-input" id="inputStress">
+                    <option value="1">Düşük</option>
+                    <option value="2" selected>Orta</option>
+                    <option value="3">Yüksek</option>
+                </select>
+            </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
             <div class="card-icon icon-red">
-                <svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg>
+                <svg class="ic" aria-hidden="true"><use href="#i-activity"></use></svg>
             </div>
             <div>
-                <div class="card-title">Hormon Paneli</div>
-                <div class="card-subtitle">Sadece bildiğiniz değerleri girin</div>
+                <div class="card-title">Semptomlarınız</div>
+                <div class="card-subtitle">Yaşadıklarınızı işaretleyin</div>
+            </div>
+        </div>
+        <div class="symptom-grid" id="symptomGrid"></div>
+        <p class="hint-line" id="symptomCount" role="status" aria-live="polite"></p>
+    </div>
+
+    <button class="btn-primary" onclick="analyzePhysical()">
+        <svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg> &nbsp;TAHMİNİ HESAPLA
+    </button>
+
+    <div class="result-panel" id="physicalResult"></div>
+</div>
+
+<!-- KAN TESTİ (DOĞRULAMA) SAYFASI -->
+<div class="page" id="bloodPage">
+    <div style="padding: 20px 0 12px; display: flex; align-items: center; gap: 10px">
+        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+        </button>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 900">Kan Testi ile Doğrulama</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Gerçek değerlerinizle kesin rapor</p>
+        </div>
+    </div>
+
+    <div class="stepper" data-stepper aria-label="Analiz adımları"></div>
+    <div class="progress-wrap" data-progress role="status" aria-live="polite"></div>
+
+    <!-- Ölçüm tipi: başlangıç mı, kontrol mü? -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-purple">
+                <svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Bu ölçüm hangisi?</div>
+                <div class="card-subtitle">Raporda böyle etiketlenecek</div>
+            </div>
+        </div>
+        <div class="segmented" role="group" aria-label="Ölçüm tipi">
+            <button type="button" data-measure="baseline" class="active" aria-pressed="true" onclick="setMeasurementType('baseline')">Başlangıç ölçümü</button>
+            <button type="button" data-measure="followup" aria-pressed="false" onclick="setMeasurementType('followup')">Kontrol (takip) ölçümü</button>
+        </div>
+        <p class="hint-line" id="measurementNote"></p>
+    </div>
+
+    <!-- Numune koşulları -->
+    <div class="card">
+        <details class="info-accordion" open>
+            <summary><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg> Kan vermeden önce: numune koşulları</summary>
+            <ul class="plain-list">
+                <li>Kan <b>sabah 07:00–10:00</b> arasında verilmelidir; testosteron gün içinde %30’a kadar düşer.</li>
+                <li><b>8–12 saat açlık</b>; yalnızca su içebilirsiniz.</li>
+                <li><b>Biotin (B7)</b> içeren takviyeleri ölçümden en az <b>72 saat</b> önce bırakın — hormon sonuçlarını yanlış gösterir.</li>
+                <li>Son <b>48 saatte</b> ağır antrenman ve alkol olmasın.</li>
+                <li>Ateş/enfeksiyon gibi akut hastalık döneminde ölçümü erteleyin.</li>
+            </ul>
+            <p class="muted">Bu koşullar sağlanmadan verilen kan, düşük çıkan bir sonucu yanlış yorumlamamıza yol açar.</p>
+        </details>
+    </div>
+
+    <!-- Ana aksiyon: tahlil yükleme -->
+    <div class="card" id="uploadCard">
+        <div class="card-header">
+            <div class="card-icon icon-gold">
+                <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Tahlilinizi yükleyin, biz okuyalım</div>
+                <div class="card-subtitle">En hızlı yol — elle giriş gerekmez</div>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputTesto">Total Testosteron(ng/dL)</label>
-                <input type="number" class="form-input" id="inputTesto" placeholder="250-1000" min="1" inputmode="decimal">
+        <div class="upload-drop">
+            <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
+            <p class="upload-title">Tahlil PDF’i veya fotoğrafı</p>
+            <p class="upload-sub">PDF’teki değerleri tarayıcınızda okuyup forma yazıyoruz. Dosya sunucuya gönderilmez.</p>
+            <label class="btn-primary" for="reportFile" style="display:block; text-align:center; cursor:pointer">
+                <svg class="ic" aria-hidden="true"><use href="#i-arrow-up"></use></svg> &nbsp;DOSYA SEÇ
+            </label>
+            <input class="visually-hidden" type="file" id="reportFile" accept="application/pdf,image/*,text/plain" onchange="handleReportFile(this)">
+        </div>
+
+        <div class="upload-status" id="uploadStatus" role="status" aria-live="polite"></div>
+
+        <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:2px">
+            <button type="button" class="link-btn" onclick="togglePasteBox()">Tahlil metnini yapıştırayım</button>
+            <button type="button" class="link-btn" id="manualToggle" onclick="toggleManualEntry()">Değerleri elle gireceğim</button>
+        </div>
+
+        <div id="pasteBox" hidden style="margin-top:12px">
+            <label class="form-label" for="pasteText">Tahlil metni</label>
+            <textarea class="form-input" id="pasteText" rows="5" placeholder="Örn: Total Testosteron 480 ng/dL&#10;SHBG 32 nmol/L"></textarea>
+            <button type="button" class="btn-secondary" style="margin-top:8px" onclick="parsePastedText()">Metinden değerleri oku</button>
+        </div>
+    </div>
+
+    <!-- Elle giriş -->
+    <div id="manualEntry" hidden>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-red">
+                    <svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Hormon Paneli</div>
+                    <div class="card-subtitle">Yalnızca Total Testosteron zorunlu</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="inputFreeTesto">Serbest Testo (pg/mL)</label>
-                <input type="number" class="form-input" id="inputFreeTesto" placeholder="5-25" min="1" inputmode="decimal">
+            <div class="lab-row" data-marker="inputTesto">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputTesto">Total Testosteron <span class="chip chip-req">Zorunlu</span></label>
+                    <span class="lab-accept" id="accept-inputTesto">Geçerli giriş aralığı: 20–4.000 ng/dL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputTesto" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 480 · 270–1.080" data-marker-key="totalT">
+                    <select class="form-input unit-select" id="unit-inputTesto" aria-label="Total Testosteron birimi"
+                            onchange="onUnitChange('inputTesto')"><option value="ng/dL">ng/dL</option><option value="nmol/L">nmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputTesto"><b>Lab normal aralığı: 270–1.080 ng/dL</b> — Total testosteron bağlı + serbest hormonun toplamıdır; 270 ng/dL altı tekrar eden ölçümlerde klinik düşüklük sayılır.</div>
+                <div class="form-error" id="error-inputTesto" role="alert"></div>
+                <div class="form-warning" id="warn-inputTesto" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputFreeTesto">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputFreeTesto">Serbest Testosteron <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputFreeTesto">Geçerli giriş aralığı: 1–1.000 pg/mL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputFreeTesto" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 95 · 47–244" data-marker-key="freeT">
+                    <select class="form-input unit-select" id="unit-inputFreeTesto" aria-label="Serbest Testosteron birimi"
+                            onchange="onUnitChange('inputFreeTesto')"><option value="pg/mL">pg/mL</option><option value="ng/dL">ng/dL</option><option value="pmol/L">pmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputFreeTesto"><b>Lab normal aralığı: 47–244 pg/mL</b> — Hücreye gerçekten giren kısımdır; şikâyetlerle total testosterondan daha iyi örtüşür.</div>
+                <div class="form-error" id="error-inputFreeTesto" role="alert"></div>
+                <div class="form-warning" id="warn-inputFreeTesto" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputSHBG">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputSHBG">SHBG <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputSHBG">Geçerli giriş aralığı: 1–250 nmol/L</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputSHBG" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 32 · 18–54" data-marker-key="shbg">
+                    <select class="form-input unit-select" id="unit-inputSHBG" aria-label="SHBG birimi"
+                            onchange="onUnitChange('inputSHBG')"><option value="nmol/L">nmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputSHBG"><b>Lab normal aralığı: 18–54 nmol/L</b> — SHBG yüksekse testosteron bu proteine bağlanır ve serbest testosteron düşer.</div>
+                <div class="form-error" id="error-inputSHBG" role="alert"></div>
+                <div class="form-warning" id="warn-inputSHBG" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputLH">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputLH">LH <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputLH">Geçerli giriş aralığı: 0,1–200 IU/L</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputLH" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 4,2 · 1,5–9,3" data-marker-key="lh">
+                    <select class="form-input unit-select" id="unit-inputLH" aria-label="LH birimi"
+                            onchange="onUnitChange('inputLH')"><option value="IU/L">IU/L</option><option value="mIU/mL">mIU/mL</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputLH"><b>Lab normal aralığı: 1,5–9,3 IU/L</b> — LH beyinden testise giden sinyaldir; düşük testosteronla birlikte yüksekse sorun testiste, düşükse hipofizdedir.</div>
+                <div class="form-error" id="error-inputLH" role="alert"></div>
+                <div class="form-warning" id="warn-inputLH" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputFSH">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputFSH">FSH <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputFSH">Geçerli giriş aralığı: 0,1–200 IU/L</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputFSH" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 5,1 · 1,4–18,1" data-marker-key="fsh">
+                    <select class="form-input unit-select" id="unit-inputFSH" aria-label="FSH birimi"
+                            onchange="onUnitChange('inputFSH')"><option value="IU/L">IU/L</option><option value="mIU/mL">mIU/mL</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputFSH"><b>Lab normal aralığı: 1,4–18,1 IU/L</b> — FSH sperm üretimini yönetir; LH ile birlikte değerlendirilince düşüklüğün kaynağını ayırır.</div>
+                <div class="form-error" id="error-inputFSH" role="alert"></div>
+                <div class="form-warning" id="warn-inputFSH" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputE2">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputE2">Estradiol (E2) <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputE2">Geçerli giriş aralığı: 1–1.000 pg/mL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputE2" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 28 · 11–62" data-marker-key="estradiol">
+                    <select class="form-input unit-select" id="unit-inputE2" aria-label="Estradiol (E2) birimi"
+                            onchange="onUnitChange('inputE2')"><option value="pg/mL">pg/mL</option><option value="pmol/L">pmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputE2"><b>Lab normal aralığı: 11–62 pg/mL</b> — Testosteronun bir kısmı yağ dokusunda estradiole dönüşür; yüksek E2 libido ve göğüs hassasiyetiyle ilişkilidir.</div>
+                <div class="form-error" id="error-inputE2" role="alert"></div>
+                <div class="form-warning" id="warn-inputE2" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputCortisol">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputCortisol">Kortizol (sabah) <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputCortisol">Geçerli giriş aralığı: 0,5–200 µg/dL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputCortisol" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 14 · 6–23" data-marker-key="cortisol">
+                    <select class="form-input unit-select" id="unit-inputCortisol" aria-label="Kortizol (sabah) birimi"
+                            onchange="onUnitChange('inputCortisol')"><option value="µg/dL">µg/dL</option><option value="nmol/L">nmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputCortisol"><b>Lab normal aralığı: 6–23 µg/dL</b> — Kronik yüksek kortizol testosteron üretimini baskılar; sabah 07–10 arası ölçülmelidir.</div>
+                <div class="form-error" id="error-inputCortisol" role="alert"></div>
+                <div class="form-warning" id="warn-inputCortisol" role="status"></div>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputCortisol">Kortizol (µg/dL)</label>
-                <input type="number" step="0.1" class="form-input" id="inputCortisol" placeholder="5-25" min="0.1" inputmode="decimal">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-blue">
+                    <svg class="ic" aria-hidden="true"><use href="#i-pill"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Vitamin & Mineral</div>
+                    <div class="card-subtitle">Hepsi opsiyonel</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="inputSHBG">SHBG (nmol/L)</label>
-                <input type="number" class="form-input" id="inputSHBG" placeholder="10-70" min="1" inputmode="decimal">
+            <div class="lab-row" data-marker="inputFerritin">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputFerritin">Ferritin <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputFerritin">Geçerli giriş aralığı: 1–5.000 ng/mL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputFerritin" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 120 · 24–336" data-marker-key="ferritin">
+                    <select class="form-input unit-select" id="unit-inputFerritin" aria-label="Ferritin birimi"
+                            onchange="onUnitChange('inputFerritin')"><option value="ng/mL">ng/mL</option><option value="µg/L">µg/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputFerritin"><b>Lab normal aralığı: 24–336 ng/mL</b> — Demir deposudur; 30 ng/mL altında yorgunluk ve toparlanamama testosterondan bağımsız olarak ortaya çıkar.</div>
+                <div class="form-error" id="error-inputFerritin" role="alert"></div>
+                <div class="form-warning" id="warn-inputFerritin" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputVitD">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputVitD">D Vitamini (25-OH) <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputVitD">Geçerli giriş aralığı: 1–400 ng/mL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputVitD" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 34 · 30–100" data-marker-key="vitD">
+                    <select class="form-input unit-select" id="unit-inputVitD" aria-label="D Vitamini (25-OH) birimi"
+                            onchange="onUnitChange('inputVitD')"><option value="ng/mL">ng/mL</option><option value="nmol/L">nmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputVitD"><b>Lab normal aralığı: 30–100 ng/mL</b> — D vitamini testosteron sentezinde kofaktördür; 30 ng/mL altı yetersiz kabul edilir.</div>
+                <div class="form-error" id="error-inputVitD" role="alert"></div>
+                <div class="form-warning" id="warn-inputVitD" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputB12">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputB12">B12 <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputB12">Geçerli giriş aralığı: 20–5.000 pg/mL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputB12" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 420 · 200–900" data-marker-key="b12">
+                    <select class="form-input unit-select" id="unit-inputB12" aria-label="B12 birimi"
+                            onchange="onUnitChange('inputB12')"><option value="pg/mL">pg/mL</option><option value="pmol/L">pmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputB12"><b>Lab normal aralığı: 200–900 pg/mL</b> — Düşük B12 enerji ve odak kaybını testosterondan bağımsız olarak taklit eder.</div>
+                <div class="form-error" id="error-inputB12" role="alert"></div>
+                <div class="form-warning" id="warn-inputB12" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputZinc">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputZinc">Çinko <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputZinc">Geçerli giriş aralığı: 5–500 µg/dL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputZinc" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 92 · 70–120" data-marker-key="zinc">
+                    <select class="form-input unit-select" id="unit-inputZinc" aria-label="Çinko birimi"
+                            onchange="onUnitChange('inputZinc')"><option value="µg/dL">µg/dL</option><option value="µmol/L">µmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputZinc"><b>Lab normal aralığı: 70–120 µg/dL</b> — Çinko eksikliği LH sinyalini ve testosteron sentezini doğrudan zayıflatır.</div>
+                <div class="form-error" id="error-inputZinc" role="alert"></div>
+                <div class="form-warning" id="warn-inputZinc" role="status"></div>
+            </div>
+            <div class="lab-row" data-marker="inputMg">
+                <div class="lab-row-head">
+                    <label class="lab-name" for="inputMg">Magnezyum <span class="chip chip-opt">Opsiyonel</span></label>
+                    <span class="lab-accept" id="accept-inputMg">Geçerli giriş aralığı: 0,2–10 mg/dL</span>
+                </div>
+                <div class="lab-inputs">
+                    <input type="text" class="form-input" id="inputMg" inputmode="decimal" autocomplete="off"
+                           placeholder="Örn: 2,1 · 1,7–2,4" data-marker-key="mg">
+                    <select class="form-input unit-select" id="unit-inputMg" aria-label="Magnezyum birimi"
+                            onchange="onUnitChange('inputMg')"><option value="mg/dL">mg/dL</option><option value="mmol/L">mmol/L</option></select>
+                </div>
+                <div class="lab-hint" id="hint-inputMg"><b>Lab normal aralığı: 1,7–2,4 mg/dL</b> — Magnezyum SHBG bağlanmasını azaltarak serbest testosteronu destekler.</div>
+                <div class="form-error" id="error-inputMg" role="alert"></div>
+                <div class="form-warning" id="warn-inputMg" role="status"></div>
             </div>
         </div>
     </div>
 
+    <!-- KVKK açık rıza -->
     <div class="card">
         <div class="card-header">
-            <div class="card-icon icon-blue">
-                <svg class="ic" aria-hidden="true"><use href="#i-pill"></use></svg>
+            <div class="card-icon icon-purple">
+                <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
             </div>
             <div>
-                <div class="card-title">Vitamin & Mineral</div>
-                <div class="card-subtitle">Eksiklik tespiti</div>
+                <div class="card-title">Sağlık verisi açık rızası</div>
+                <div class="card-subtitle">KVKK m.6 — özel nitelikli kişisel veri</div>
             </div>
         </div>
+        <div class="consent-box">
+            <input type="checkbox" id="consentCheck" onchange="setConsent(this)">
+            <label for="consentCheck">
+                Girdiğim kan değerlerinin (özel nitelikli sağlık verisi) yalnızca bu analizi oluşturmak amacıyla
+                <b>cihazımda</b> işlenmesine açık rıza veriyorum. Veriler sunucuya gönderilmez, saklanmaz ve üçüncü kişilerle paylaşılmaz.
+                Rızamı sayfayı kapatarak her an geri çekebilirim.
+            </label>
+        </div>
+        <p class="consent-error" id="consentError">Devam etmek için açık rıza kutusunu işaretlemeniz gerekiyor.</p>
+    </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputVitD">D Vitamini (ng/mL)</label>
-                <input type="number" class="form-input" id="inputVitD" placeholder="20-80" min="1" inputmode="decimal">
+    <!-- Lojistik: nerede, nasıl, kaç günde -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-green">
+                <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="inputB12">B12 (pg/mL)</label>
-                <input type="number" class="form-input" id="inputB12" placeholder="200-900" min="1" inputmode="decimal">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputZinc">Çinko (µg/dL)</label>
-                <input type="number" class="form-input" id="inputZinc" placeholder="60-120" min="1" inputmode="decimal">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="inputMg">Magnezyum (mg/dL)</label>
-                <input type="number" step="0.1" class="form-input" id="inputMg" placeholder="1.7-2.5" min="0.1" inputmode="decimal">
+            <div>
+                <div class="card-title">Testi nerede ve kaç günde yaptırırım?</div>
+                <div class="card-subtitle">Butona basmadan önce bilmeniz gerekenler</div>
             </div>
         </div>
+        <ul class="plain-list">
+            <li><b>Nerede:</b> Herhangi bir özel laboratuvar veya devlet hastanesi; randevu dışında özel bir sevk gerekmez.</li>
+            <li><b>Ücret:</b> Laboratuvarın işlem ücreti size aittir. TestoTavan hiçbir ücret almaz ve laboratuvarlarla iş ortaklığı yoktur.</li>
+            <li><b>Sonuç süresi:</b> Çoğu laboratuvarda aynı gün – 2 iş günü.</li>
+            <li><b>SGK:</b> Hekim istemi varsa devlet hastanesinde SGK kapsamındadır.</li>
+        </ul>
+        <p class="muted">Güncel ücret ve randevu koşulları laboratuvardan laboratuvara değişir; işlem öncesi kurumdan teyit edin.</p>
     </div>
 
     <button class="btn-primary" onclick="analyzeBlood()">
-        <svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg> &nbsp;KAN ANALİZİ BAŞLAT
+        <svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg> &nbsp;RAPORU OLUŞTUR
     </button>
+    <p class="trust-line"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg> Rapor 5 saniyede hazır · <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg> veriler cihazınızdan çıkmaz</p>
 
     <div class="result-panel" id="bloodResult"></div>
 </div>
+<!-- ANALYSIS-PAGES:END -->
     <!-- HAKKIMIZDA SAYFASI -->
 <div class="page" id="aboutPage">
     <div style="padding: 20px 0 16px">
@@ -1241,14 +1736,14 @@
 <!-- Alt Navigasyon -->
 <nav class="nav-bottom" aria-label="Ana navigasyon">
     <button type="button" class="nav-item active" aria-current="page" aria-controls="homePage" onclick="changePage('homePage')"><svg class="ic" aria-hidden="true"><use href="#i-home"></use></svg><span>Ana Sayfa</span></button>
-    <button type="button" class="nav-item" aria-controls="physicalPage" onclick="changePage('physicalPage')"><svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg><span>Fiziksel</span></button>
-    <button type="button" class="nav-item" aria-controls="bloodPage" onclick="changePage('bloodPage')"><svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg><span>Kan Testi</span></button>
+    <button type="button" class="nav-item" aria-controls="physicalPage" onclick="changePage('physicalPage')"><svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg><span>Semptom</span></button>
+    <button type="button" class="nav-item" aria-controls="bloodPage" onclick="changePage('bloodPage')"><svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg><span>Doğrulama</span></button>
     <button type="button" class="nav-item" aria-controls="blogPage" onclick="changePage('blogPage')"><svg class="ic" aria-hidden="true"><use href="#i-news"></use></svg><span>Blog</span></button>
     <button type="button" class="nav-item" aria-controls="aboutPage" onclick="changePage('aboutPage')"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>Hakkımızda</span></button>
 </nav>
 
-<script defer src="js/validation.69d286c8.js"></script>
-<script defer src="js/app.19bdd207.js"></script>
+<script defer src="js/validation.ac4aa46e.js"></script>
+<script defer src="js/app.d0684203.js"></script>
 
 </body>
 </html>

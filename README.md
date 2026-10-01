@@ -22,11 +22,25 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
-- **İki analiz yöntemi**
-  - **Fiziksel Analiz** — yaş, boy, kilo ve semptom bazlı değerlendirme
-  - **Kan Testi Analizi** — total/serbest testosteron, kortizol, SHBG, D vitamini, B12, çinko ve magnezyum değerleriyle (opsiyonel alanlar)
-- **Anlık sonuç raporu** ve doğal artırma önerileri
+- **Üç adımlı tek akış: Semptom → Tahmin → Doğrulama** (adım göstergesi + ilerleme yüzdesi)
+  - **Semptom Analizi** — yaş, boy, kilo, uyku, stres ve semptom seçimlerinden **nokta tahmin + %68 güven aralığı**
+    (ör. “Tahmini 340 ng/dL”), seçilen semptomun adını taşıyan kartlar, her kartta laboratuvar referans aralığı,
+    Kritik/Düşük/Sınırda/Normal rozetiyle önceliklendirme ve tek cümlelik açıklama
+  - **Kan Testi ile Doğrulama** — 12 parametre (total/serbest testosteron, SHBG, LH, FSH, estradiol, kortizol,
+    ferritin, D vitamini, B12, çinko, magnezyum); yalnızca Total T zorunlu, diğerleri opsiyonel
+- **Tahlil yükleme** — PDF’teki değerler tarayıcı içinde okunup forma yazılır (dosya sunucuya gönderilmez);
+  metin yapıştırma ve elle giriş alternatif yollardır
+- **Birim desteği** — her satırda birim kolonu ve nmol/L ↔ ng/dL gibi anında dönüşüm
+- **Gerçek laboratuvar aralıkları** — geçerli sonuçlar reddedilmez; alışılmadık değer reddedilmek yerine
+  “emin misiniz?” uyarısı ve hekim yönlendirmesiyle kabul edilir
+- **Şeffaf Genel Değerlendirme skoru** — ağırlıkların ve kapsama oranının açıklandığı tooltip
+- **KVKK açık rızası** — sağlık verisi için ayrı, boş başlangıçlı onay kutusu
+- **Numune koşulları ve lojistik** — sabah 07:00–10:00, açlık, biotin kesme; nerede/kaça/kaç günde bilgisi
+- **Anlık sonuç raporu** ve doğal destek önerileri
 - **Blog & Tarifler** — admin panelinden yönetilen içerikler (blog yazıları ve tarifler; kategori, malzeme listesi, kapak görseli)
+- **Dört dilde içerik (TR/EN/DE/JA)** — admin panelinde başlık, özet, içerik ve kategorinin yanı sıra
+  **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
+  çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, SEO + Open Graph meta etiketleri, sitemap
@@ -48,17 +62,22 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ├── index.html            # Ana SPA (analiz, blog, tarifler, hakkında)
 ├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
 ├── js/
-│   ├── validation.69d286c8.js # Ortak girdi doğrulama (tarayıcı + Node testleri)
-│   ├── app.0a806577.js        # İlk ekranda gereken analiz davranışları
-│   └── content.cdff6027.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
+│   ├── validation.ac4aa46e.js # Laboratuvar çekirdeği: referans aralıkları, birimler,
+│   │                          #   doğrulama/uyarı, tahmin motoru, tahlil metni okuma
+│   ├── app.d0684203.js        # Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
+│   └── content.e630d1c6.js    # Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
 ├── api/                  # Vercel serverless functions
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
+│   ├── _content-shape.js #   Ortak: içerik/çeviri alan temizleme, süre yerelleştirme (private)
 │   ├── login.js          #   POST /api/login — admin girişi (IP bazlı rate limit)
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
 │   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD)
 │   └── media/            #   Görsel yükleme ve sunma (/api/media/<id>)
+├── tools/
+│   ├── analysis-pages.template.html  # Semptom + kan testi ekranlarının şablonu
+│   └── build-analysis-pages.mjs      # Form satırlarını referans aralıklarından üretir
 ├── tests/                # node --test testleri (validation, media)
 ├── vercel.json           # Güvenlik başlıkları
 ├── sitemap.xml           # SEO site haritası
@@ -109,7 +128,9 @@ npm test
 - İlk ekranda üçüncü taraf font veya ikon paketi çağrılmaz; sistem fontları ve yerel Unicode ikonları kullanılır.
 - Blog, içerik API çağrıları ve çeviri verisi yalnızca Blog sekmesi veya dil seçici kullanıldığında yüklenir.
 - `js/` altındaki sürümlenmiş (dosya adına hash eklenmiş) varlıklar Vercel üzerinde bir yıl `immutable` önbelleklenir. Bu dosyalardan birini değiştirirken dosya adını ve `index.html` içindeki referansını birlikte güncelleyin.
-- `npm test`, doğrulama mantığını ve kritik istemci giriş noktalarını denetler.
+- `npm test`, doğrulama mantığını, laboratuvar aralıklarını, tahmin motorunu ve kritik istemci giriş noktalarını denetler.
+- Kan testi formundaki satırlar elle yazılmaz; referans aralıkları değişince `node tools/build-analysis-pages.mjs`
+  komutu `index.html` içindeki `ANALYSIS-PAGES` bloğunu yeniden üretir.
 
 ## 📡 API Overview
 

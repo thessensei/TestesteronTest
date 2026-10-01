@@ -1,0 +1,258 @@
+<!-- FİZİKSEL (SEMPTOM) ANALİZ SAYFASI -->
+<div class="page" id="physicalPage">
+    <div style="padding: 20px 0 12px; display: flex; align-items: center; gap: 10px">
+        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+        </button>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 900">Semptom Analizi</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Tahmini hormon değerleriniz</p>
+        </div>
+    </div>
+
+    <!-- Adım göstergesi: Semptom → Tahmin → Doğrulama -->
+    <div class="stepper" data-stepper aria-label="Analiz adımları"></div>
+    <div class="progress-wrap" data-progress role="status" aria-live="polite"></div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-gold">
+                <svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Temel Bilgiler</div>
+                <div class="card-subtitle">Tahmin modelinin girdileri</div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="inputAge">Yaş</label>
+                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="16" max="100" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="inputHeight">Boy (cm)</label>
+                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="120" max="240" inputmode="decimal">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="inputWeight">Kilo (kg)</label>
+                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="35" max="300" inputmode="decimal">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="inputActivity">Aktivite Seviyesi</label>
+                <select class="form-input" id="inputActivity">
+                    <option value="1">Hareketsiz</option>
+                    <option value="2">Haftada 1-2 gün</option>
+                    <option value="3" selected>Haftada 3-5 gün</option>
+                    <option value="4">Haftada 6-7 gün</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="inputSleep">Ortalama Uyku</label>
+                <select class="form-input" id="inputSleep">
+                    <option value="5">5 saat ve altı</option>
+                    <option value="6">6 saat</option>
+                    <option value="7" selected>7 saat</option>
+                    <option value="8">8 saat ve üzeri</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="inputStress">Stres Düzeyi</label>
+                <select class="form-input" id="inputStress">
+                    <option value="1">Düşük</option>
+                    <option value="2" selected>Orta</option>
+                    <option value="3">Yüksek</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-red">
+                <svg class="ic" aria-hidden="true"><use href="#i-activity"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Semptomlarınız</div>
+                <div class="card-subtitle">Yaşadıklarınızı işaretleyin</div>
+            </div>
+        </div>
+        <div class="symptom-grid" id="symptomGrid"></div>
+        <p class="hint-line" id="symptomCount" role="status" aria-live="polite"></p>
+    </div>
+
+    <button class="btn-primary" onclick="analyzePhysical()">
+        <svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg> &nbsp;TAHMİNİ HESAPLA
+    </button>
+
+    <div class="result-panel" id="physicalResult"></div>
+</div>
+
+<!-- KAN TESTİ (DOĞRULAMA) SAYFASI -->
+<div class="page" id="bloodPage">
+    <div style="padding: 20px 0 12px; display: flex; align-items: center; gap: 10px">
+        <button class="btn-secondary" aria-label="Ana sayfaya dön" style="width: auto; padding: 10px 16px" onclick="changePage('homePage')">
+            <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+        </button>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 900">Kan Testi ile Doğrulama</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Gerçek değerlerinizle kesin rapor</p>
+        </div>
+    </div>
+
+    <div class="stepper" data-stepper aria-label="Analiz adımları"></div>
+    <div class="progress-wrap" data-progress role="status" aria-live="polite"></div>
+
+    <!-- Ölçüm tipi: başlangıç mı, kontrol mü? -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-purple">
+                <svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Bu ölçüm hangisi?</div>
+                <div class="card-subtitle">Raporda böyle etiketlenecek</div>
+            </div>
+        </div>
+        <div class="segmented" role="group" aria-label="Ölçüm tipi">
+            <button type="button" data-measure="baseline" class="active" aria-pressed="true" onclick="setMeasurementType('baseline')">Başlangıç ölçümü</button>
+            <button type="button" data-measure="followup" aria-pressed="false" onclick="setMeasurementType('followup')">Kontrol (takip) ölçümü</button>
+        </div>
+        <p class="hint-line" id="measurementNote"></p>
+    </div>
+
+    <!-- Numune koşulları -->
+    <div class="card">
+        <details class="info-accordion" open>
+            <summary><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg> Kan vermeden önce: numune koşulları</summary>
+            <ul class="plain-list">
+                <li>Kan <b>sabah 07:00–10:00</b> arasında verilmelidir; testosteron gün içinde %30’a kadar düşer.</li>
+                <li><b>8–12 saat açlık</b>; yalnızca su içebilirsiniz.</li>
+                <li><b>Biotin (B7)</b> içeren takviyeleri ölçümden en az <b>72 saat</b> önce bırakın — hormon sonuçlarını yanlış gösterir.</li>
+                <li>Son <b>48 saatte</b> ağır antrenman ve alkol olmasın.</li>
+                <li>Ateş/enfeksiyon gibi akut hastalık döneminde ölçümü erteleyin.</li>
+            </ul>
+            <p class="muted">Bu koşullar sağlanmadan verilen kan, düşük çıkan bir sonucu yanlış yorumlamamıza yol açar.</p>
+        </details>
+    </div>
+
+    <!-- Ana aksiyon: tahlil yükleme -->
+    <div class="card" id="uploadCard">
+        <div class="card-header">
+            <div class="card-icon icon-gold">
+                <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Tahlilinizi yükleyin, biz okuyalım</div>
+                <div class="card-subtitle">En hızlı yol — elle giriş gerekmez</div>
+            </div>
+        </div>
+
+        <div class="upload-drop">
+            <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
+            <p class="upload-title">Tahlil PDF’i veya fotoğrafı</p>
+            <p class="upload-sub">PDF’teki değerleri tarayıcınızda okuyup forma yazıyoruz. Dosya sunucuya gönderilmez.</p>
+            <label class="btn-primary" for="reportFile" style="display:block; text-align:center; cursor:pointer">
+                <svg class="ic" aria-hidden="true"><use href="#i-arrow-up"></use></svg> &nbsp;DOSYA SEÇ
+            </label>
+            <input class="visually-hidden" type="file" id="reportFile" accept="application/pdf,image/*,text/plain" onchange="handleReportFile(this)">
+        </div>
+
+        <div class="upload-status" id="uploadStatus" role="status" aria-live="polite"></div>
+
+        <div style="text-align:center; margin-top:10px; display:flex; flex-direction:column; gap:2px">
+            <button type="button" class="link-btn" onclick="togglePasteBox()">Tahlil metnini yapıştırayım</button>
+            <button type="button" class="link-btn" id="manualToggle" onclick="toggleManualEntry()">Değerleri elle gireceğim</button>
+        </div>
+
+        <div id="pasteBox" hidden style="margin-top:12px">
+            <label class="form-label" for="pasteText">Tahlil metni</label>
+            <textarea class="form-input" id="pasteText" rows="5" placeholder="Örn: Total Testosteron 480 ng/dL&#10;SHBG 32 nmol/L"></textarea>
+            <button type="button" class="btn-secondary" style="margin-top:8px" onclick="parsePastedText()">Metinden değerleri oku</button>
+        </div>
+    </div>
+
+    <!-- Elle giriş -->
+    <div id="manualEntry" hidden>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-red">
+                    <svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Hormon Paneli</div>
+                    <div class="card-subtitle">Yalnızca Total Testosteron zorunlu</div>
+                </div>
+            </div>
+{{HORMONE_ROWS}}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-blue">
+                    <svg class="ic" aria-hidden="true"><use href="#i-pill"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Vitamin & Mineral</div>
+                    <div class="card-subtitle">Hepsi opsiyonel</div>
+                </div>
+            </div>
+{{VITAMIN_ROWS}}
+        </div>
+    </div>
+
+    <!-- KVKK açık rıza -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-purple">
+                <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Sağlık verisi açık rızası</div>
+                <div class="card-subtitle">KVKK m.6 — özel nitelikli kişisel veri</div>
+            </div>
+        </div>
+        <div class="consent-box">
+            <input type="checkbox" id="consentCheck" onchange="setConsent(this)">
+            <label for="consentCheck">
+                Girdiğim kan değerlerinin (özel nitelikli sağlık verisi) yalnızca bu analizi oluşturmak amacıyla
+                <b>cihazımda</b> işlenmesine açık rıza veriyorum. Veriler sunucuya gönderilmez, saklanmaz ve üçüncü kişilerle paylaşılmaz.
+                Rızamı sayfayı kapatarak her an geri çekebilirim.
+            </label>
+        </div>
+        <p class="consent-error" id="consentError">Devam etmek için açık rıza kutusunu işaretlemeniz gerekiyor.</p>
+    </div>
+
+    <!-- Lojistik: nerede, nasıl, kaç günde -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon icon-green">
+                <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Testi nerede ve kaç günde yaptırırım?</div>
+                <div class="card-subtitle">Butona basmadan önce bilmeniz gerekenler</div>
+            </div>
+        </div>
+        <ul class="plain-list">
+            <li><b>Nerede:</b> Herhangi bir özel laboratuvar veya devlet hastanesi; randevu dışında özel bir sevk gerekmez.</li>
+            <li><b>Ücret:</b> Laboratuvarın işlem ücreti size aittir. TestoTavan hiçbir ücret almaz ve laboratuvarlarla iş ortaklığı yoktur.</li>
+            <li><b>Sonuç süresi:</b> Çoğu laboratuvarda aynı gün – 2 iş günü.</li>
+            <li><b>SGK:</b> Hekim istemi varsa devlet hastanesinde SGK kapsamındadır.</li>
+        </ul>
+        <p class="muted">Güncel ücret ve randevu koşulları laboratuvardan laboratuvara değişir; işlem öncesi kurumdan teyit edin.</p>
+    </div>
+
+    <button class="btn-primary" onclick="analyzeBlood()">
+        <svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg> &nbsp;RAPORU OLUŞTUR
+    </button>
+    <p class="trust-line"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg> Rapor 5 saniyede hazır · <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg> veriler cihazınızdan çıkmaz</p>
+
+    <div class="result-panel" id="bloodResult"></div>
+</div>
