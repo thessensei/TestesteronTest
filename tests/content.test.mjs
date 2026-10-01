@@ -152,9 +152,22 @@ test('admin panelinde her dil için süre ve malzeme alanı var', () => {
 
 test('admin paneli süre ve malzemeyi çeviri bloğuyla gönderir', () => {
     assert.match(adminHtml, /time:\s*\$\(`time-\$\{l\}`\)\.value\.trim\(\)/);
-    assert.match(adminHtml, /ingredients:\s*lines\(l\)/);
+    assert.match(adminHtml, /ingredients:\s*ingredientValues\(l\)/);
     assert.match(adminHtml, /translations:\{en:base\('en'\),de:base\('de'\),ja:base\('ja'\)\}/);
     assert.match(adminHtml, /function autoFillDurations\(\)/, 'TR süresinden otomatik çeviri önerisi olmalı');
+});
+
+test('admin panelindeki malzeme editörü tarif malzemelerini satır satır yönetir', () => {
+    assert.match(adminHtml, /function addIngredient\(lang,afterIndex\)/, 'malzeme ekleme işlevi olmalı');
+    assert.match(adminHtml, /function removeIngredient\(lang,index\)/, 'malzeme silme işlevi olmalı');
+    assert.match(adminHtml, /ingredient-count-\$\{l\}/, 'malzeme sayacı olmalı');
+    assert.match(adminHtml, /Tarifler için en az bir malzeme ekleyin/, 'boş tarif listesi istemcide engellenmeli');
+});
+
+test('tarifler API tarafında da en az bir malzeme gerektirir', () => {
+    const source = fs.readFileSync(path.join(root, 'api', 'content.js'), 'utf8');
+    const checks = source.match(/item\.type === 'recipe' && !item\.ingredients\.length/g) || [];
+    assert.equal(checks.length, 2, 'oluşturma ve güncelleme istekleri doğrulanmalı');
 });
 
 // ------------------------------------------------------------------ fiyatlar
