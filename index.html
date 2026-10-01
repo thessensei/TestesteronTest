@@ -809,6 +809,67 @@
         .warn-card { border-color:rgba(245,166,35,.22); }
         .danger-card { border-color:rgba(255,82,82,.18); background:rgba(255,82,82,.02); }
 
+        /* ========== HAKKIMIZDA IZGARA DÜZENİ ========== */
+        #aboutPage { --about-gap: 12px; }
+        .about-intro { padding: 20px 0 16px; }
+        .about-intro h2 { font-size:22px; font-weight:900; margin-bottom:8px; }
+        .about-intro p { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+        .about-hero {
+            display:grid;
+            grid-template-columns:72px minmax(0,1fr);
+            align-items:center;
+            gap:16px;
+            padding:22px;
+            text-align:left;
+            background:linear-gradient(135deg, rgba(245,166,35,.12), rgba(245,166,35,.025));
+            border-color:rgba(245,166,35,.18);
+            overflow:hidden;
+        }
+        .about-hero-logo {
+            width:72px;
+            height:72px;
+            border-radius:22px;
+            display:block;
+            object-fit:cover;
+            box-shadow:0 0 28px rgba(245,166,35,.26);
+            background:#08080c;
+        }
+        .about-hero h2 { font-size:24px; font-weight:900; margin-bottom:8px; }
+        .about-hero p { font-size:12px; color:var(--text-secondary); line-height:1.7; margin:0; }
+        .about-grid,
+        .about-ref-grid { display:grid; gap:var(--about-gap); margin-bottom:14px; }
+        .about-grid > .card,
+        .about-ref-grid > .card { margin-bottom:0; }
+        .about-ref-card { height:100%; padding:16px; }
+        .about-ref-card > div { height:100%; }
+        .about-ref-card .ref-ic { margin-top:3px; }
+        .about-ref-card > div > div { min-width:0; }
+        .about-bottom-grid { margin-top:20px; }
+        .about-bottom-grid .card { height:100%; }
+
+        @media (min-width: 540px) {
+            .about-grid,
+            .about-ref-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .about-bottom-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .about-bottom-grid .about-wide { grid-column:1 / -1; }
+        }
+
+        @media (min-width: 760px) {
+            body:has(#aboutPage.active) { max-width:860px; }
+            #aboutPage { padding-left:20px; padding-right:20px; }
+            .about-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .about-ref-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .about-bottom-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+            .about-bottom-grid .about-wide { grid-column:auto; }
+            .about-hero { grid-template-columns:88px minmax(0, 1fr); gap:20px; }
+            .about-hero-logo { width:88px; height:88px; border-radius:26px; }
+        }
+
+        @media (max-width: 430px) {
+            .about-hero { grid-template-columns:1fr; text-align:center; }
+            .about-hero-logo { margin:0 auto; }
+        }
+
         details.info-accordion { border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--input); padding:12px 14px; }
         details.info-accordion summary { font-size:12px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; }
         details.info-accordion summary::-webkit-details-marker { display:none; }
@@ -1409,66 +1470,71 @@
 <!-- ANALYSIS-PAGES:END -->
     <!-- HAKKIMIZDA SAYFASI -->
 <div class="page" id="aboutPage">
-    <div style="padding: 20px 0 16px">
-        <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 8px">Hakkımızda</h2>
-        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.6">
-            TestoTavan projesi ve bilimsel kaynaklar
+    <div class="about-intro">
+        <h2>Hakkımızda</h2>
+        <p>
+            TestoTavan projesi, yaklaşımımız ve bilimsel kaynaklar
         </p>
     </div>
 
     <!-- Hero Card -->
-    <div class="card" style="text-align: center; background: linear-gradient(135deg, rgba(245,166,35,.08), rgba(245,166,35,.02)); border-color: rgba(245,166,35,.15)">
-        <svg class="hero-ic" aria-hidden="true" style="margin-bottom:14px"><use href="#i-bolt"></use></svg>
-        <h2 style="font-size: 24px; font-weight: 900; margin-bottom: 8px">TestoTavan</h2>
-        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7; max-width: 380px; margin: 0 auto">
-            Doğal Testosteronoptimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.
-        </p>
+    <div class="card about-hero">
+        <img class="about-hero-logo" src="assets/logo.png" alt="TestoTavan logosu" width="88" height="88">
+        <div>
+            <h2>TestoTavan</h2>
+            <p>
+                Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.
+            </p>
+        </div>
     </div>
 
-    <!-- Misyon -->
-    <div class="card">
-        <div class="card-header">
-            <div class="card-icon icon-gold">
-                <svg class="ic" aria-hidden="true"><use href="#i-target"></use></svg>
+    <div class="about-grid">
+        <!-- Misyon -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon icon-gold">
+                    <svg class="ic" aria-hidden="true"><use href="#i-target"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Misyonumuz</div>
+                    <div class="card-subtitle">Ne yapıyoruz?</div>
+                </div>
             </div>
-            <div>
-                <div class="card-title">Misyonumuz</div>
-                <div class="card-subtitle">Ne yapıyoruz?</div>
-            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
+                Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,
+                bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.
+            </p>
         </div>
-        <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
-            Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,
-            bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.
-        </p>
-    </div>
 
-    <!-- Kaynakça Başlığı -->
-    <div class="card" style="border-color: rgba(68,138,255,.2)">
-        <div class="card-header">
-            <div class="card-icon icon-blue">
-                <svg class="ic" aria-hidden="true"><use href="#i-book"></use></svg>
+        <!-- Kaynakça Başlığı -->
+        <div class="card" style="border-color: rgba(68,138,255,.2)">
+            <div class="card-header">
+                <div class="card-icon icon-blue">
+                    <svg class="ic" aria-hidden="true"><use href="#i-book"></use></svg>
+                </div>
+                <div>
+                    <div class="card-title">Bilimsel Kaynaklar</div>
+                    <div class="card-subtitle">Referans aldığımız çalışmalar</div>
+                </div>
             </div>
-            <div>
-                <div class="card-title">Bilimsel Kaynaklar</div>
-                <div class="card-subtitle">Referans aldığımız çalışmalar</div>
-            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6">
+                Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.
+            </p>
         </div>
-        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px">
-            Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.
-        </p>
     </div>
 
     <!-- ========================== -->
     <!-- KAYNAKÇA BÖLÜMÜ BURAYA -->
     <!-- ========================== -->
 
+    <div class="about-ref-grid">
     <!-- D Vitamini & Testosteron-->
-    <div class="card" style="border-left: 4px solid var(--green); background: rgba(0,230,118,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--green); background: rgba(0,230,118,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
                 <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--green)">
-                    D Vitamini & Testosteronİlişkisi
+                    D Vitamini & Testosteron İlişkisi
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Pilz S, Frisch S, Koertke H, et al.</b><br>
@@ -1476,7 +1542,7 @@
                     <i>Horm Metab Res.</i> 2011;43(3):223-225.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> 3332 IU/gün D vitamini takviyesi alan erkeklerde 12 ay sonunda total Testosteron
+                    <b>Özet:</b> 3332 IU/gün D vitamini takviyesi alan erkeklerde 12 ay sonunda total testosteron
                     %25.2 artış göstermiş (10.7±3.9'dan 13.4±4.7 nmol/L'ye). Plasebo grubunda değişiklik gözlenmemiş.
                 </div>
             </div>
@@ -1484,7 +1550,7 @@
     </div>
 
     <!-- Ashwagandha & Kortizol -->
-    <div class="card" style="border-left: 4px solid var(--gold); background: rgba(245,166,35,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--gold); background: rgba(245,166,35,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
@@ -1506,7 +1572,7 @@
     </div>
 
     <!-- Çinko & Testosteron-->
-    <div class="card" style="border-left: 4px solid var(--blue); background: rgba(68,138,255,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--blue); background: rgba(68,138,255,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
@@ -1520,19 +1586,19 @@
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
                     <b>Özet:</b> Orta dereceli çinko eksikliği olan genç erkeklerde 20-40 mg/gün çinko takviyesi
-                    6 ay sonunda serum Testosteronseviyesinde belirgin artış sağlamış.
+                    6 ay sonunda serum testosteron seviyesinde belirgin artış sağlamış.
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Magnezyum & Serbest Testosteron-->
-    <div class="card" style="border-left: 4px solid var(--purple); background: rgba(179,136,255,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--purple); background: rgba(179,136,255,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
                 <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--purple)">
-                    Magnezyum & Serbest TestosteronArtışı
+                    Magnezyum & Serbest Testosteron Artışı
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Cinar V, Polat Y, Baltaci AK, Mogulkoc R.</b><br>
@@ -1542,19 +1608,19 @@
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
                     <b>Özet:</b> 10 mg/kg magnezyum sülfat takviyesi 4 hafta boyunca hem sedanter hem de aktif
-                    bireylerde serbest ve total Testosteronseviyelerinde artış sağlamış.
+                    bireylerde serbest ve total testosteron seviyelerinde artış sağlamış.
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Uyku & Testosteron-->
-    <div class="card" style="border-left: 4px solid var(--red); background: rgba(255,82,82,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--red); background: rgba(255,82,82,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
                 <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--red)">
-                    Uyku Kısıtlaması & TestosteronDüşüşü
+                    Uyku Kısıtlaması & Testosteron Düşüşü
                 </div>
                 <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px">
                     <b>Leproult R, Van Cauter E.</b><br>
@@ -1562,7 +1628,7 @@
                     <i>JAMA.</i> 2011;305(21):2173-2174.
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
-                    <b>Özet:</b> Genç erkeklerde 1 haftalık uyku kısıtlaması (5 saat/gece) gündüz Testosteron
+                    <b>Özet:</b> Genç erkeklerde 1 haftalık uyku kısıtlaması (5 saat/gece) gündüz testosteron
                     seviyelerinde %10-15 azalma ile sonuçlanmış. Bu etki sadece 1 haftada gözlenmiş.
                 </div>
             </div>
@@ -1570,7 +1636,7 @@
     </div>
 
     <!-- Omega-3 & İnflamasyon -->
-    <div class="card" style="border-left: 4px solid var(--blue); background: rgba(68,138,255,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--blue); background: rgba(68,138,255,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
@@ -1592,7 +1658,7 @@
     </div>
 
     <!-- Kreatin & Kas Kütlesi -->
-    <div class="card" style="border-left: 4px solid var(--green); background: rgba(0,230,118,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--green); background: rgba(0,230,118,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
@@ -1614,7 +1680,7 @@
     </div>
 
     <!-- Fenugreek & Testosteron-->
-    <div class="card" style="border-left: 4px solid var(--gold); background: rgba(245,166,35,.02)">
+    <div class="card about-ref-card" style="border-left: 4px solid var(--gold); background: rgba(245,166,35,.02)">
         <div style="display: flex; align-items: flex-start; gap: 12px">
             <svg class="ref-ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <div>
@@ -1629,18 +1695,21 @@
                 </div>
                 <div style="font-size: 10px; color: var(--text-secondary); background: var(--input); padding: 8px; border-radius: 8px; line-height: 1.5">
                     <b>Özet:</b> 8 hafta boyunca 500 mg/gün fenugreek ekstrakt alan direnç antrenmanı yapan
-                    erkeklerde serbest Testosteron%46 artmış, vücut yağ oranı azalmış.
+                    erkeklerde serbest testosteron %46 artmış, vücut yağ oranı azalmış.
                 </div>
             </div>
         </div>
+    </div>
+
     </div>
 
     <!-- ========================== -->
     <!-- KAYNAKÇA SONU -->
     <!-- ========================== -->
 
+    <div class="about-grid about-bottom-grid">
     <!-- Ekip -->
-    <div class="card" style="margin-top: 20px">
+    <div class="card">
         <div class="card-header">
             <div class="card-icon icon-purple">
                 <svg class="ic" aria-hidden="true"><use href="#i-users"></use></svg>
@@ -1680,7 +1749,7 @@
     </div>
 
     <!-- Gizlilik -->
-    <div class="card" style="border-color: rgba(0,230,118,.2); background: rgba(0,230,118,.02)">
+    <div class="card about-wide" style="border-color: rgba(0,230,118,.2); background: rgba(0,230,118,.02)">
         <div class="card-header">
             <div class="card-icon icon-green">
                 <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
@@ -1694,6 +1763,8 @@
             Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar
             tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.
         </p>
+    </div>
+
     </div>
 
     <!-- Footer -->
