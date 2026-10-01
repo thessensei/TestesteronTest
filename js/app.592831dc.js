@@ -4,11 +4,14 @@
 // ========================================
 const IC = id => `<svg class="ic" aria-hidden="true"><use href="#${id}"></use></svg>`;
 const V = () => window.TestoValidation;
+// Çeviri modülü isteğe bağlı yüklenir; yüklenene kadar kaynak metin gösterilir.
+const T = text => window.translateUi ? window.translateUi(text) : text;
 
 // Uygulama durumu (ekranlar arası tutarlılık için tek kaynak)
 const state = {
     step: 1,
     progress: 10,
+    progressNote: '',
     estimate: null,
     measurement: 'baseline',
     consent: false,
@@ -32,7 +35,7 @@ function renderSteppers() {
             const cls = done ? 'step done' : (active ? 'step active' : 'step');
             return `<div class="${cls}" aria-current="${active ? 'step' : 'false'}">
                         <span class="step-dot">${done ? IC('i-check') : step.id}</span>
-                        <span class="step-label">${step.label}</span>
+                        <span class="step-label">${T(step.label)}</span>
                     </div>`;
         }).join('<span class="step-line" aria-hidden="true"></span>');
     });
@@ -46,7 +49,8 @@ function setStep(step) {
 function setProgress(percent, note) {
     state.progress = percent;
     document.querySelectorAll('[data-progress]').forEach(node => {
-        const text = note || `Analizin %${percent} tamamlandı`;
+        state.progressNote = note || `Analizin %${percent} tamamlandı`;
+    const text = T(state.progressNote);
         node.innerHTML = `
             <div class="progress-head">
                 <span>${text}</span>
@@ -212,7 +216,7 @@ function renderSymptomGrid() {
     grid.innerHTML = V().SYMPTOMS.map(symptom => `
         <label class="symptom-chip" for="sym-${symptom.id}">
             <input type="checkbox" id="sym-${symptom.id}" value="${symptom.id}" onchange="onSymptomChange()">
-            <span>${symptom.label}</span>
+            <span>${T(symptom.label)}</span>
         </label>
     `).join('');
 }
@@ -304,10 +308,10 @@ function renderEstimate(est) {
         <article class="lab-card" style="--status:${card.status.color}">
             <header class="lab-card-head">
                 <div>
-                    <h4 class="lab-card-title">${card.title}</h4>
-                    <p class="lab-card-sub">İlgili gösterge: ${card.marker.label}</p>
+                    <h4 class="lab-card-title">${T(card.title)}</h4>
+                    <p class="lab-card-sub">${T('İlgili gösterge:')} ${T(card.marker.label)}</p>
                 </div>
-                <span class="badge ${card.status.badgeClass}">${card.status.label}</span>
+                <span class="badge ${card.status.badgeClass}">${T(card.status.label)}</span>
             </header>
             <div class="lab-card-value">
                 <strong>${fmt(card.value, dec)}</strong>
@@ -320,7 +324,7 @@ function renderEstimate(est) {
                 <div class="ci-point" style="left:${cPoint}%"></div>
             </div>
             <p class="lab-card-ref">Laboratuvar normal aralığı: <b>${card.refText}</b></p>
-            <p class="lab-card-explain">${card.explain}</p>
+            <p class="lab-card-explain">${T(card.explain)}</p>
         </article>`;
     }).join('');
 
@@ -331,7 +335,7 @@ function renderEstimate(est) {
                     <p class="eyebrow">Tahmini değer</p>
                     <h3 class="estimate-title">Total Testosteron</h3>
                 </div>
-                <span class="badge ${est.status.badgeClass}">${est.status.label}</span>
+                <span class="badge ${est.status.badgeClass}">${T(est.status.label)}</span>
             </header>
 
             <div class="estimate-value">${fmt(est.point)}<span class="unit">ng/dL</span></div>
@@ -425,8 +429,8 @@ function refreshFieldMeta(markerId) {
     const accept = document.getElementById('accept-' + markerId);
 
     if (input) input.placeholder = V().placeholderFor(marker, unit);
-    if (hint) hint.innerHTML = `<b>Lab normal aralığı: ${V().describeRange(marker, unit, 'ref')}</b> — ${marker.explain}`;
-    if (accept) accept.textContent = 'Geçerli giriş aralığı: ' + V().describeRange(marker, unit, 'accept');
+    if (hint) hint.innerHTML = `<b>${T('Lab normal aralığı:')} ${V().describeRange(marker, unit, 'ref')}</b> — ${T(marker.explain)}`;
+    if (accept) accept.textContent = T('Geçerli giriş aralığı:') + ' ' + V().describeRange(marker, unit, 'accept');
 }
 
 // nmol/L <-> ng/dL gibi birim değişiminde girilen değeri çevirir
@@ -481,8 +485,8 @@ function setMeasurementType(type) {
     const label = document.getElementById('measurementNote');
     if (label) {
         label.textContent = type === 'baseline'
-            ? 'Bu değerler başlangıç (ilk) ölçümü olarak kaydedilir.'
-            : 'Bu değerler kontrol (takip) ölçümü olarak kaydedilir; önceki ölçümle karşılaştırılır.';
+            ? T('Bu değerler başlangıç (ilk) ölçümü olarak kaydedilir.')
+            : T('Bu değerler kontrol (takip) ölçümü olarak kaydedilir; önceki ölçümle karşılaştırılır.');
     }
 }
 
@@ -493,11 +497,11 @@ function toggleManualEntry(force) {
     const willOpen = force === undefined ? section.hasAttribute('hidden') : force;
     if (willOpen) {
         section.removeAttribute('hidden');
-        if (link) link.textContent = 'Elle girişi gizle';
+        if (link) link.textContent = T('Elle girişi gizle');
         safeScroll(section);
     } else {
         section.setAttribute('hidden', '');
-        if (link) link.textContent = 'Değerleri elle gireceğim';
+        if (link) link.textContent = T('Değerleri elle gireceğim');
     }
 }
 
@@ -737,7 +741,7 @@ function renderBloodReport(result) {
                 <th scope="row">${m.short}</th>
                 <td class="num">${fmt(shown, decimals)} <span class="unit">${unit}</span></td>
                 <td class="num ref">${V().describeRange(m, unit, 'ref')}</td>
-                <td><span class="badge ${status.badgeClass}">${status.label}</span></td>
+                <td><span class="badge ${status.badgeClass}">${T(status.label)}</span></td>
             </tr>`;
     }).join('');
 
@@ -816,17 +820,17 @@ function renderBloodReport(result) {
             <article class="lab-card" style="--status:${item.status.color}">
                 <header class="lab-card-head">
                     <div>
-                        <h4 class="lab-card-title">${item.marker.label}</h4>
+                        <h4 class="lab-card-title">${T(item.marker.label)}</h4>
                         <p class="lab-card-sub">${state.measurement === 'baseline' ? 'Başlangıç ölçümü' : 'Kontrol ölçümü'}</p>
                     </div>
-                    <span class="badge ${item.status.badgeClass}">${item.status.label}</span>
+                    <span class="badge ${item.status.badgeClass}">${T(item.status.label)}</span>
                 </header>
                 <div class="lab-card-value">
                     <strong>${fmt(V().fromCanonical(item.marker, item.value, unit), decimals)}</strong>
                     <span class="unit">${unit}</span>
                 </div>
                 <p class="lab-card-ref">Laboratuvar normal aralığı: <b>${V().describeRange(item.marker, unit, 'ref')}</b></p>
-                <p class="lab-card-explain">${item.marker.explain}</p>
+                <p class="lab-card-explain">${T(item.marker.explain)}</p>
             </article>`;
         }).join('')}` : ''}
 
@@ -1011,10 +1015,22 @@ function initAnalysisScreens() {
 
 document.addEventListener('DOMContentLoaded', initAnalysisScreens);
 
+// Dil değiştiğinde dinamik basılan adımlar, notlar ve laboratuvar yardımcıları da
+// yeni sözlükle tekrar üretilir. Böylece yalnızca sayfadaki başlıklar değil alt
+// açıklamalar da seçilen dile geçer.
+window.addEventListener('testo-language-change', () => {
+    if (!V()) return;
+    renderSteppers();
+    onSymptomChange();
+    setMeasurementType(state.measurement);
+    V().MARKERS.forEach(marker => refreshFieldMeta(marker.id));
+    setProgress(state.progress, state.progressNote);
+});
+
 // ========================================
 // OPSİYONEL MODÜLLER (blog + çeviri)
 // ========================================
-const OPTIONAL_FEATURES_URL = 'js/content.e630d1c6.js';
+const OPTIONAL_FEATURES_URL = 'js/content.9282211a.js';
 let optionalFeaturesPromise;
 function loadOptionalFeatures(){
     if (window.__testoOptionalReady) return Promise.resolve();
