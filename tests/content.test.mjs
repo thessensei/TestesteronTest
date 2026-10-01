@@ -138,6 +138,33 @@ test('modal başlıkları (Malzemeler / Hazırlanışı) sözlükte var', () => 
     assert.equal(api.i18n.ja['Hazırlanışı'], '作り方');
 });
 
+test('analiz alt açıklamaları ve erişilebilir etiketleri tüm dillerde çevrilir', () => {
+    const { api } = loadContentModule();
+    const required = [
+        'Semptomlarınızdan tahmini bir değer ve güven aralığı üretiriz — 2 dakika sürer.',
+        'Tahmin modelinin girdileri',
+        'Kan vermeden önce: numune koşulları',
+        'Tahlilinizi yükleyin, biz okuyalım',
+        'Sağlık verisi açık rızası',
+        'Testi nerede ve kaç günde yaptırırım?',
+        'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.',
+        'Dil seçin',
+        'Ana navigasyon'
+    ];
+    for (const lang of ['en', 'de', 'ja']) {
+        for (const source of required) {
+            assert.ok(api.i18n[lang][source], `${lang}: ${source} çevirisi eksik`);
+        }
+    }
+    assert.equal(api.i18n.en['Tahmin modelinin girdileri'], 'Inputs used by the estimation model');
+    assert.equal(api.i18n.de['Sağlık verisi açık rızası'], 'Einwilligung für Gesundheitsdaten');
+    assert.equal(api.i18n.ja['Ana navigasyon'], 'メインナビゲーション');
+
+    const appSource = fs.readFileSync(path.join(jsDir, fs.readdirSync(jsDir).find(f => /^app\..*\.js$/.test(f))), 'utf8');
+    assert.match(appSource, /window\.addEventListener\('testo-language-change'/, 'dinamik alt metinler dil değişiminde yeniden çizilmeli');
+    assert.match(appSource, /const T = text => window\.translateUi/, 'dinamik metinler ortak çeviri yardımcısını kullanmalı');
+});
+
 // --------------------------------------------------------------- admin panel
 
 test('admin panelinde her dil için süre ve malzeme alanı var', () => {
