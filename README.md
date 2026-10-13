@@ -147,6 +147,7 @@ npx vercel dev
 ```bash
 npm test
 ```
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/thessensei/testesterontest?utm_source=readme&utm_medium=badge)
 
 ## ⚡ PageSpeed yaklaşımı
 
