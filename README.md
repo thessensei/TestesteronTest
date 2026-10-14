@@ -47,7 +47,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
-- **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, SEO + Open Graph meta etiketleri, sitemap
+- **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, canonical URL, Open Graph + WebApplication yapılandırılmış verisi, `robots.txt` ve geçerli sitemap
 - **Güvenlik başlıkları** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (bkz. `vercel.json`)
 
 ## 🛠 Tech Stack
@@ -144,12 +144,20 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `SITE_URL` | Yayındaki kök adres, ör. `https://testotavan.vercel.app` (opsiyonel) |
 | `ENABLE_MACHINE_TRANSLATION` | `0` ise AI çevirisi eksik kaldığında yedek çeviri servisi çağrılmaz (opsiyonel) |
 | `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
+| `GEMINI_MODEL` | Gemini model kimliği (opsiyonel; varsayılan `gemini-3.8-flash`; kapatılmış 1.x/2.0 modelleri otomatik güncel modele taşınır) |
 | `OPENAI_API_KEY` | OpenAI API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
 | `GROQ_API_KEY` | Groq API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
+| `GROQ_MODEL` | Groq model kimliği (opsiyonel; varsayılan `openai/gpt-oss-120b`; kapatılmış eski model ayarları otomatik güncel modele taşınır) |
 
 > Not: `ADMIN_PASSWORD` / `SESSION_SECRET` tanımlı değilse giriş API'si `503` döner; `DATABASE_URL` yoksa istatistik ve içerik servisleri devre dışı kalır (site çalışmaya devam eder).
 > Pinterest değişkenleri tanımlı değilse site ve yayın akışı normal çalışır; yalnızca pin adımı atlanır.
 > `SITE_URL` boşsa Vercel'in `VERCEL_PROJECT_PRODUCTION_URL` / `VERCEL_URL` değerleri, o da yoksa istek başlıkları kullanılır.
+
+### Google'da dizine ekleme
+
+Site haritası `/sitemap.xml` ve tarama kuralları `/robots.txt` adreslerinde yayınlanır. Canonical, Open Graph, yapılandırılmış veri ve forum URL'leri mevcut dağıtım adresi `https://testotavan.vercel.app` ile eşleştirilmiştir. Başka bir özel alan adı kullanıyorsanız HTML dosyalarındaki bu adresleri, `sitemap.xml` ve `robots.txt` içindeki adresleri de yeni ana alan adınıza göre güncelleyin.
+
+Dağıtımdan sonra Google Search Console'da alan adını doğrulayın, `/sitemap.xml` haritasını gönderin ve URL Denetimi'nden ana sayfa için dizine ekleme isteyin. Kod tarafındaki ayarlar Google'ın taramasını kolaylaştırır; Google'ın dizine ekleme ve sonuçlarda gösterme kararı/zamanı garanti edilemez.
 
 ### Run Locally
 
