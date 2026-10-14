@@ -1015,6 +1015,29 @@ function initAnalysisScreens() {
 
 document.addEventListener('DOMContentLoaded', initAnalysisScreens);
 
+// ========================================
+// PİN DERİN BAĞLANTISI
+// ========================================
+// Pinterest pinlerinin hedefi /?icerik=<id> biçimindedir. Bu adresle gelen ziyaretçi
+// Blog sekmesine yönlendirilir ve ilgili yazı, veritabanı yanıtı gelir gelmez açılır.
+function openDeepLinkedContent(){
+    const id = new URLSearchParams(window.location.search).get('icerik');
+    if (!id) return;
+
+    loadOptionalFeatures().then(() => {
+        changePage('blogPage');
+        window.ensureBlogData?.();
+        let tries = 0;
+        const openWhenReady = () => {
+            if (window.openSharedContent?.(id) || tries++ >= 20) return;
+            setTimeout(openWhenReady, 250);
+        };
+        openWhenReady();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', openDeepLinkedContent);
+
 // Dil değiştiğinde dinamik basılan adımlar, notlar ve laboratuvar yardımcıları da
 // yeni sözlükle tekrar üretilir. Böylece yalnızca sayfadaki başlıklar değil alt
 // açıklamalar da seçilen dile geçer.

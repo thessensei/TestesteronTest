@@ -73,6 +73,15 @@ function showContent(id){
 }
 function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
 function openAdmin(){ window.location.href='/admin/'; }
+// Pinterest pinlerinin hedef bağlantısı: /?icerik=<id> → ilgili yazıyı modalda açar.
+function openSharedContent(id){
+    const key=String(id||'').trim();
+    if(!/^[\w-]{1,120}$/.test(key)) return false;
+    const x=getAllContent().find(i=>i.id===key);
+    if(!x) return false;
+    showContent(key);
+    return true;
+}
 function toggleRecipeFields(){ document.getElementById('recipeFields').style.display=document.getElementById('adminType').value==='recipe'?'block':'none'; }
 async function saveContent(event){
     event.preventDefault(); const type=document.getElementById('adminType').value;
@@ -781,6 +790,7 @@ function setLanguage(lang){
 }
 window.translateUi=translateUi;
 window.applyTranslations=applyTranslations;
+window.openSharedContent=openSharedContent;
 if(currentLanguage !== 'tr'){
  applyTranslations();
  startTranslationObserver();

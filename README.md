@@ -18,7 +18,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-27%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-87%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
@@ -42,6 +42,9 @@ We offer natural, safe, and alternative solutions to address the decline in test
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
+- **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
+  canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
+  (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, SEO + Open Graph meta etiketleri, sitemap
 - **Güvenlik başlıkları** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (bkz. `vercel.json`)
@@ -80,10 +83,11 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
 │   ├── _content-shape.js #   Ortak: içerik/çeviri alan temizleme, süre yerelleştirme (private)
+│   ├── _pinterest.js     #   Ortak: Pinterest pin gövdesi + gönderim boru hattı (private)
 │   ├── login.js          #   POST /api/login — admin girişi (IP bazlı rate limit)
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
-│   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD)
+│   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD) — yayında Pinterest tetikleyicisi
 │   └── media/            #   Görsel yükleme ve sunma (/api/media/<id>)
 ├── tools/
 │   ├── build.mjs                     # src/ → yayın dosyaları (CSS/JS küçültme + hash)
@@ -131,8 +135,13 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `DATABASE_URL` | Neon Postgres bağlantı adresi |
 | `ADMIN_PASSWORD` | Admin paneli şifresi |
 | `SESSION_SECRET` | Oturum cookie imzası için gizli anahtar |
+| `PINTEREST_ACCESS_TOKEN` | Pinterest API v5 erişim tokenı (opsiyonel; yoksa pin gönderilmez) |
+| `PINTEREST_BOARD_ID` | Pinin ekleneceği board kimliği (opsiyonel; yoksa pin gönderilmez) |
+| `SITE_URL` | Yayındaki kök adres, ör. `https://testotavan.vercel.app` (opsiyonel) |
 
 > Not: `ADMIN_PASSWORD` / `SESSION_SECRET` tanımlı değilse giriş API'si `503` döner; `DATABASE_URL` yoksa istatistik ve içerik servisleri devre dışı kalır (site çalışmaya devam eder).
+> Pinterest değişkenleri tanımlı değilse site ve yayın akışı normal çalışır; yalnızca pin adımı atlanır.
+> `SITE_URL` boşsa Vercel'in `VERCEL_PROJECT_PRODUCTION_URL` / `VERCEL_URL` değerleri, o da yoksa istek başlıkları kullanılır.
 
 ### Run Locally
 
@@ -172,6 +181,66 @@ npm test
 | logo | 1.731 KB | 6 KB (+14 KB favicon) |
 | **Toplam** | **~1.774 KB** | **~57 KB** |
 
+## 📌 Pinterest Rich Pin köprüsü
+
+Blog yazısı admin panelinden yayınlandığı anda akış şu sırayla çalışır (Python'daki
+`pinterest_rich_pin_firlat(blog_data)` çağrısının bu projedeki karşılığı `api/_pinterest.js`
+içindeki `pinterestRichPinFire(created, ...)` fonksiyonudur):
+
+```
+Admin paneli (Herkese açık yayınla)
+        │  POST /api/content  { title, summary, body, cover_url, pinterest: true }
+        ▼
+1. Doğrulama + Neon Postgres'e kayıt (INSERT … commit)
+        ▼
+2. pinterestRichPinFire() — pin gövdesi kurulur
+   board_id · title · description · link · alt_text · media_source
+        ▼
+3. POST https://api.pinterest.com/v5/pins   (Authorization: Bearer …)
+        ▼
+4. Sonuç, 201 yanıtındaki `pinterest` alanıyla panele raporlanır
+```
+
+Gönderilen kurumsal gövde:
+
+```json
+{
+  "board_id": "987654321",
+  "title": "Sabah Rutininin Testosterona Etkisi",
+  "description": "Gün ışığı, uyku düzeni ve kahvaltı tercihlerinin hormon dengesine etkisi.\n\n#HormonSagligi #TestoTavan #ErkekSagligi",
+  "link": "https://testotavan.vercel.app/?icerik=content-1760000000000-ab12cd34",
+  "alt_text": "Sabah Rutininin Testosterona Etkisi — Hormon Sağlığı",
+  "media_source": {
+    "source_type": "image_url",
+    "url": "https://testotavan.vercel.app/api/media/media-1760000000000-ab12cd34"
+  }
+}
+```
+
+- **`link`** Vercel'deki canlı yazıya derin bağlantıdır: `?icerik=<id>` adresini açan ziyaretçi
+  doğrudan Blog sekmesine yönlendirilir ve ilgili yazı veritabanı yanıtı gelir gelmez açılır.
+- **`media_source.url`** yalnızca HTTPS olabilir; panelden yüklenen `/api/media/...` görselleri
+  sitenin kök adresiyle mutlaklaştırılır (görseli Pinterest kendi indirir).
+- **`description`** blog özetinin sonuna kategori hashtag'i eklenerek üretilir; başlık 100,
+  açıklama ve alt metin 500 karakter sınırına kırpılır (`Hormon Sağlığı` → `#HormonSagligi`).
+
+Davranış kuralları:
+
+| Durum | Sonuç |
+| --- | --- |
+| Pin başarılı | Yanıtta `{ ok: true, pin_id }`; panelde "Pinterest pin gönderildi" bildirimi |
+| 429 / 5xx | Bir kez daha denenir (300 ms bekleme); yine olmazsa `{ ok: false, reason: 'api_error' }` |
+| 4xx (yetki, board hatası) | Tekrar denenmez; hata mesajı panele yazılır |
+| Ağ hatası / zaman aşımı | `AbortController` ile 3 sn'de kesilir; blog yayını **her durumda** başarılı kalır |
+| Kapak görseli yok ya da token/board tanımsız | Pin atlanır (`skipped`), blog normal yayınlanır |
+| Tarif yayını | Pinterest adımı çalışmaz (yalnızca blog yazıları) |
+| Panelde onay kutusu kaldırıldı | Gövdede `pinterest: false` iletilir, hiç istek atılmaz (tercih tarayıcıda hatırlanır) |
+
+> **Serverless notu:** Vercel fonksiyon örneği yanıtla birlikte dondurulabildiği için istek
+> "ateşle-unut" biçiminde bırakılmaz; sert zaman aşımıyla sınırlandırılmış şekilde beklenir ve
+> sonucu panele bildirilir. En kötü durumda yayın yanıtı ~6 sn gecikir (2 deneme × 3 sn) ve
+> pin hatası yayını hiçbir koşulda düşürmez.
+
 ## 📡 API Overview
 
 | Endpoint | Metod | Açıklama |
@@ -179,7 +248,7 @@ npm test
 | `/api/login` | `POST` | Admin girişi; 15 dk içinde IP başına en fazla 10 deneme |
 | `/api/session` | `GET` | Oturumun doğrulanmış mı olduğunu döner |
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
-| `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister) |
+| `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
 
