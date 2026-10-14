@@ -84,7 +84,7 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            padding: 8px 14px;
+            padding: 8px clamp(3px, 1.5vw, 14px);
             border-radius: 14px;
             cursor: pointer;
             color: var(--text-secondary);
@@ -1804,6 +1804,7 @@
 
 <!-- Alt Navigasyon -->
 <nav class="nav-bottom" aria-label="Ana navigasyon">
+    <a class="nav-item" href="/forum/" style="text-decoration:none"><svg class="ic" aria-hidden="true"><use href="#i-news"></use></svg><span>Forum</span></a>
     <button type="button" class="nav-item active" aria-current="page" aria-controls="homePage" onclick="changePage('homePage')"><svg class="ic" aria-hidden="true"><use href="#i-home"></use></svg><span>Ana Sayfa</span></button>
     <button type="button" class="nav-item" aria-controls="physicalPage" onclick="changePage('physicalPage')"><svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg><span>Semptom</span></button>
     <button type="button" class="nav-item" aria-controls="bloodPage" onclick="changePage('bloodPage')"><svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg><span>Doğrulama</span></button>
