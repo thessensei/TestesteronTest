@@ -267,7 +267,7 @@ test('admin paneli pin tercihini gönderir ve sonucu bildirir', () => {
     assert.match(adminHtml, /testotavan_pin/, 'tercih tarayıcıda hatırlanmalı');
 });
 
-test('openSharedContent geçerli kimliği açar, uydurma kimliği reddeder', () => {
+test('openSharedContent geçerli kimliği açar, uydurma kimliği reddeder', async () => {
     // content.js tarayıcı modülü, DOM stub'larıyla Node'da değerlendirilir.
     const elements = { modalSheet: { innerHTML: '' }, contentModal: { classList: { add() {}, remove() {} } } };
     const document = {
@@ -281,11 +281,13 @@ test('openSharedContent geçerli kimliği açar, uydurma kimliği reddeder', () 
     const source = fs.readFileSync(path.join(root, 'src', 'js', 'content.js'), 'utf8');
     const api = new Function(
         'document', 'localStorage', 'window', 'IC', 'showToast', 'requestAnimationFrame', 'fetch',
-        `${source}\n;return { openSharedContent };`
-    )(document, { getItem: () => null, setItem: () => {} }, {}, () => '', () => {}, () => {}, () => Promise.reject(new Error('offline')));
+        `${source}\n;return { openSharedContent, loadSharedContent };`
+    )(document, { getItem: () => null, setItem: () => {} }, {}, () => '', () => {}, () => {}, async () => ({ ok: true, json: async () => [{ id: 'content-panel', type: 'blog', title: 'Panelden eklenen yazı', body: 'Yazı içeriği' }] }));
+    await api.loadSharedContent();
 
-    assert.equal(api.openSharedContent('seed-1'), true, 'yayındaki yazı açılmalı');
-    assert.equal(elements.modalSheet.innerHTML.includes('Testosteronu Destekleyen'), true, 'modal doğru yazıyla doldurulmalı');
+    assert.equal(api.openSharedContent('content-panel'), true, 'yayındaki yazı açılmalı');
+    assert.equal(elements.modalSheet.innerHTML.includes('Panelden eklenen yazı'), true, 'modal doğru yazıyla doldurulmalı');
+    assert.equal(api.openSharedContent('seed-1'), false, 'kaldırılan hazır yazı açılmamalı');
     assert.equal(api.openSharedContent('content-yok'), false, 'olmayan içerik sessizce yok sayılmalı');
     assert.equal(api.openSharedContent('"><script>alert(1)</script>'), false, 'geçersiz kimlik reddedilmeli');
     assert.equal(api.openSharedContent(''), false);

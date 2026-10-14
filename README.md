@@ -314,3 +314,25 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 - **Sıfırlama dağıtımda devreye girer:** Eski `site_stats.page_views` toplamı artık okunmaz; yeni boş tekil ziyaretçi tablosuyla sayaç sıfırdan başlar. Eski veriler silinmez. Sonraki dağıtımlarda veya uygulama yeniden başlatıldığında yeni sayaç korunur. İlk onaylı ziyaretçiyle sayı 1 olur.
 - Bu değişiklik yerel kodu hazırlar; canlı veritabanında doğrudan bir işlem yapmaz. Yeni sürüm yayınlandığında, mevcut `DATABASE_URL` ile tablo otomatik oluşturulur. Servis hataları 0 gibi gösterilmez.
 - Bu bir kişi sayacı değil, **onay veren tarayıcı kimliği sayacıdır**. Çerezlerin silinmesi/süresinin dolması, gizli pencere, farklı cihaz veya tercihin geri çekilip yeniden onaylanması yeni kimlikle tekrar sayılmaya neden olabilir.
+
+
+## Hakkımda / Hakkımızda yönetimi
+
+`/admin/` panelinde **Hakkımda / Hakkımızda → Hakkımızda bilgilerini düzenle** alanı bulunur.
+Sayfa başlığı ve tanıtımı, misyon, bilimsel kaynaklar açıklaması, ekip adı/unvanı,
+tıbbi sorumluluk reddi ve gizlilik metni buradan düzenlenebilir. Bilimsel referans
+kartları bu editör kapsamında değildir.
+
+- Türkçe alanlar zorunludur. EN, DE ve JA çevirileri isteğe bağlıdır; boş çeviride
+  mevcut arayüz çevirisi veya Türkçe metin gösterilir.
+- `GET /api/about` mevcut metinleri ve alan tanımlarını döndürür.
+- `PUT /api/about` mevcut admin oturumunu, JSON içerik türünü ve
+  `X-Testotavan-About: 1` başlığını gerektirir; çapraz site yazmaları reddedilir.
+- Mevcut `DATABASE_URL` kullanılır. `site_about` tablosu ilk istekte otomatik
+  oluşturulur; sonraki dağıtımlarda kaydedilen metinler korunur. Yeni ortam
+  değişkeni veya elle veri taşıma işlemi gerekmez.
+- İlk kayda kadar mevcut sayfa metinleri kullanılır. API erişilemezse sitedeki
+  mevcut metin korunur, admin paneli yükleme/kayıt hatasını gösterir.
+- İçerik düz metindir; HTML/JavaScript çalıştırılmaz, satır sonları korunur.
+
+Kontroller: `npm test`, `npm run build:assets`, `npm run check:assets`.

@@ -842,6 +842,7 @@
 
         /* ========== HAKKIMIZDA IZGARA DÜZENİ ========== */
         #aboutPage { --about-gap: 12px; }
+        [data-about-field] { white-space: pre-line; overflow-wrap: anywhere; }
         .about-intro { padding: 20px 0 16px; }
         .about-intro h2 { font-size:22px; font-weight:900; margin-bottom:8px; }
         .about-intro p { font-size:12px; color:var(--text-secondary); line-height:1.6; }
@@ -1523,8 +1524,8 @@
     <!-- HAKKIMIZDA SAYFASI -->
 <div class="page" id="aboutPage">
     <div class="about-intro">
-        <h2>Hakkımızda</h2>
-        <p>
+        <h2 data-about-field="title">Hakkımızda</h2>
+        <p data-about-field="intro">
             TestoTavan projesi, yaklaşımımız ve bilimsel kaynaklar
         </p>
     </div>
@@ -1533,8 +1534,8 @@
     <div class="card about-hero">
         <img class="about-hero-logo" src="assets/logo.webp" alt="TestoTavan logosu" width="88" height="88" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='assets/logo.png'">
         <div>
-            <h2>TestoTavan</h2>
-            <p>
+            <h2 data-about-field="brand">TestoTavan</h2>
+            <p data-about-field="description">
                 Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.
             </p>
         </div>
@@ -1548,11 +1549,11 @@
                     <svg class="ic" aria-hidden="true"><use href="#i-target"></use></svg>
                 </div>
                 <div>
-                    <div class="card-title">Misyonumuz</div>
-                    <div class="card-subtitle">Ne yapıyoruz?</div>
+                    <div class="card-title" data-about-field="missionTitle">Misyonumuz</div>
+                    <div class="card-subtitle" data-about-field="missionSubtitle">Ne yapıyoruz?</div>
                 </div>
             </div>
-            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7">
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.7" data-about-field="mission">
                 Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan,
                 bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.
             </p>
@@ -1569,7 +1570,7 @@
                     <div class="card-subtitle">Referans aldığımız çalışmalar</div>
                 </div>
             </div>
-            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6">
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.6" data-about-field="sourcesIntro">
                 Tüm takviye önerilerimiz peer-reviewed (hakemli) bilimsel makalelere dayanmaktadır.
             </p>
         </div>
@@ -1767,8 +1768,8 @@
                 <svg class="ic" aria-hidden="true"><use href="#i-users"></use></svg>
             </div>
             <div>
-                <div class="card-title">Ekip</div>
-                <div class="card-subtitle">Geliştirici</div>
+                <div class="card-title" data-about-field="teamTitle">Ekip</div>
+                <div class="card-subtitle" data-about-field="teamSubtitle">Geliştirici</div>
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--input); border-radius: 14px">
@@ -1776,8 +1777,8 @@
                 S
             </div>
             <div>
-                <div style="font-size: 14px; font-weight: 700">The Sensei</div>
-                <div style="font-size: 11px; color: var(--text-secondary)">Kurucu & Geliştirici</div>
+                <div style="font-size: 14px; font-weight: 700" data-about-field="name">The Sensei</div>
+                <div style="font-size: 11px; color: var(--text-secondary)" data-about-field="role">Kurucu & Geliştirici</div>
             </div>
         </div>
     </div>
@@ -1793,7 +1794,7 @@
                 <div class="card-subtitle">Lütfen dikkatle okuyun</div>
             </div>
         </div>
-        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7" data-about-field="disclaimer">
             TestoTavan bir tıbbi cihaz, teşhis aracı veya tedavi yöntemi <b>değildir</b>.
             Herhangi bir takviyeye başlamadan önce mutlaka bir sağlık profesyoneline danışın.
             Bu platform sadece bilgilendirme amaçlıdır.
@@ -1811,7 +1812,7 @@
                 <div class="card-subtitle">%100 güvenli</div>
             </div>
         </div>
-        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7">
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.7" data-about-field="privacy">
             Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar
             tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.
         </p>
@@ -1825,7 +1826,7 @@
             TestoTavan v3.0 — Tüm hakları saklıdır © 2026
         </p>
         <p style="font-size: 10px; color: var(--text-secondary); margin-top: 6px">
-            Geliştiren: <b>The Sensei</b>
+            Geliştiren: <b data-about-field="name">The Sensei</b>
         </p>
     </div>
 </div>

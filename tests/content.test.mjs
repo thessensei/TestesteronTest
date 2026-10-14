@@ -13,7 +13,7 @@ const adminHtml = fs.readFileSync(path.join(root, 'admin', 'index.html'), 'utf8'
 const indexHtml = fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8');
 
 // İçerik modülünü tarayıcı stub'larıyla Node'da değerlendirip API'sini alıyoruz
-function loadContentModule() {
+function loadContentModule(fetchContent = () => Promise.reject(new Error('offline'))) {
     const store = new Map();
     const localStorage = {
         getItem: key => (store.has(key) ? store.get(key) : null),
@@ -29,9 +29,9 @@ function loadContentModule() {
     };
     const factory = new Function(
         'document', 'localStorage', 'window', 'IC', 'showToast', 'requestAnimationFrame', 'fetch',
-        `${contentSource}\n;return { localizedContent, localizeDuration, i18n, seedContent, getAllContent };`
+        `${contentSource}\n;return { localizedContent, localizeDuration, i18n, getAllContent, loadSharedContent };`
     );
-    const api = factory(document, localStorage, {}, () => '', () => {}, () => {}, () => Promise.reject(new Error('offline')));
+    const api = factory(document, localStorage, {}, () => '', () => {}, () => {}, fetchContent);
     return { api, store };
 }
 
@@ -120,12 +120,51 @@ test('çeviri girilmemişse süre otomatik çevrilir, malzeme Türkçeye düşer
     assert.deepEqual(de.ingredients, ['1 su bardağı bulgur'], 'malzeme çevirisi yoksa Türkçesi gösterilir');
 });
 
-test('örnek tarifin süresi ve malzemeleri seçilen dilde gelir', () => {
-    const { api, store } = loadContentModule();
+test('API yüklenmeden koda gömülü içerik gösterilmez', () => {
+    const { api } = loadContentModule();
+    assert.deepEqual(api.getAllContent(), []);
+    assert.ok(!contentSource.includes('seedContent'), 'sabit örnek içerikler kaldırılmalı');
+});
+
+test('yalnızca panel kayıtları gösterilir ve son kayıt silinince liste boş kalır', async () => {
+    let records = [
+        { id: 'content-blog', type: 'blog', title: 'Panel yazısı' },
+        { id: 'content-recipe', type: 'recipe', title: 'Panel tarifi' }
+    ];
+    const { api } = loadContentModule(async url => {
+        assert.equal(url, '/api/content');
+        return { ok: true, json: async () => records };
+    });
+    await api.loadSharedContent();
+    assert.deepEqual(api.getAllContent(), records);
+    records = [{ ...records[0], title: 'Düzenlenmiş panel yazısı' }];
+    await api.loadSharedContent();
+    assert.deepEqual(api.getAllContent(), records, 'düzenleme ve silme listeye yansımalı');
+    records = [];
+    await api.loadSharedContent();
+    assert.deepEqual(api.getAllContent(), [], 'boş API yanıtında örnek içerik eklenmemeli');
+});
+
+test('API hata yanıtında hazır içerik gösterilmez', async () => {
+    const { api } = loadContentModule(async () => ({ ok: false }));
+    await api.loadSharedContent();
+    assert.deepEqual(api.getAllContent(), []);
+});
+
+test('panel tarifinin süresi ve malzemeleri seçilen dilde gelir', async () => {
+    const { api, store } = loadContentModule(async () => ({
+        ok: true,
+        json: async () => [{
+            id: 'content-recipe', type: 'recipe', title: 'Panel tarifi', time: '20 dk',
+            ingredients: ['150 g tavuk göğsü'],
+            translations: { ja: { ingredients: ['鶏むね肉 150g'] } }
+        }]
+    }));
+    await api.loadSharedContent();
     store.set('testotavan_language', 'ja');
     const recipe = api.getAllContent().find(x => x.type === 'recipe');
     assert.equal(recipe.time, '20分');
-    assert.ok(recipe.ingredients.some(x => x.includes('鶏むね肉')));
+    assert.deepEqual(recipe.ingredients, ['鶏むね肉 150g']);
 });
 
 test('modal başlıkları (Malzemeler / Hazırlanışı) sözlükte var', () => {
