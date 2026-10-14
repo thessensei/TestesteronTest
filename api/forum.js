@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
 import { prepareForum, validatePost, validId } from './_forum.js';
+import { findForumUserByToken, readForumToken } from './_forum-auth.js';
 
 export function createForumHandler(connect = neon) {
   return async function handler(req, res) {
@@ -20,6 +21,7 @@ export function createForumHandler(connect = neon) {
     let input;
     if (req.method === 'POST') {
       try { input = validatePost(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
+      if (!readForumToken(req)) return res.status(401).json({ error: 'Konu açmak ve yanıtlamak için giriş yapın.' });
     }
     if (query.id && !validId(query.id)) return res.status(400).json({ error: 'Geçersiz kimlik.' });
     if (['PATCH', 'DELETE'].includes(req.method) && (!validId(query.id) || !['thread', 'reply'].includes(query.kind))) return res.status(400).json({ error: 'Kimlik ve tür gerekli.' });
@@ -42,18 +44,20 @@ export function createForumHandler(connect = neon) {
         return res.status(200).json({ threads });
       }
       if (req.method === 'POST') {
-        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-        const key = crypto.createHmac('sha256', process.env.SESSION_SECRET).update(ip).digest('hex');
+        const user = await findForumUserByToken(sql, readForumToken(req));
+        if (!user) return res.status(401).json({ error: 'Oturumunuz sona erdi. Tekrar giriş yapın.' });
+        input.author = user.username;
+        const key = crypto.createHmac('sha256', process.env.SESSION_SECRET).update(`forum-user:${user.id}`).digest('hex');
         await sql`DELETE FROM forum_limits WHERE last_post < NOW() - INTERVAL '1 day'`;
         const allowed = await sql`INSERT INTO forum_limits (key,last_post) VALUES (${key},NOW()) ON CONFLICT (key) DO UPDATE SET last_post=NOW() WHERE forum_limits.last_post < NOW() - INTERVAL '30 seconds' RETURNING key`;
         if (!allowed.length) return res.status(429).json({ error: 'Yeni mesaj için 30 saniye bekleyin.' });
         const id = crypto.randomUUID();
         if (input.threadId) {
           // Row lock serializes reply insertion with moderation/deletion.
-          const rows = await sql`WITH parent AS (SELECT id FROM forum_threads WHERE id=${input.threadId} AND approved=TRUE AND locked=FALSE FOR UPDATE) INSERT INTO forum_replies (id,thread_id,author,body) SELECT ${id}::uuid,id,${input.author},${input.body} FROM parent RETURNING id`;
+          const rows = await sql`WITH parent AS (SELECT id FROM forum_threads WHERE id=${input.threadId} AND approved=TRUE AND locked=FALSE FOR UPDATE) INSERT INTO forum_replies (id,thread_id,author,body,user_id) SELECT ${id}::uuid,id,${input.author},${input.body},${user.id}::uuid FROM parent RETURNING id`;
           if (!rows.length) return res.status(409).json({ error: 'Konu kapalı veya yayında değil.' });
         } else {
-          await sql`INSERT INTO forum_threads (id,author,title,body,category) VALUES (${id},${input.author},${input.title},${input.body},${input.category})`;
+          await sql`INSERT INTO forum_threads (id,author,title,body,category,user_id) VALUES (${id},${input.author},${input.title},${input.body},${input.category},${user.id})`;
         }
         return res.status(201).json({ id, message: 'Mesajınız alındı. Admin onayından sonra yayınlanacak.' });
       }

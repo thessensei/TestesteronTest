@@ -1,5 +1,5 @@
 import { isAdmin } from './_auth.js';
-import { createBlogDraftFromUrl, validateNewsUrl } from './_ai-blog.js';
+import { completeBlogTranslations, createBlogDraftFromUrl, validateNewsUrl } from './_ai-blog.js';
 
 export function createAiBlogHandler(options = {}) {
   return async function handler(req, res) {
@@ -23,18 +23,31 @@ export function createAiBlogHandler(options = {}) {
     }
 
     const body = req.body || {};
+    const aiOptions = {
+      ...options,
+      provider: body.provider,
+      apiKey: body.apiKey,
+      model: body.model
+    };
+
+    if (body.mode === 'translate') {
+      try {
+        const translated = await completeBlogTranslations(body.item, aiOptions);
+        if (!translated.ok) return res.status(400).json({ error: translated.error });
+        return res.status(200).json(translated);
+      } catch (error) {
+        console.error('[ai-blog] çeviri hatası:', error);
+        return res.status(500).json({ error: 'Çeviri servisi şu anda yanıt veremiyor.' });
+      }
+    }
+
     const urlCheck = validateNewsUrl(body.url);
     if (!urlCheck.ok) {
       return res.status(400).json({ error: urlCheck.error });
     }
 
     try {
-      const result = await createBlogDraftFromUrl(urlCheck.url, {
-        ...options,
-        provider: body.provider,
-        apiKey: body.apiKey,
-        model: body.model
-      });
+      const result = await createBlogDraftFromUrl(urlCheck.url, aiOptions);
 
       if (!result.ok) {
         return res.status(422).json({ error: result.error || 'Haber içeriği işlenemedi.' });

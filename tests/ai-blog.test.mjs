@@ -17,6 +17,7 @@ import {
   generateBlogFromArticle,
   createBlogDraftFromUrl
 } from '../api/_ai-blog.js';
+import { isTranslationComplete, fieldLooksTranslated, machineTranslateText } from '../api/_translate.js';
 import { createAiBlogHandler } from '../api/ai-blog.js';
 import {
   createSessionCookie,
@@ -156,6 +157,14 @@ test('classifyArticleCategory ve buildFallbackBlogPost 4 dilde eksiksiz taslak �
   assert.match(draft.translations.en.time, /min$/);
   assert.match(draft.translations.de.time, /Min\.$/);
   assert.match(draft.translations.ja.time, /分$/);
+  assert.notEqual(draft.translations.en.title, draft.title, 'İngilizce başlık Türkçenin kopyası olmamalı');
+  assert.match(draft.translations.en.title, /Sleep|Testosterone|Sunlight/i);
+  assert.match(draft.translations.de.body, /Schlaf|Testosteron/);
+  assert.match(draft.translations.ja.body, /[\u3040-\u30ff\u4e00-\u9fff]/);
+  assert.equal(isTranslationComplete(draft.translations.en, draft, 'en'), true);
+  assert.equal(isTranslationComplete(draft.translations.de, draft, 'de'), true);
+  assert.equal(isTranslationComplete(draft.translations.ja, draft, 'ja'), true);
+  assert.equal(fieldLooksTranslated(draft.title, draft.title, 'en'), false, 'kopya metin çeviri sayılmamalı');
 });
 
 // -------------------------------------------------- AI Sağlayıcıları ve Yedek Mod
@@ -228,6 +237,89 @@ test('generateBlogFromArticle AI yanıtını 4 dilde normalize eder, hata olursa
   assert.equal(fallbackRes.mode, 'fallback');
   assert.ok(fallbackRes.item.title.length > 0);
   assert.ok(fallbackRes.item.translations.en.body.length > 0);
+  assert.notEqual(fallbackRes.item.translations.en.title, fallbackRes.item.title);
+});
+
+test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', async () => {
+  const article = {
+    title: 'Zencefil çayı her sabah içilmelidir',
+    description: 'Zencefil çayı dolaşımı desteklediği için sabah rutininize eklenmelidir.',
+    body: 'Zencefil çayı her sabah içilmelidir çünkü dolaşımı destekler ve günü daha dengeli başlatır. Uzmanlar bu içeceği öğünle birlikte önermektedir.',
+    siteName: 'Örnek Haber',
+    url: 'https://ornek.com/zencefil',
+    image: ''
+  };
+  const copied = {
+    category: 'Hormon Sağlığı',
+    emoji: '🧬',
+    title: article.title,
+    summary: article.description,
+    body: article.body,
+    time: '4 dk',
+    translations: {
+      en: { title: article.title, summary: article.description, body: article.body, category: 'Hormon Sağlığı', time: '4 dk' },
+      de: { title: article.title, summary: article.description, body: article.body, category: 'Hormon Sağlığı' },
+      ja: { title: article.title, summary: article.description, body: article.body, category: 'Hormon Sağlığı' }
+    }
+  };
+  const translated = {
+    en: {
+      category: 'Hormone Health',
+      title: 'Ginger tea belongs in the morning routine',
+      summary: 'Ginger tea can support circulation when it is part of a morning routine.',
+      body: 'Ginger tea in the morning can support circulation and start the day more steadily. Experts suggest having it with a meal.\n\nThis is general information, not medical advice.'
+    },
+    de: {
+      category: 'Hormongesundheit',
+      title: 'Ingwertee gehört in die Morgenroutine',
+      summary: 'Ingwertee kann die Durchblutung unterstützen, wenn er zur Morgenroutine gehört.',
+      body: 'Ingwertee am Morgen kann die Durchblutung unterstützen und den Tag ausgeglichener beginnen. Fachleute empfehlen ihn zu einer Mahlzeit.\n\nDas ist eine allgemeine Information und kein medizinischer Rat.'
+    },
+    ja: {
+      category: 'ホルモン健康',
+      title: '生姜茶は朝の習慣に合う',
+      summary: '生姜茶は朝の習慣に取り入れると巡りを支えるとされています。',
+      body: '朝の生姜茶は巡りを支え、1日をより安定して始めやすくします。専門家は食事と一緒に摂ることを勧めています。\n\nこれは一般的な情報であり、医療アドバイスではありません。'
+    }
+  };
+  let translationCalls = 0;
+  const fetchImpl = async (_url, init) => {
+    const payload = JSON.parse(init.body);
+    const system = payload.systemInstruction.parts[0].text;
+    const data = system.includes('full-translation') ? (translationCalls += 1, translated) : copied;
+    return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(data) }] } }] }) };
+  };
+  const result = await generateBlogFromArticle(article, {
+    apiKey: 'AIzaFakeKey',
+    provider: 'gemini',
+    fetchImpl,
+    networkTranslate: false
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.mode, 'ai');
+  assert.equal(translationCalls, 1, 'üç dil tek çeviri turunda tamamlanmalı');
+  assert.equal(result.translation.en, 'ai');
+  assert.equal(result.translation.de, 'ai');
+  assert.equal(result.translation.ja, 'ai');
+  assert.equal(result.item.translations.en.title, translated.en.title);
+  assert.equal(result.item.translations.de.body, translated.de.body);
+  assert.match(result.item.translations.ja.body, /生姜茶/);
+  assert.equal(fieldLooksTranslated(article.body, article.body, 'en'), false);
+});
+
+test('makine çevirisi paragrafları birleştirir ve kopyayı kabul etmez', async () => {
+  const fetchImpl = async url => {
+    const href = String(url);
+    if (href.includes('translate.googleapis.com')) {
+      const q = new URL(href).searchParams.get('q');
+      return { ok: true, json: async () => [[['EN: ' + q, q]]] };
+    }
+    return { ok: false, status: 503, json: async () => ({}) };
+  };
+  const translated = await machineTranslateText('İlk paragraf yeterince uzundur.\n\nİkinci paragraf da çevrilmeli.', 'en', { fetchImpl, networkTranslate: true });
+  assert.match(translated, /EN: İlk paragraf/);
+  assert.match(translated, /EN: İkinci paragraf/);
+  assert.ok(translated.includes('\n\n'));
 });
 
 // -------------------------------------------------- /api/ai-blog HTTP Handler
@@ -271,9 +363,23 @@ test('/api/ai-blog admin yetkisi, JSON başlığı ve URL güvenliğini denetler
   assert.equal(okRes.data.ok, true);
   assert.equal(okRes.data.item.type, 'blog');
   assert.equal(okRes.data.item.title, 'Derin Uyku ve Sabah Güneşi Testosteronu Nasıl Etkiliyor?');
-  assert.ok(okRes.data.item.translations.en.title);
-  assert.ok(okRes.data.item.translations.de.title);
-  assert.ok(okRes.data.item.translations.ja.title);
+  assert.notEqual(okRes.data.item.translations.en.title, okRes.data.item.title);
+  assert.match(okRes.data.item.translations.ja.body, /[\u3040-\u30ff\u4e00-\u9fff]/);
+
+  const missing = await call('POST', { mode: 'translate', item: { title: 'Yalnız başlık' } }, true);
+  assert.equal(missing.code, 400);
+  const translated = await call('POST', {
+    mode: 'translate',
+    item: {
+      title: 'Zencefil çayı her sabah içilmelidir',
+      summary: 'Zencefil çayı dolaşımı desteklediği için sabah rutininize eklenmelidir.',
+      body: 'Zencefil çayı her sabah içilmelidir çünkü dolaşımı destekler ve günü daha dengeli başlatır.'
+    }
+  }, true);
+  assert.equal(translated.code, 200);
+  assert.equal(translated.data.ok, true);
+  assert.ok(translated.data.item.translations.en.body);
+  assert.ok(translated.data.translation);
 });
 
 // -------------------------------------------------- Admin Paneli Arayüzü ve Giriş Doğrulama Kodu
@@ -283,12 +389,15 @@ test('admin panelinde haber linkinden otomatik blog oluşturma ve doğrulama kod
   assert.match(adminHtml, /id="news_url"/, 'haber URL giriş alanı olmalı');
   assert.match(adminHtml, /id="ai_generate_btn"/, 'AI blog üretim butonu olmalı');
   assert.match(adminHtml, /function generateFromNewsUrl\(\)/, 'haber çekme işlevi olmalı');
-  assert.match(adminHtml, /function applyGeneratedBlog\(item\)/, 'form doldurma işlevi olmalı');
+  assert.match(adminHtml, /function applyGeneratedBlog\(/, 'form doldurma işlevi olmalı');
   assert.match(adminHtml, /fetch\('\/api\/ai-blog'/, 'admin paneli /api/ai-blog ucunu çağırmalı');
   assert.match(adminHtml, /id="username"/, 'kullanıcı adı alanı olmalı');
   assert.match(adminHtml, /id="captcha_code"/, 'doğrulama kodu giriş alanı olmalı');
   assert.match(adminHtml, /id="captcha_display"/, 'doğrulama kodu göstergesi olmalı');
   assert.match(adminHtml, /function loadCaptcha\(\)/, 'doğrulama kodu yenileme işlevi olmalı');
+  assert.match(adminHtml, /id="ai_translate_btn"/, 'açık alanları çevirme düğmesi olmalı');
+  assert.match(adminHtml, /function translateOpenFields\(/);
+  assert.match(adminHtml, /mode:'translate'/);
 });
 
 test('kullanıcı adı ve HMAC imzalı doğrulama kodu (Captcha) güvenli biçimde doğrulanır', async () => {

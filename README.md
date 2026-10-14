@@ -42,7 +42,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
-- **AI Haberden Otomatik Blog Üretici** — admin paneline girilen haber/makale bağlantısından başlık, özet, gövde, kategori, okuma süresi ve kapak görselini çekip 4 dilde (TR/EN/DE/JA) blog taslağına dönüştürür (Gemini, OpenAI, Groq + anahtarsız yerleşik akıllı mod)
+- **AI Haberden Otomatik Blog Üretici** — admin paneline girilen haber/makale bağlantısından başlık, özet, gövde, kategori, okuma süresi ve kapak görselini çekip 4 dilde (TR/EN/DE/JA) blog taslağına dönüştürür (Gemini, OpenAI, Groq + anahtarsız yerleşik akıllı mod). EN/DE/JA alanları kaynak metnin kopyası olarak bırakılmaz; başlık, özet ve gövde ayrı bir tam çeviri turundan geçer. Eksik dil kalırsa yedek makine çevirisi denenir (`ENABLE_MACHINE_TRANSLATION=0` ile kapatılır). Paneldeki **4 dile tam çevir** düğmesi, forma yazılmış Türkçe metni de aynı denetimle çevirir
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
@@ -142,7 +142,8 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `PINTEREST_ACCESS_TOKEN` | Pinterest API v5 erişim tokenı (opsiyonel; yoksa pin gönderilmez) |
 | `PINTEREST_BOARD_ID` | Pinin ekleneceği board kimliği (opsiyonel; yoksa pin gönderilmez) |
 | `SITE_URL` | Yayındaki kök adres, ör. `https://testotavan.vercel.app` (opsiyonel) |
-| `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi için (opsiyonel) |
+| `ENABLE_MACHINE_TRANSLATION` | `0` ise AI çevirisi eksik kaldığında yedek çeviri servisi çağrılmaz (opsiyonel) |
+| `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
 | `OPENAI_API_KEY` | OpenAI API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
 | `GROQ_API_KEY` | Groq API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
 
@@ -256,7 +257,9 @@ Davranış kuralları:
 | `/api/session` | `GET` | Oturumun doğrulanmış mı olduğunu döner |
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
 | `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
-| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir (admin yetkisi ister) |
+| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir (admin yetkisi ister) |
+| `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu ve yanıt için forum hesabı gerekir. Moderasyon admin oturumu ister |
+| `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
 
@@ -270,8 +273,9 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 
 ## Topluluk forumu
 
-- `/forum/`: ziyaretçiler rumuzla konu açabilir ve açık konulara yanıt verebilir.
-  Bu sürümde üyelik/kimlik doğrulaması yoktur; rumuzlar benzersiz veya doğrulanmış değildir.
+- `/forum/`: konular herkese açıktır. Konu açmak ve yanıt yazmak için **Giriş yap** veya **Kayıt ol**
+  gerekir. Kullanıcı adı paylaşımlarda görünür; istemcinin gönderdiği yazar adı yok sayılır.
+  Şifreler düz metin saklanmaz (scrypt). Oturum `HttpOnly` çerezle 14 gün sürer.
 - Admin panelindeki **Forum yönetimini aç** bağlantısı `/forum/?manage=1` sayfasını açar.
   Mevcut admin oturumu zorunludur. Bekleyen konuları/yanıtları onaylama, konu
   kilitleme/kilidi açma ve kalıcı silme desteklenir. Konu silinince yanıtları da silinir.
@@ -280,10 +284,11 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
   Sayfalar 30 konu / 50 yanıtla sınırlıdır ve önceki/sonraki kontrolleri vardır.
 - Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
   `ADMIN_PASSWORD` ortam değişkenlerini kullanır. İlk API isteği `forum_threads`,
-  `forum_replies`, `forum_limits` tablolarını ve yanıt indeksini otomatik oluşturur;
+  `forum_replies`, `forum_limits`, `forum_users` ve `forum_sessions` tablolarını otomatik oluşturur;
   DB kullanıcısının CREATE yetkisi gerekir. Ek servis veya paket gerekmez.
-- IP'nin HMAC özetiyle DB üzerinde 30 saniyede bir gönderi sınırı uygulanır;
-  ham IP saklanmaz. Eski hız sınırı kayıtları sonraki gönderimlerde 24 saat sonra temizlenir.
+- Hesabın HMAC özetiyle DB üzerinde 30 saniyede bir gönderi sınırı uygulanır;
+  ham IP saklanmaz. Giriş denemeleri 15 dakikada IP başına 10, kayıt denemeleri saatte 8 ile sınırlıdır.
+  Eski hız sınırı kayıtları sonraki gönderimlerde 24 saat sonra temizlenir.
   Ters proxy `x-forwarded-for` başlığını güvenilir şekilde sağlamalıdır (Vercel dağıtımı).
   Yoğun trafik için ayrıca platform/WAF hız sınırı önerilir.
 - Paylaşımlar düz metin olarak kaçışlanarak gösterilir. JSON yazma istekleri ve

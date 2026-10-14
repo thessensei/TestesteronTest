@@ -12,6 +12,14 @@
 
 import { clean, cleanTranslations, localizeDuration } from './_content-shape.js';
 import { isSafeCoverUrl } from './_media.js';
+import {
+  ensureCompleteTranslations,
+  localTranslateFields,
+  pickLanguageBlock,
+  coerceTranslatedFields,
+  preferTranslated,
+  repairTranslation
+} from './_translate.js';
 
 export const NEWS_FETCH_TIMEOUT_MS = 10000;
 export const AI_TIMEOUT_MS = 25000;
@@ -494,35 +502,13 @@ export function buildFallbackBlogPost(article) {
   const bodyTr = clean(trBodyParts.join('\n\n'), 20000);
   const timeTr = estimateReadingTime(bodyTr);
 
-  const enBody = clean(
-    [
-      summaryTr,
-      mainParagraphs.slice(0, 4).join('\n\n'),
-      'Key Takeaway:\nConsistent sleep, balanced nutrition, resistance training and stress management remain the foundation of metabolic and hormonal well-being. Always review new health findings with a qualified physician.',
-      sourceLine ? sourceLine.replace(/^Kaynak:/, 'Source:') : ''
-    ].filter(Boolean).join('\n\n'),
-    20000
-  );
-
-  const deBody = clean(
-    [
-      summaryTr,
-      mainParagraphs.slice(0, 4).join('\n\n'),
-      'Wichtiger Hinweis:\nErholsamer Schlaf, ausgewogene Ernährung, regelmäßiges Krafttraining und Stressbewältigung bilden die Grundlage für die hormonelle Gesundheit. Besprechen Sie gesundheitliche Fragen stets mit medizinischem Fachpersonal.',
-      sourceLine ? sourceLine.replace(/^Kaynak:/, 'Quelle:') : ''
-    ].filter(Boolean).join('\n\n'),
-    20000
-  );
-
-  const jaBody = clean(
-    [
-      summaryTr,
-      mainParagraphs.slice(0, 4).join('\n\n'),
-      'ポイント：\n質の高い睡眠、バランスの取れた栄養、定期的な筋力トレーニング、ストレス管理はホルモンと全身の健康を支える基本です。健康に関する判断は必ず医師にご相談ください。',
-      sourceLine ? sourceLine.replace(/^Kaynak:/, '出典：') : ''
-    ].filter(Boolean).join('\n\n'),
-    20000
-  );
+  const source = {
+    category: cat.tr,
+    title: titleTr,
+    summary: summaryTr,
+    body: bodyTr,
+    time: timeTr
+  };
 
   return {
     type: 'blog',
@@ -534,30 +520,9 @@ export function buildFallbackBlogPost(article) {
     body: bodyTr,
     cover_url: resolveSafeImage(article?.image || '', article?.url || ''),
     translations: {
-      en: {
-        category: cat.en,
-        title: titleTr,
-        summary: summaryTr,
-        body: enBody,
-        time: localizeDuration(timeTr, 'en'),
-        ingredients: []
-      },
-      de: {
-        category: cat.de,
-        title: titleTr,
-        summary: summaryTr,
-        body: deBody,
-        time: localizeDuration(timeTr, 'de'),
-        ingredients: []
-      },
-      ja: {
-        category: cat.ja,
-        title: titleTr,
-        summary: summaryTr,
-        body: jaBody,
-        time: localizeDuration(timeTr, 'ja'),
-        ingredients: []
-      }
+      en: localTranslateFields(source, 'en'),
+      de: localTranslateFields(source, 'de'),
+      ja: localTranslateFields(source, 'ja')
     }
   };
 }
@@ -566,6 +531,22 @@ export function buildFallbackBlogPost(article) {
  * Üretilen ham AI çıktısını /api/content şemasına ve karakter sınırlarına göre temizler.
  * Eksik kalan alanları yerleşik yedek taslaktan tamamlar.
  */
+function collectedTranslations(raw) {
+  const bag = { ...(raw?.translations && typeof raw.translations === 'object' ? raw.translations : {}) };
+  for (const lang of ['en', 'de', 'ja']) {
+    if (!pickLanguageBlock(bag, lang)) {
+      const top = pickLanguageBlock(raw, lang);
+      if (top) bag[lang] = top;
+    }
+  }
+  const normalized = {};
+  for (const lang of ['en', 'de', 'ja']) {
+    const block = coerceTranslatedFields(pickLanguageBlock(bag, lang)) || {};
+    normalized[lang] = block;
+  }
+  return normalized;
+}
+
 export function normalizeGeneratedBlog(raw, article) {
   const fallback = buildFallbackBlogPost(article);
   const cat = classifyArticleCategory({
@@ -581,19 +562,23 @@ export function normalizeGeneratedBlog(raw, article) {
   const emoji = clean(raw?.emoji, 8) || cat.emoji;
   const time = clean(raw?.time, 30) || estimateReadingTime(body);
   const cover_url = isSafeCoverUrl(raw?.cover_url || article?.image || fallback.cover_url);
+  const source = { category, title, summary, body, time };
 
-  const cleanedTrans = cleanTranslations(raw?.translations || {});
+  const cleanedTrans = cleanTranslations(collectedTranslations(raw));
   const defaultCats = { en: cat.en, de: cat.de, ja: cat.ja };
 
   for (const lang of ['en', 'de', 'ja']) {
     const t = cleanedTrans[lang];
     const fb = fallback.translations[lang];
     t.category = t.category || defaultCats[lang];
-    t.title = t.title || fb.title || title;
-    t.summary = t.summary || fb.summary || summary;
-    t.body = t.body || fb.body || body;
+    t.title = clean(preferTranslated(t.title, fb.title, title, lang), 100);
+    t.summary = clean(preferTranslated(t.summary, fb.summary, summary, lang), 240);
+    t.body = clean(preferTranslated(t.body, fb.body, body, lang), 20000);
     t.time = t.time || localizeDuration(time, lang);
     t.ingredients = [];
+    const repaired = repairTranslation(t, source, lang);
+    t.category = repaired.category || t.category;
+    t.time = repaired.time || t.time;
   }
 
   return {
@@ -680,7 +665,9 @@ function buildAiPrompts(article) {
     '4. "summary" en fazla 220 karakter, 1-2 cümlelik net özet olmalı.',
     '5. "body" en az 3-5 paragraf olmalı; haberin temel bulgularını, erkek sağlığı / hormon dengesi / yaşam tarzı açısından önemini, maddeli pratik önerileri ve sonunda tıbbi sorumluluk notunu içermeli.',
     '6. "time" okuma süresini "5 dk" biçiminde belirtmeli.',
-    '7. "translations" altında "en" (İngilizce), "de" (Almanca) ve "ja" (Japonca) için category, title, summary, body ve time alanlarını eksiksiz doldur.',
+    '7. "translations.en", "translations.de" ve "translations.ja" başlık, özet ve gövdenin EKSİKSİZ ve doğal çevirisi olmalı. Aynı paragraf sayısı ve liste yapısı korunmalı.',
+    '8. Diğer dillere Türkçe cümle kopyalama. Özel isim, URL, sayı ve birim (ng/dL, REM, SHBG) dışında kaynak dil bırakma.',
+    '9. Japonca alanlar Japonca yazı sistemiyle, Almanca doğal Almanca, İngilizce doğal İngilizce olmalı. Kısaltma veya özet çeviri yasaktır.',
     'JSON Şeması:',
     '{"category":"Hormon Sağlığı","emoji":"🧬","title":"...","summary":"...","body":"...","time":"5 dk","translations":{"en":{"category":"Hormone Health","title":"...","summary":"...","body":"...","time":"5 min"},"de":{"category":"Hormongesundheit","title":"...","summary":"...","body":"...","time":"5 Min."},"ja":{"category":"ホルモン健康","title":"...","summary":"...","body":"...","time":"5分"}}}'
   ].join('\n');
@@ -697,12 +684,16 @@ function buildAiPrompts(article) {
 }
 
 /**
- * Seçilen AI sağlayıcısına (Gemini / OpenAI / Groq) istek gönderip JSON yanıtı alır.
+ * Sağlayıcıya serbest sistem/kullanıcı istemi gönderir ve JSON nesnesi döndürür.
+ * Çeviri turu da aynı istemciyi kullanır; anahtar veya gövde günlüğe yazılmaz.
  */
-export async function callAiProvider(article, config, options = {}) {
+export async function requestAiJson(config, prompts, options = {}) {
   const fetchImpl = options.fetchImpl || fetch;
   const timeoutMs = options.timeoutMs ?? AI_TIMEOUT_MS;
-  const { systemPrompt, userPrompt } = buildAiPrompts(article);
+  const systemPrompt = prompts.systemPrompt;
+  const userPrompt = prompts.userPrompt;
+  const temperature = prompts.temperature ?? 0.3;
+  const maxTokens = prompts.maxTokens ?? 8192;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -718,8 +709,9 @@ export async function callAiProvider(article, config, options = {}) {
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
           generationConfig: {
-            temperature: 0.4,
-            responseMimeType: 'application/json'
+            temperature,
+            responseMimeType: 'application/json',
+            maxOutputTokens: maxTokens
           }
         }),
         signal: controller.signal
@@ -736,7 +728,8 @@ export async function callAiProvider(article, config, options = {}) {
         },
         body: JSON.stringify({
           model: config.model,
-          temperature: 0.4,
+          temperature,
+          max_tokens: maxTokens,
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: systemPrompt },
@@ -774,39 +767,101 @@ export async function callAiProvider(article, config, options = {}) {
 }
 
 /**
+ * Seçilen AI sağlayıcısına (Gemini / OpenAI / Groq) istek gönderip JSON yanıtı alır.
+ */
+export async function callAiProvider(article, config, options = {}) {
+  const { systemPrompt, userPrompt } = buildAiPrompts(article);
+  const result = await requestAiJson(config, { systemPrompt, userPrompt, temperature: 0.4 }, options);
+  if (!result.ok) return result;
+  return { ...result, provider: config.provider, model: config.model };
+}
+
+function isHardAiFailure(message = '') {
+  return /quota|429|401|403|unauthorized|api key|zaman aşımı|timeout|aborted|invalid api/i.test(String(message));
+}
+
+async function finishWithTranslations(item, options, aiConfig, canRepairWithAi) {
+  const requestAi = canRepairWithAi && aiConfig
+    ? (systemPrompt, userPrompt) => requestAiJson(aiConfig, {
+      systemPrompt,
+      userPrompt,
+      temperature: 0.2,
+      maxTokens: 8192
+    }, { ...options, timeoutMs: options.translateTimeoutMs ?? Math.min(options.timeoutMs ?? AI_TIMEOUT_MS, 20000) })
+    : null;
+  return ensureCompleteTranslations(item, { ...options, requestAi });
+}
+
+/**
  * Çıkarılan haber verisinden tam blog taslağı üretir.
  * Yapılandırılmış bir AI anahtarı varsa LLM kullanır; yoksa veya LLM hata verirse
- * yerleşik akıllı modla (fallback) 4 dilde taslağı kesintisiz oluşturur.
+ * yerleşik akıllı modla 4 dilde taslağı kesintisiz oluşturur.
+ * EN/DE/JA alanları kaynak metnin kopyasıysa ayrı bir tam çeviri turu çalışır.
  */
 export async function generateBlogFromArticle(article, options = {}) {
   const aiConfig = resolveAiProvider(options, options.env || process.env);
+  let mode = 'fallback';
+  let provider = 'builtin';
+  let model;
+  let warning;
+  let raw = {};
 
   if (aiConfig) {
     const aiResult = await callAiProvider(article, aiConfig, options);
     if (aiResult.ok) {
-      return {
-        ok: true,
-        mode: 'ai',
-        provider: aiResult.provider,
-        model: aiResult.model,
-        item: normalizeGeneratedBlog(aiResult.data, article)
-      };
+      mode = 'ai';
+      provider = aiResult.provider;
+      model = aiResult.model;
+      raw = aiResult.data || {};
+    } else {
+      warning = aiResult.error;
+      console.warn(`[ai-blog] ${aiConfig.provider} hatası, yerleşik moda geçiliyor:`, aiResult.error);
     }
-    console.warn(`[ai-blog] ${aiConfig.provider} hatası, yerleşik moda geçiliyor:`, aiResult.error);
-    return {
-      ok: true,
-      mode: 'fallback',
-      provider: 'builtin',
-      warning: aiResult.error,
-      item: normalizeGeneratedBlog({}, article)
-    };
   }
+
+  const item = normalizeGeneratedBlog(raw, article);
+  const repaired = await finishWithTranslations(item, options, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
+  if (repaired.warning) warning = [warning, repaired.warning].filter(Boolean).join(' ');
 
   return {
     ok: true,
-    mode: 'fallback',
-    provider: 'builtin',
-    item: normalizeGeneratedBlog({}, article)
+    mode,
+    provider,
+    model,
+    warning,
+    translation: repaired.report,
+    item: repaired.item
+  };
+}
+
+/**
+ * Var olan Türkçe blog alanlarını yeniden yazmadan EN/DE/JA çevirilerini tamamlar.
+ */
+export async function completeBlogTranslations(rawItem, options = {}) {
+  const title = clean(rawItem?.title, 100);
+  const summary = clean(rawItem?.summary, 240);
+  const body = clean(rawItem?.body, 20000);
+  if (!title || !summary || !body) {
+    return { ok: false, error: 'Çeviri için başlık, özet ve içerik gerekli.' };
+  }
+  const article = { title, description: summary, body, image: rawItem?.cover_url || '' };
+  const aiConfig = resolveAiProvider(options, options.env || process.env);
+  const item = normalizeGeneratedBlog({
+    ...rawItem,
+    title,
+    summary,
+    body,
+    translations: rawItem?.translations || {}
+  }, article);
+  const repaired = await finishWithTranslations(item, options, aiConfig, Boolean(aiConfig));
+  return {
+    ok: true,
+    mode: aiConfig ? 'ai' : 'fallback',
+    provider: aiConfig?.provider || 'builtin',
+    model: aiConfig?.model,
+    warning: repaired.warning,
+    translation: repaired.report,
+    item: repaired.item
   };
 }
 
