@@ -1,23 +1,39 @@
+// Hakkımızda: yalnızca metin yerleştirilir; panel içeriği HTML olarak çalıştırılmaz.
+let aboutContent = null;
+let aboutRequest = null;
+function renderAboutContent() {
+    if (!aboutContent) return;
+    const lang = localStorage.getItem('testotavan_language') || 'tr';
+    document.querySelectorAll('[data-about-field]').forEach(el => {
+        const key = el.dataset.aboutField;
+        const base = aboutContent.tr?.[key];
+        if (typeof base !== 'string') return;
+        const text = aboutContent[lang]?.[key] || (i18n[lang] || {})[base] || base;
+        el.dataset.aboutCustom = 'true';
+        if (el.textContent !== text) el.textContent = text;
+    });
+}
+function loadAboutContent() {
+    if (aboutRequest) return aboutRequest;
+    aboutRequest = (async () => {
+        try {
+            const response = await fetch('/api/about', { cache: 'no-store' });
+            if (!response.ok) throw new Error('Hakkımızda bilgileri yüklenemedi.');
+            const data = await response.json();
+            if (!data.content?.tr) throw new Error('Geçersiz Hakkımızda yanıtı.');
+            aboutContent = data.content;
+            renderAboutContent();
+        } catch (error) {
+            // Servis kesintisinde mevcut sayfa metni korunur; sonraki girişte yeniden denenir.
+            console.warn(error.message);
+        } finally { aboutRequest = null; }
+    })();
+    return aboutRequest;
+}
+
 // ========================================
 // BLOG, TARİFLER & YÖNETİM PANELİ
 // ========================================
-const seedContent = [
-    {id:'seed-1',type:'blog',category:'Hormon Sağlığı',title:'Testosteronu Destekleyen 7 Günlük Alışkanlık',emoji:'',time:'6 dk',summary:'Uyku, direnç antrenmanı ve beslenme düzeninizi sürdürülebilir şekilde iyileştirmek için pratik bir başlangıç rehberi.',body:'Testosteron sağlığı tek bir takviyeden değil, tutarlı alışkanlıklardan etkilenir.\n\n1. Her gün aynı saatte uyuyup 7–9 saat uyumayı hedefleyin.\n2. Haftada 3 gün temel direnç egzersizleri uygulayın.\n3. Yeterli enerji, protein ve sağlıklı yağ alın.\n4. Alkol tüketimini sınırlayın.\n5. Gün ışığına çıkın ve D vitamini düzeyinizi doktorunuzla değerlendirin.\n6. Stresi nefes egzersizi veya yürüyüşle yönetin.\n7. İlerlemenizi haftalık olarak takip edin.\n\nBelirtileriniz varsa kendi kendinize tedavi uygulamak yerine bir sağlık profesyoneline başvurun.',date:'2026-09-30'},
-    {id:'seed-2',type:'recipe',category:'Yüksek Protein',title:'Proteinli Akdeniz Kasesi',emoji:'',time:'20 dk',summary:'Tavuk, yoğurt ve renkli sebzelerle hazırlanan dengeli, yüksek proteinli bir ana öğün.',ingredients:['150 g tavuk göğsü','4 yemek kaşığı süzme yoğurt','1 su bardağı pişmiş bulgur','Domates, salatalık ve maydanoz','1 tatlı kaşığı zeytinyağı','Limon, kimyon ve karabiber'],body:'Tavuğu baharatlarla harmanlayıp tavada tamamen pişirin. Bulguru kaseye alın; doğranmış sebzeleri ve dilimlenmiş tavuğu üzerine yerleştirin. Yoğurt, limon ve zeytinyağını karıştırıp sos olarak ekleyin. Ilık veya soğuk servis edin.',date:'2026-09-29'},
-    {id:'seed-3',type:'blog',category:'Uyku',title:'Uyku ve Hormon Dengesi: Temel Rehber',emoji:'',time:'4 dk',summary:'Gece rutininizi düzenleyerek toparlanmayı ve hormon sağlığını desteklemenin kanıta dayalı yolları.',body:'Kaliteli uyku, fiziksel toparlanma ve hormonal ritim için temeldir. Yatak odasını serin ve karanlık tutun. Uyumadan 60 dakika önce parlak ekranları azaltın. Kafeini öğleden sonra sınırlayın ve yoğun egzersizi yatış saatine çok yakın yapmayın.\n\nHorlamanız, nefes kesilmeniz veya gündüz aşırı uykululuğunuz varsa uyku apnesi açısından hekime danışın.',date:'2026-09-28'}
-];
-seedContent[0].translations={
- en:{category:'Hormone Health',title:'7 Daily Habits That Support Testosterone',summary:'A practical guide to sustainably improve sleep, resistance training and nutrition.',body:'Testosterone health is influenced by consistent habits, not a single supplement.\n\n1. Aim for 7–9 hours of sleep at consistent times.\n2. Do basic resistance exercises three days a week.\n3. Get enough energy, protein and healthy fats.\n4. Limit alcohol.\n5. Spend time in daylight and discuss vitamin D with your doctor.\n6. Manage stress with breathing exercises or walking.\n7. Track your progress weekly.\n\nIf you have symptoms, consult a healthcare professional instead of self-treating.'},
- de:{category:'Hormongesundheit',title:'7 tägliche Gewohnheiten zur Unterstützung des Testosterons',summary:'Ein praktischer Leitfaden zur nachhaltigen Verbesserung von Schlaf, Krafttraining und Ernährung.',body:'Die Testosterongesundheit wird durch beständige Gewohnheiten beeinflusst, nicht durch ein einzelnes Präparat.\n\n1. Streben Sie 7–9 Stunden Schlaf zu festen Zeiten an.\n2. Machen Sie dreimal pro Woche grundlegendes Krafttraining.\n3. Nehmen Sie genug Energie, Protein und gesunde Fette auf.\n4. Begrenzen Sie Alkohol.\n5. Nutzen Sie Tageslicht und besprechen Sie Vitamin D mit Ihrem Arzt.\n6. Reduzieren Sie Stress durch Atemübungen oder Spaziergänge.\n7. Verfolgen Sie Ihre Fortschritte wöchentlich.\n\nWenden Sie sich bei Beschwerden an medizinisches Fachpersonal.'},
- ja:{category:'ホルモン健康',title:'テストステロンを支える7つの習慣',summary:'睡眠、筋力トレーニング、栄養を持続的に改善するための実践ガイドです。',body:'テストステロンの健康は、1つのサプリではなく継続的な習慣に左右されます。\n\n1. 毎日同じ時間に7〜9時間眠りましょう。\n2. 週3回、基本的な筋力トレーニングを行いましょう。\n3. 十分なエネルギー、たんぱく質、良質な脂質を摂りましょう。\n4. 飲酒を控えましょう。\n5. 日光を浴び、ビタミンDについて医師に相談しましょう。\n6. 呼吸法や散歩でストレスを管理しましょう。\n7. 毎週進捗を確認しましょう。\n\n症状がある場合は、自己判断で治療せず医療専門家に相談してください。'}};
-seedContent[1].translations={
- en:{category:'High Protein',title:'Protein Mediterranean Bowl',summary:'A balanced, high-protein meal with chicken, yogurt and colorful vegetables.',body:'Season the chicken and cook it thoroughly in a pan. Put bulgur in a bowl, then add chopped vegetables and sliced chicken. Mix yogurt, lemon and olive oil for the dressing. Serve warm or cold.',ingredients:['150 g chicken breast','4 tbsp strained yogurt','1 cup cooked bulgur','Tomato, cucumber and parsley','1 tsp olive oil','Lemon, cumin and black pepper']},
- de:{category:'Proteinreich',title:'Proteinreiche mediterrane Bowl',summary:'Eine ausgewogene, proteinreiche Mahlzeit mit Hähnchen, Joghurt und buntem Gemüse.',body:'Hähnchen würzen und vollständig in der Pfanne garen. Bulgur in eine Schüssel geben, Gemüse und Hähnchen darauf verteilen. Joghurt, Zitrone und Olivenöl als Dressing mischen. Warm oder kalt servieren.',ingredients:['150 g Hähnchenbrust','4 EL stichfester Joghurt','1 Tasse gekochter Bulgur','Tomate, Gurke und Petersilie','1 TL Olivenöl','Zitrone, Kreuzkümmel und Pfeffer']},
- ja:{category:'高たんぱく',title:'地中海風プロテインボウル',summary:'鶏肉、ヨーグルト、彩り野菜を使ったバランスのよい高たんぱく料理です。',body:'鶏肉にスパイスを加え、フライパンで十分に加熱します。器にブルグル、刻んだ野菜、鶏肉を盛ります。ヨーグルト、レモン、オリーブオイルを混ぜてソースにし、温かいまま、または冷やしてどうぞ。',ingredients:['鶏むね肉 150g','水切りヨーグルト 大さじ4','調理済みブルグル 1カップ','トマト、きゅうり、パセリ','オリーブオイル 小さじ1','レモン、クミン、黒こしょう']}};
-seedContent[2].translations={
- en:{category:'Sleep',title:'Sleep and Hormone Balance: The Basics',summary:'Evidence-informed ways to support recovery and hormone health through a better night routine.',body:'Quality sleep is essential for physical recovery and hormonal rhythm. Keep your bedroom cool and dark. Reduce bright screens 60 minutes before bed. Limit caffeine in the afternoon and avoid intense exercise too close to bedtime.\n\nIf you snore, stop breathing during sleep or feel excessively sleepy in the daytime, ask a doctor about sleep apnea.'},
- de:{category:'Schlaf',title:'Schlaf und Hormonbalance: Grundlagen',summary:'Wissenschaftlich fundierte Wege, um Erholung und Hormongesundheit durch eine bessere Abendroutine zu unterstützen.',body:'Guter Schlaf ist wesentlich für körperliche Erholung und den Hormonrhythmus. Halten Sie das Schlafzimmer kühl und dunkel. Reduzieren Sie helle Bildschirme 60 Minuten vor dem Schlafen. Begrenzen Sie Koffein am Nachmittag.\n\nSprechen Sie bei Schnarchen, Atemaussetzern oder starker Tagesmüdigkeit mit einem Arzt über Schlafapnoe.'},
- ja:{category:'睡眠',title:'睡眠とホルモンバランス：基本ガイド',summary:'夜の習慣を整え、回復とホルモンの健康を支える科学的な方法です。',body:'質のよい睡眠は身体の回復とホルモンリズムに不可欠です。寝室を涼しく暗く保ち、就寝60分前から明るい画面を控えましょう。午後のカフェインを減らし、就寝直前の激しい運動を避けてください。\n\nいびき、睡眠中の呼吸停止、日中の強い眠気がある場合は、睡眠時無呼吸症候群について医師に相談してください。'}};
 let activeContentFilter = 'all';
 let sharedContent = [];
 let blogDataRequested = false;
@@ -46,7 +62,7 @@ function localizedContent(item){
   time:t.time||localizeDuration(item.time,lang),
   ingredients};
 }
-function getAllContent(){ return [...sharedContent, ...seedContent].map(localizedContent); }
+function getAllContent(){ return sharedContent.map(localizedContent); }
 async function loadSharedContent(){ try { const response=await fetch('/api/content'); if(response.ok){ sharedContent=await response.json(); renderContent(); } } catch(e){ console.warn('İçerikler yüklenemedi',e); } }
 function ensureBlogData(){
     if (blogDataRequested) return;
@@ -98,7 +114,7 @@ async function deleteContent(id){
 function renderAdmin(){
     const all=getAllContent(), custom=getCustomContent();
     document.getElementById('statAll').textContent=all.length; document.getElementById('statBlog').textContent=all.filter(x=>x.type==='blog').length; document.getElementById('statRecipe').textContent=all.filter(x=>x.type==='recipe').length;
-    document.getElementById('adminContentList').innerHTML=custom.length?custom.map(x=>`<div class="admin-item"><div style="min-width:0"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${IC(x.type==='recipe'?'i-utensils':'i-news')} ${escapeHTML(x.title)}</div><div class="card-subtitle">${x.type==='recipe'?'Tarif':'Blog'} · ${escapeHTML(x.category)}</div></div><button class="icon-btn" aria-label="Sil" onclick="deleteContent('${escapeHTML(x.id)}')"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg></button></div>`).join(''):'<p class="card-subtitle" style="padding:18px 0">Henüz panelden eklenmiş içerik yok. Örnek içerikler silinemez.</p>';
+    document.getElementById('adminContentList').innerHTML=custom.length?custom.map(x=>`<div class="admin-item"><div style="min-width:0"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${IC(x.type==='recipe'?'i-utensils':'i-news')} ${escapeHTML(x.title)}</div><div class="card-subtitle">${x.type==='recipe'?'Tarif':'Blog'} · ${escapeHTML(x.category)}</div></div><button class="icon-btn" aria-label="Sil" onclick="deleteContent('${escapeHTML(x.id)}')"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg></button></div>`).join(''):'<p class="card-subtitle" style="padding:18px 0">Henüz panelden eklenmiş içerik yok.</p>';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeContentModal()});
 
@@ -763,12 +779,13 @@ const pageMeta = {
 let currentLanguage = localStorage.getItem('testotavan_language') || 'tr';
 function translateUi(text){return (i18n[currentLanguage]||{})[text]||text}
 function rememberOriginals(){
- document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.textContent.trim()).forEach(n=>{if(!n.__tr)n.__tr=n.textContent.trim()}); if(('placeholder' in el)&&el.placeholder&&!el.dataset.trPlaceholder)el.dataset.trPlaceholder=el.placeholder; if(el.hasAttribute('aria-label')&&!el.dataset.trAria)el.dataset.trAria=el.getAttribute('aria-label'); if(el.hasAttribute('alt')&&!el.dataset.trAlt)el.dataset.trAlt=el.getAttribute('alt'); });
+ document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ if(el.closest?.('[data-about-custom]'))return; Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.textContent.trim()).forEach(n=>{if(!n.__tr)n.__tr=n.textContent.trim()}); if(('placeholder' in el)&&el.placeholder&&!el.dataset.trPlaceholder)el.dataset.trPlaceholder=el.placeholder; if(el.hasAttribute('aria-label')&&!el.dataset.trAria)el.dataset.trAria=el.getAttribute('aria-label'); if(el.hasAttribute('alt')&&!el.dataset.trAlt)el.dataset.trAlt=el.getAttribute('alt'); });
 }
 function applyTranslations(){
+ renderAboutContent();
  rememberOriginals(); const dict=i18n[currentLanguage]||{};
  document.documentElement.lang=currentLanguage;
- document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.__tr).forEach(n=>{const lead=n.textContent.match(/^\s*/)[0],tail=n.textContent.match(/\s*$/)[0];const translated=lead+(dict[n.__tr]||n.__tr)+tail;if(n.textContent!==translated)n.textContent=translated}); if(el.dataset.trPlaceholder)el.placeholder=(placeholderI18n[currentLanguage]||{})[el.dataset.trPlaceholder]||el.dataset.trPlaceholder; if(el.dataset.trAria)el.setAttribute('aria-label',dict[el.dataset.trAria]||el.dataset.trAria); if(el.dataset.trAlt)el.setAttribute('alt',dict[el.dataset.trAlt]||el.dataset.trAlt); });
+ document.querySelectorAll('body *:not(script):not(style)').forEach(el=>{ if(el.closest?.('[data-about-custom]'))return; Array.from(el.childNodes).filter(n=>n.nodeType===3&&n.__tr).forEach(n=>{const lead=n.textContent.match(/^\s*/)[0],tail=n.textContent.match(/\s*$/)[0];const translated=lead+(dict[n.__tr]||n.__tr)+tail;if(n.textContent!==translated)n.textContent=translated}); if(el.dataset.trPlaceholder)el.placeholder=(placeholderI18n[currentLanguage]||{})[el.dataset.trPlaceholder]||el.dataset.trPlaceholder; if(el.dataset.trAria)el.setAttribute('aria-label',dict[el.dataset.trAria]||el.dataset.trAria); if(el.dataset.trAlt)el.setAttribute('alt',dict[el.dataset.trAlt]||el.dataset.trAlt); });
  const meta=pageMeta[currentLanguage]||pageMeta.tr; document.title=meta.title; document.querySelector?.('meta[name="description"]')?.setAttribute('content',meta.description); document.querySelector?.('meta[property="og:title"]')?.setAttribute('content',meta.title); document.querySelector?.('meta[property="og:description"]')?.setAttribute('content',meta.description); document.querySelector?.('meta[property="og:locale"]')?.setAttribute('content',meta.locale||'tr_TR');
  const select=document.getElementById('languageSelect'); if(select)select.value=currentLanguage;
 }

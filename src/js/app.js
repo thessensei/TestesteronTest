@@ -173,6 +173,7 @@ function changePage(pageId) {
             window.ensureBlogData();
         });
     }
+    if (pageId === 'aboutPage') loadOptionalFeatures().then(() => window.loadAboutContent?.());
     if (pageId === 'adminPage') loadOptionalFeatures().then(() => window.renderAdmin?.());
     if (window.applyTranslations) requestAnimationFrame(window.applyTranslations);
 
