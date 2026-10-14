@@ -25,6 +25,29 @@ export const NEWS_FETCH_TIMEOUT_MS = 10000;
 export const AI_TIMEOUT_MS = 25000;
 export const MAX_HTML_CHARS = 500_000;
 export const MAX_REDIRECTS = 3;
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
+
+const RETIRED_GEMINI_MODEL = /^gemini-(?:1\.0|1\.5|2\.0)(?:-|$)/i;
+const RETIRED_GROQ_MODELS = new Set([
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'qwen/qwen3-32b',
+  'meta-llama/llama-4-scout-17b-16e-instruct'
+]);
+
+function resolveGeminiModel(model) {
+  const requested = String(model || '').trim();
+  // Gemini 1.x/2.0 models are shut down; old deployment variables should not
+  // silently break the admin's translation workflow.
+  return !requested || RETIRED_GEMINI_MODEL.test(requested) ? DEFAULT_GEMINI_MODEL : requested;
+}
+
+function resolveGroqModel(model) {
+  const requested = String(model || '').trim();
+  // Migrate retired Groq model IDs that may still be stored in Vercel settings.
+  return !requested || RETIRED_GROQ_MODELS.has(requested.toLowerCase()) ? DEFAULT_GROQ_MODEL : requested;
+}
 
 export const CATEGORY_MAP = {
   hormone: {
@@ -603,27 +626,27 @@ export function resolveAiProvider(options = {}, env = process.env) {
 
   if (explicitKey) {
     if (explicitProvider === 'gemini' || explicitKey.startsWith('AIza')) {
-      return { provider: 'gemini', apiKey: explicitKey, model: options.model || env.GEMINI_MODEL || 'gemini-2.0-flash' };
+      return { provider: 'gemini', apiKey: explicitKey, model: resolveGeminiModel(options.model || env.GEMINI_MODEL) };
     }
     if (explicitProvider === 'groq' || explicitKey.startsWith('gsk_')) {
-      return { provider: 'groq', apiKey: explicitKey, model: options.model || env.GROQ_MODEL || 'llama-3.3-70b-versatile' };
+      return { provider: 'groq', apiKey: explicitKey, model: resolveGroqModel(options.model || env.GROQ_MODEL) };
     }
     return { provider: 'openai', apiKey: explicitKey, model: options.model || env.OPENAI_MODEL || 'gpt-4o-mini' };
   }
 
   if (env.GEMINI_API_KEY) {
-    return { provider: 'gemini', apiKey: env.GEMINI_API_KEY.trim(), model: env.GEMINI_MODEL || 'gemini-2.0-flash' };
+    return { provider: 'gemini', apiKey: env.GEMINI_API_KEY.trim(), model: resolveGeminiModel(env.GEMINI_MODEL) };
   }
   if (env.OPENAI_API_KEY) {
     return { provider: 'openai', apiKey: env.OPENAI_API_KEY.trim(), model: env.OPENAI_MODEL || 'gpt-4o-mini' };
   }
   if (env.GROQ_API_KEY) {
-    return { provider: 'groq', apiKey: env.GROQ_API_KEY.trim(), model: env.GROQ_MODEL || 'llama-3.3-70b-versatile' };
+    return { provider: 'groq', apiKey: env.GROQ_API_KEY.trim(), model: resolveGroqModel(env.GROQ_MODEL) };
   }
   if (env.AI_API_KEY) {
     const key = env.AI_API_KEY.trim();
-    if (key.startsWith('AIza')) return { provider: 'gemini', apiKey: key, model: env.AI_MODEL || 'gemini-2.0-flash' };
-    if (key.startsWith('gsk_')) return { provider: 'groq', apiKey: key, model: env.AI_MODEL || 'llama-3.3-70b-versatile' };
+    if (key.startsWith('AIza')) return { provider: 'gemini', apiKey: key, model: resolveGeminiModel(env.AI_MODEL) };
+    if (key.startsWith('gsk_')) return { provider: 'groq', apiKey: key, model: resolveGroqModel(env.AI_MODEL) };
     return { provider: 'openai', apiKey: key, model: env.AI_MODEL || 'gpt-4o-mini' };
   }
 
@@ -717,7 +740,9 @@ export async function requestAiJson(config, prompts, options = {}) {
         signal: controller.signal
       });
     } else {
-      const endpoint = config.provider === 'groq'
+      const isGroq = config.provider === 'groq';
+      const isGroqGptOss = isGroq && /^openai\/gpt-oss-(?:20b|120b)$/i.test(config.model);
+      const endpoint = isGroq
         ? 'https://api.groq.com/openai/v1/chat/completions'
         : 'https://api.openai.com/v1/chat/completions';
       response = await fetchImpl(endpoint, {
@@ -729,7 +754,8 @@ export async function requestAiJson(config, prompts, options = {}) {
         body: JSON.stringify({
           model: config.model,
           temperature,
-          max_tokens: maxTokens,
+          ...(isGroq ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
+          ...(isGroqGptOss ? { reasoning_effort: 'low', reasoning_format: 'hidden' } : {}),
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: systemPrompt },
@@ -739,12 +765,11 @@ export async function requestAiJson(config, prompts, options = {}) {
         signal: controller.signal
       });
     }
-    clearTimeout(timer);
 
     const data = await response.json().catch(() => null);
     if (!response.ok) {
       const msg = data?.error?.message || `AI API hatası (${response.status})`;
-      return { ok: false, error: msg };
+      return { ok: false, error: msg, status: response.status };
     }
 
     const rawText = config.provider === 'gemini'
@@ -758,12 +783,37 @@ export async function requestAiJson(config, prompts, options = {}) {
 
     return { ok: true, data: parsed, provider: config.provider, model: config.model };
   } catch (error) {
-    clearTimeout(timer);
     return {
       ok: false,
       error: error?.name === 'AbortError' ? 'AI servisi zaman aşımına uğradı.' : String(error?.message || error)
     };
+  } finally {
+    // JSON gövdesinin okunması da aynı zaman aşımı bütçesi içinde kalsın.
+    clearTimeout(timer);
   }
+}
+
+function isModelUnavailable(result) {
+  const error = String(result?.error || '');
+  if (result?.status === 404) return true;
+  if (![400, 403].includes(result?.status)) return false;
+  return /model.{0,160}(?:not found|does not exist|not supported|unavailable|shut.?down|deprecated|decommissioned)|(?:not found|does not exist|not supported|unavailable|shut.?down|deprecated|decommissioned).{0,160}model|model_decommissioned/i.test(error);
+}
+
+function currentModelFor(provider) {
+  if (provider === 'gemini') return DEFAULT_GEMINI_MODEL;
+  if (provider === 'groq') return DEFAULT_GROQ_MODEL;
+  return '';
+}
+
+async function requestAiJsonWithFallback(config, prompts, options = {}) {
+  const result = await requestAiJson(config, prompts, options);
+  const fallbackModel = currentModelFor(config.provider);
+  if (result.ok || !fallbackModel || config.model === fallbackModel || !isModelUnavailable(result)) return result;
+
+  console.warn(`[ai-blog] ${config.provider} modeli ${config.model} kullanılamıyor; ${fallbackModel} deneniyor.`);
+  const fallback = await requestAiJson({ ...config, model: fallbackModel }, prompts, options);
+  return fallback.ok ? { ...fallback, modelFallbackFrom: config.model } : fallback;
 }
 
 /**
@@ -771,9 +821,9 @@ export async function requestAiJson(config, prompts, options = {}) {
  */
 export async function callAiProvider(article, config, options = {}) {
   const { systemPrompt, userPrompt } = buildAiPrompts(article);
-  const result = await requestAiJson(config, { systemPrompt, userPrompt, temperature: 0.4 }, options);
+  const result = await requestAiJsonWithFallback(config, { systemPrompt, userPrompt, temperature: 0.4 }, options);
   if (!result.ok) return result;
-  return { ...result, provider: config.provider, model: config.model };
+  return { ...result, provider: config.provider, model: result.model || config.model };
 }
 
 function isHardAiFailure(message = '') {
@@ -782,7 +832,7 @@ function isHardAiFailure(message = '') {
 
 async function finishWithTranslations(item, options, aiConfig, canRepairWithAi) {
   const requestAi = canRepairWithAi && aiConfig
-    ? (systemPrompt, userPrompt) => requestAiJson(aiConfig, {
+    ? (systemPrompt, userPrompt) => requestAiJsonWithFallback(aiConfig, {
       systemPrompt,
       userPrompt,
       temperature: 0.2,

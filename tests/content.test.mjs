@@ -142,6 +142,8 @@ test('analiz alt açıklamaları ve erişilebilir etiketleri tüm dillerde çevr
     const { api } = loadContentModule();
     const required = [
         'Semptomlarınızdan tahmini bir değer ve güven aralığı üretiriz — 2 dakika sürer.',
+        'Testosteron Seviyesi İçin Ön Değerlendirme',
+        'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.',
         'Tahmin modelinin girdileri',
         'Kan vermeden önce: numune koşulları',
         'Tahlilinizi yükleyin, biz okuyalım',

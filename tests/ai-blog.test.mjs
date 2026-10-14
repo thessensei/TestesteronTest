@@ -14,6 +14,7 @@ import {
   normalizeGeneratedBlog,
   resolveAiProvider,
   parseAiJson,
+  callAiProvider,
   generateBlogFromArticle,
   createBlogDraftFromUrl
 } from '../api/_ai-blog.js';
@@ -173,9 +174,74 @@ test('resolveAiProvider Gemini, OpenAI ve Groq anahtarlarını doğru tanır', (
   assert.equal(resolveAiProvider({}, { GEMINI_API_KEY: 'AIzaSyTest123' }).provider, 'gemini');
   assert.equal(resolveAiProvider({}, { OPENAI_API_KEY: 'sk-test-123' }).provider, 'openai');
   assert.equal(resolveAiProvider({}, { GROQ_API_KEY: 'gsk_test_123' }).provider, 'groq');
+  assert.equal(resolveAiProvider({}, { GROQ_API_KEY: 'gsk_test_123' }).model, 'openai/gpt-oss-120b');
   assert.equal(resolveAiProvider({ apiKey: 'gsk_custom' }, {}).provider, 'groq');
+  assert.equal(resolveAiProvider({ apiKey: 'gsk_custom' }, {}).model, 'openai/gpt-oss-120b');
   assert.equal(resolveAiProvider({}, {}), null);
   assert.deepEqual(parseAiJson('```json\n{"title":"Merhaba"}\n```'), { title: 'Merhaba' });
+});
+
+test('Gemini varsayılanı güncel, kapatılmış model ayarı otomatik olarak yenilenir', () => {
+  assert.equal(resolveAiProvider({ apiKey: 'AIzaFake' }, {}).model, 'gemini-3.8-flash');
+  assert.equal(resolveAiProvider({}, { GEMINI_API_KEY: 'AIzaFake', GEMINI_MODEL: 'gemini-2.0-flash' }).model, 'gemini-3.8-flash');
+  assert.equal(resolveAiProvider({ provider: 'gemini', apiKey: 'AIzaFake' }, { GEMINI_MODEL: 'gemini-1.5-pro' }).model, 'gemini-3.8-flash');
+  assert.equal(resolveAiProvider({ provider: 'gemini', apiKey: 'AIzaFake' }, { GEMINI_MODEL: 'gemini-3.8-flash' }).model, 'gemini-3.8-flash');
+  assert.equal(resolveAiProvider({ provider: 'groq', apiKey: 'gskFake' }, { GROQ_MODEL: 'llama-3.3-70b-versatile' }).model, 'openai/gpt-oss-120b');
+  assert.equal(resolveAiProvider({ provider: 'groq', apiKey: 'gskFake' }, { GROQ_MODEL: 'openai/gpt-oss-120b' }).model, 'openai/gpt-oss-120b');
+});
+
+test('Gemini eski model 404 verirse güncel modele otomatik geçer', async () => {
+  const models = [];
+  const fetchImpl = async url => {
+    const model = decodeURIComponent(String(url).match(/models\/([^:]+)/)?.[1] || '');
+    models.push(model);
+    if (model === 'gemini-2.0-flash') {
+      return { ok: false, status: 404, json: async () => ({ error: { message: 'models/gemini-2.0-flash is not found for API version v1beta' } }) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: '{"title":"Translated"}' }] } }] })
+    };
+  };
+
+  const result = await callAiProvider({ title: 'Başlık', body: 'Makale içeriği' }, {
+    provider: 'gemini', apiKey: 'AIzaFake', model: 'gemini-2.0-flash'
+  }, { fetchImpl });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(models, ['gemini-2.0-flash', 'gemini-3.8-flash']);
+  assert.equal(result.model, 'gemini-3.8-flash');
+  assert.equal(result.modelFallbackFrom, 'gemini-2.0-flash');
+});
+
+test('Groq eski model 404 verirse gpt-oss-120b modeline geçer ve reasoning çıktısını sınırlı tutar', async () => {
+  const models = [];
+  const fetchImpl = async (url, init) => {
+    assert.match(String(url), /api\.groq\.com\/openai\/v1\/chat\/completions/);
+    const payload = JSON.parse(init.body);
+    models.push(payload.model);
+    if (payload.model === 'llama-3.3-70b-versatile') {
+      return { ok: false, status: 404, json: async () => ({ error: { message: 'The model llama-3.3-70b-versatile does not exist.' } }) };
+    }
+    assert.equal(payload.max_completion_tokens, 8192);
+    assert.equal(payload.reasoning_effort, 'low');
+    assert.equal(payload.reasoning_format, 'hidden');
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: '{"title":"Translated"}' } }] })
+    };
+  };
+
+  const result = await callAiProvider({ title: 'Başlık', body: 'Makale içeriği' }, {
+    provider: 'groq', apiKey: 'gsk_fake', model: 'llama-3.3-70b-versatile'
+  }, { fetchImpl });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(models, ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b']);
+  assert.equal(result.model, 'openai/gpt-oss-120b');
+  assert.equal(result.modelFallbackFrom, 'llama-3.3-70b-versatile');
 });
 
 test('generateBlogFromArticle AI yanıtını 4 dilde normalize eder, hata olursa yedek moda düşer', async () => {
