@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
 import { isSafeCoverUrl } from './_media.js';
 import { clean, cleanIngredients, cleanTranslations } from './_content-shape.js';
+import { pinterestRichPinFire } from './_pinterest.js';
 
 function db() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL tanımlı değil.');
@@ -56,7 +57,18 @@ export default async function handler(req, res) {
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
       if (item.type === 'recipe' && !item.ingredients.length) return res.status(400).json({ error: 'Tarifler için en az bir malzeme gerekli.' });
       const [created] = await sql`INSERT INTO content (id,type,category,title,emoji,time_text,summary,body,ingredients,translations,cover_url) VALUES (${item.id},${item.type},${item.category},${item.title},${item.emoji},${item.time},${item.summary},${item.body},${JSON.stringify(item.ingredients)}::jsonb,${JSON.stringify(item.translations)}::jsonb,${item.cover_url}) RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
-      return res.status(201).json(created);
+
+      // --- Pinterest Rich Pin boru hattı -------------------------------------------------
+      // Kayıt commit edildiği anda tetiklenir; başlık, özet, canlı bağlantı ve kapak
+      // görseli kurumsal JSON gövdesi olarak Pinterest API v5 /pins ucuna gönderilir.
+      // Pin hatası yayın akışını bozmaz: sonuç 201 yanıtındaki `pinterest` alanıyla raporlanır.
+      // (İstemci pin göndermek istemezse gövdede `pinterest: false` gönderir.)
+      const pinterest = await pinterestRichPinFire(created, {
+        headers: req.headers,
+        enabled: input.pinterest !== false
+      });
+
+      return res.status(201).json({ ...created, pinterest });
     }
 
     if (req.method === 'PUT') {
