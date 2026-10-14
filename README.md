@@ -42,6 +42,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
+- **AI Haberden Otomatik Blog Üretici** — admin paneline girilen haber/makale bağlantısından başlık, özet, gövde, kategori, okuma süresi ve kapak görselini çekip 4 dilde (TR/EN/DE/JA) blog taslağına dönüştürür (Gemini, OpenAI, Groq + anahtarsız yerleşik akıllı mod)
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
@@ -84,6 +85,8 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
 │   ├── _content-shape.js #   Ortak: içerik/çeviri alan temizleme, süre yerelleştirme (private)
 │   ├── _pinterest.js     #   Ortak: Pinterest pin gövdesi + gönderim boru hattı (private)
+│   ├── _ai-blog.js       #   Ortak: haber URL'sinden içerik çıkarma ve 4 dilde AI blog üretimi (private)
+│   ├── ai-blog.js        #   POST /api/ai-blog — haber linkinden otomatik blog taslağı üretir
 │   ├── login.js          #   POST /api/login — admin girişi (IP bazlı rate limit)
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
@@ -133,11 +136,15 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | Değişken | Açıklama |
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres bağlantı adresi |
+| `ADMIN_USERNAME` | Admin paneli kullanıcı adı (opsiyonel; varsayılan `admin`) |
 | `ADMIN_PASSWORD` | Admin paneli şifresi |
-| `SESSION_SECRET` | Oturum cookie imzası için gizli anahtar |
+| `SESSION_SECRET` | Oturum cookie ve doğrulama kodu (Captcha) imzası için gizli anahtar |
 | `PINTEREST_ACCESS_TOKEN` | Pinterest API v5 erişim tokenı (opsiyonel; yoksa pin gönderilmez) |
 | `PINTEREST_BOARD_ID` | Pinin ekleneceği board kimliği (opsiyonel; yoksa pin gönderilmez) |
 | `SITE_URL` | Yayındaki kök adres, ör. `https://testotavan.vercel.app` (opsiyonel) |
+| `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi için (opsiyonel) |
+| `OPENAI_API_KEY` | OpenAI API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
+| `GROQ_API_KEY` | Groq API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
 
 > Not: `ADMIN_PASSWORD` / `SESSION_SECRET` tanımlı değilse giriş API'si `503` döner; `DATABASE_URL` yoksa istatistik ve içerik servisleri devre dışı kalır (site çalışmaya devam eder).
 > Pinterest değişkenleri tanımlı değilse site ve yayın akışı normal çalışır; yalnızca pin adımı atlanır.
@@ -245,10 +252,11 @@ Davranış kuralları:
 
 | Endpoint | Metod | Açıklama |
 | --- | --- | --- |
-| `/api/login` | `POST` | Admin girişi; 15 dk içinde IP başına en fazla 10 deneme |
+| `/api/login` | `GET` / `POST` | Admin doğrulama kodu (Captcha) üretimi ve kullanıcı adı + şifre + kod ile giriş; 15 dk içinde IP başına en fazla 10 deneme |
 | `/api/session` | `GET` | Oturumun doğrulanmış mı olduğunu döner |
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
 | `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
+| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir (admin yetkisi ister) |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
 
