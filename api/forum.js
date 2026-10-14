@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
-import { prepareForum, validatePost, validId } from './_forum.js';
+import { prepareForum, validatePost, validId, parseForumQuery } from './_forum.js';
 import { findForumUserByToken, readForumToken } from './_forum-auth.js';
 
 export function createForumHandler(connect = neon) {
@@ -18,7 +18,10 @@ export function createForumHandler(connect = neon) {
       if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) return res.status(415).json({ error: 'JSON gerekli.' });
       if (req.headers['sec-fetch-site'] === 'cross-site') return res.status(403).json({ error: 'İstek reddedildi.' });
     }
-    let input;
+    let input, filters;
+    if (req.method === 'GET' && !query.id) {
+      try { filters = parseForumQuery(query); } catch (e) { return res.status(400).json({ error: e.message }); }
+    }
     if (req.method === 'POST') {
       try { input = validatePost(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
       if (!readForumToken(req)) return res.status(401).json({ error: 'Konu açmak ve yanıtlamak için giriş yapın.' });
@@ -37,11 +40,34 @@ export function createForumHandler(connect = neon) {
         if (query.id) {
           const [thread] = await sql`SELECT * FROM forum_threads WHERE id=${query.id} AND (approved=TRUE OR ${manage})`;
           if (!thread) return res.status(404).json({ error: 'Konu bulunamadı.' });
-          const replies = await sql`SELECT * FROM forum_replies WHERE thread_id=${query.id} AND (approved=TRUE OR ${manage}) ORDER BY created_at, id LIMIT 50 OFFSET ${offset}`;
-          return res.status(200).json({ thread, replies });
+          const replies = await sql`SELECT * FROM forum_replies WHERE thread_id=${query.id} AND (approved=TRUE OR ${manage}) ORDER BY created_at, id LIMIT 51 OFFSET ${offset}`;
+          return res.status(200).json({ thread, replies: replies.slice(0, 50), hasMore: replies.length > 50 });
         }
-        const threads = await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=FALSE AND ${manage}) AS pending_count FROM forum_threads t WHERE t.approved=TRUE OR ${manage} ORDER BY t.created_at DESC, t.id LIMIT 30 OFFSET ${offset}`;
-        return res.status(200).json({ threads });
+        const { category, search, sort } = filters;
+        // Every aggregate uses the same visibility rule as the list. Pending
+        // replies must not change public counts, order or last-activity dates.
+        const threads = await sql`
+          WITH visible AS (
+            SELECT t.*,
+              (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count,
+              (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=FALSE AND ${manage}) AS pending_count,
+              GREATEST(t.created_at, (SELECT MAX(r.created_at) FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage}))) AS last_activity
+            FROM forum_threads t
+            WHERE (t.approved=TRUE OR ${manage})
+              AND (${category} = '' OR t.category=${category})
+              AND (${search} = '' OR STRPOS(LOWER(t.title || ' ' || t.body), LOWER(${search})) > 0)
+          )
+          SELECT * FROM visible WHERE (${sort} <> 'unanswered' OR reply_count=0)
+          ORDER BY
+            CASE WHEN ${sort} = 'popular' THEN reply_count END DESC,
+            CASE WHEN ${sort} = 'active' THEN last_activity ELSE created_at END DESC,
+            id
+          LIMIT 31 OFFSET ${offset}`;
+        const categories = await sql`
+          SELECT t.category, COUNT(*)::int AS topic_count,
+            COALESCE(SUM((SELECT COUNT(*) FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage}))), 0)::int AS reply_count
+          FROM forum_threads t WHERE (t.approved=TRUE OR ${manage}) GROUP BY t.category`;
+        return res.status(200).json({ threads: threads.slice(0, 30), hasMore: threads.length > 30, categories });
       }
       if (req.method === 'POST') {
         const user = await findForumUserByToken(sql, readForumToken(req));

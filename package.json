@@ -12,6 +12,8 @@
     "test": "node --test \"tests/**/*.test.mjs\""
   },
   "devDependencies": {
-    "esbuild": "0.25.10"
+    "@electric-sql/pglite": "^0.3.14",
+    "esbuild": "0.25.10",
+    "jsdom": "^26.1.0"
   }
 }

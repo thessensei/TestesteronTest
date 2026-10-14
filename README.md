@@ -284,10 +284,27 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 - `/forum/`: konular herkese açıktır. Konu açmak ve yanıt yazmak için **Giriş yap** veya **Kayıt ol**
   gerekir. Kullanıcı adı paylaşımlarda görünür; istemcinin gönderdiği yazar adı yok sayılır.
   Şifreler düz metin saklanmaz (scrypt). Oturum `HttpOnly` çerezle 14 gün sürer.
+- Forum görünümü masaüstünde kategori kenar çubuğu, konu/yazar satırları, yanıt sayıları
+  ve son hareket sütunu içerir. Mobilde kategoriler yatay kaydırılır; istatistik ve
+  kurallar panelleri konuların altına taşınır. Sayaçlar örnek veri değil, API'deki
+  görünür konu ve yanıtların toplamıdır; filtrelerden bağımsızdır.
+- Başlık ve mesaj gövdesinde arama, kategori filtresi ve **Son hareket / Yeni konular /
+  Çok yanıtlanan / Yanıtsız** sıralaması sunucuda, sayfalama öncesinde uygulanır.
+  Varsayılan görünüm son harekettir. Bekleyen yanıtlar ziyaretçinin sıralamasını,
+  sayaçlarını veya son hareket tarihini değiştirmez; yönetimde hesaba katılır.
+- Konu bağlantıları `/forum/?thread=<uuid>` biçiminde paylaşılabilir. Kategori,
+  arama, sıralama ve sayfa URL'de korunur; tarayıcının geri/ileri düğmeleri çalışır.
+  Dil tercihi TR/EN/DE/JA için geçerlidir; depolama engellendiğinde de forum çalışır.
+- Liste API'si: `/api/forum?category=Antrenman&q=program&sort=active&offset=0`.
+  `category` isteğe bağlıdır; `q` en fazla 120 karakterlik düz metin aramasıdır
+  (`%` ve `_` joker karakter değildir). `sort`: `active`, `newest`, `popular`,
+  `unanswered`. Liste yanıtı `threads`, `categories` ve `hasMore`; konu detayı
+  `thread`, `replies` ve `hasMore` alanlarını içerir. Fazladan bir kayıt okunarak
+  sonraki sayfa varlığı belirlenir; tam dolu son sayfa boş bir sayfaya yönlendirmez.
 - Admin panelindeki **Forum yönetimini aç** bağlantısı `/forum/?manage=1` sayfasını açar.
   Mevcut admin oturumu zorunludur. Bekleyen konuları/yanıtları onaylama, konu
   kilitleme/kilidi açma ve kalıcı silme desteklenir. Konu silinince yanıtları da silinir.
-  Konu kartlarında bekleyen yanıt sayısı gösterilir; yanıtları incelemek için konuyu açın.
+  Konu satırlarında bekleyen yanıt sayısı gösterilir; yanıtları incelemek için konuyu açın.
 - Tüm yeni gönderiler onay bekler; ziyaretçiler bekleyen içerikleri göremez.
   Sayfalar 30 konu / 50 yanıtla sınırlıdır ve önceki/sonraki kontrolleri vardır.
 - Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
@@ -301,7 +318,11 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
   Yoğun trafik için ayrıca platform/WAF hız sınırı önerilir.
 - Paylaşımlar düz metin olarak kaçışlanarak gösterilir. JSON yazma istekleri ve
   cross-site istek kontrolü kullanılır; moderasyon sunucuda admin yetkisi gerektirir.
-- Yerelde `npm test` ve `npm run check:assets` çalıştırın. Gerçek ortamda iki ayrı
+- Yerelde `npm ci`, `npm test` ve `npm run check:assets` çalıştırın. Forum testleri
+  jsdom ile kullanıcı etkileşimlerini; PGlite'ın bellek içi PostgreSQL motoruyla
+  gerçek liste SQL'ini, sıralamayı ve görünürlük kurallarını sınar. Bunlar yalnızca
+  geliştirme/test bağımlılıklarıdır; testler Neon bağlantısı veya sır gerektirmez.
+  Tarayıcı test verileri üretim forumuna eklenmez. Gerçek ortamda iki ayrı
   tarayıcı oturumuyla konu gönder → adminde onayla → ziyaretçide görüntüle → yanıt
   gönder/onayla → kilitle (yanıt gönderilememeli) → sil akışını doğrulayın.
 
