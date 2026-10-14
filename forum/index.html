@@ -1,9 +1,120 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a0a0f"><title>Topluluk Forumu · TestoTavan</title><link rel="stylesheet" href="/forum/style.css"><script defer src="/forum/forum.js"></script></head>
-<body><main><header><a class="brand" href="/">TestoTavan<span> / TOPLULUK</span></a><a href="/">← Siteye dön</a></header>
-<div class="eyebrow">BİRLİKTE ÖĞREN, DENEYİMİNİ PAYLAŞ</div><h1>Gelişim bir sohbetle başlar.</h1><p class="intro">Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuş.</p>
-<aside>Rumuzlar doğrulanmış kimlik değildir. Kişisel sağlık verilerinizi paylaşmayın. Buradaki paylaşımlar tıbbi tavsiye değildir. Saygılı olun; tüm konu ve yanıtlar admin onayından sonra yayınlanır.</aside>
-<p id="status" role="status" aria-live="polite"></p>
-<section id="listing"><div class="toolbar"><h2>Konular</h2><button id="refresh">Yenile</button></div><div id="threads"></div><div class="toolbar"><button id="previous">← Önceki</button><span id="page"></span><button id="next">Sonraki →</button></div>
-<form id="new-thread"><h2>Yeni bir sohbet başlat</h2><label>Rumuz<input name="author" required minlength="2" maxlength="40" autocomplete="nickname"></label><label>Kategori<select name="category"><option>Genel</option><option>Antrenman</option><option>Beslenme</option><option>Deneyimler</option></select></label><label>Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label><label>Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label><button type="submit">Onaya gönder →</button></form></section>
-<section id="detail" hidden><button id="back">← Tüm konular</button><div id="conversation"></div><div class="toolbar"><button id="reply-prev">← Önceki yanıtlar</button><button id="reply-next">Sonraki yanıtlar →</button></div><form id="reply-form"><h2>Sohbete katıl</h2><label>Rumuz<input name="author" required minlength="2" maxlength="40" autocomplete="nickname"></label><label>Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label><button type="submit">Yanıtı onaya gönder →</button></form></section><footer>TestoTavan · Daha bilinçli bir topluluk.</footer></main></body></html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Topluluk Forumu · TestoTavan</title>
+  <link rel="stylesheet" href="/forum/style.css">
+  <script defer src="/forum/forum.js"></script>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/">TestoTavan<span> / TOPLULUK</span></a>
+    <div class="header-actions">
+      <label class="lang-label" for="forum-lang">Dil</label>
+      <select id="forum-lang" aria-label="Dil">
+        <option value="tr">TR</option>
+        <option value="en">EN</option>
+        <option value="de">DE</option>
+        <option value="ja">JA</option>
+      </select>
+      <div id="auth-user" hidden>
+        <span id="auth-name" class="auth-chip"></span>
+        <button id="logout" class="secondary" type="button">Çıkış</button>
+      </div>
+      <div id="auth-guest" class="auth-guest">
+        <button id="show-login" class="secondary" type="button">Giriş yap</button>
+        <button id="show-register" type="button">Kayıt ol</button>
+      </div>
+      <a href="/" data-i18n="site">← Siteye dön</a>
+    </div>
+  </header>
+
+  <div class="eyebrow" data-i18n="eyebrow">BİRLİKTE ÖĞREN, DENEYİMİNİ PAYLAŞ</div>
+  <h1 id="page-title">Gelişim bir sohbetle başlar.</h1>
+  <p class="intro" data-i18n="intro">Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuş.</p>
+  <aside data-i18n="aside">Rumuz yerine hesabın görünür. Kişisel sağlık verilerini paylaşma. Buradaki paylaşımlar tıbbi tavsiye değildir. Saygılı ol; konu ve yanıtlar admin onayından sonra yayınlanır.</aside>
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <section id="auth-panel" hidden>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form">Giriş yap</button>
+      <button type="button" id="tab-register" class="secondary" role="tab" aria-selected="false" aria-controls="register-form">Kayıt ol</button>
+    </div>
+    <form id="login-form">
+      <h2 data-i18n="login-title">Hesabınla devam et</h2>
+      <p class="meta" data-i18n="login-help">Oturum 14 gün açık kalır. Paylaşımlarda kullanıcı adın görünür.</p>
+      <label data-i18n-label="username">Kullanıcı adı<input name="username" required minlength="3" maxlength="20" autocomplete="username"></label>
+      <label data-i18n-label="password">Şifre<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="current-password"></label>
+      <button type="submit" data-i18n="login-submit">Giriş yap</button>
+    </form>
+    <form id="register-form" hidden>
+      <h2 data-i18n="register-title">Ücretsiz hesap oluştur</h2>
+      <p class="meta" data-i18n="register-help">3–20 karakterlik bir kullanıcı adı ve en az 8 karakterlik, harf ile rakam içeren bir şifre seç.</p>
+      <label class="hp" aria-hidden="true">Web sitesi<input name="website" tabindex="-1" autocomplete="off"></label>
+      <label data-i18n-label="username">Kullanıcı adı<input name="username" required minlength="3" maxlength="20" autocomplete="username"></label>
+      <label data-i18n-label="password">Şifre<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+      <label data-i18n-label="confirm">Şifre tekrar<input name="passwordConfirm" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+      <button type="submit" data-i18n="register-submit">Kayıt ol</button>
+    </form>
+  </section>
+
+  <section id="listing">
+    <div class="toolbar">
+      <h2 data-i18n="topics">Konular</h2>
+      <button id="refresh" type="button" data-i18n="refresh">Yenile</button>
+    </div>
+    <div id="threads"></div>
+    <div class="toolbar">
+      <button id="previous" type="button" data-i18n="prev">← Önceki</button>
+      <span id="page"></span>
+      <button id="next" type="button" data-i18n="next">Sonraki →</button>
+    </div>
+    <div id="auth-gate" class="gate">
+      <h2 data-i18n="gate-title">Sohbete katılmak için hesap gerekir</h2>
+      <p data-i18n="gate-body">Konu açmak ve yanıt yazmak ücretsizdir. Önce giriş yap veya kayıt ol.</p>
+      <div class="toolbar">
+        <button type="button" id="gate-login" class="secondary" data-i18n="login-submit">Giriş yap</button>
+        <button type="button" id="gate-register" data-i18n="register-submit">Kayıt ol</button>
+      </div>
+    </div>
+    <form id="new-thread" hidden>
+      <h2 data-i18n="new-title">Yeni bir sohbet başlat</h2>
+      <p class="meta" id="composer-as"></p>
+      <label data-i18n-label="category">Kategori
+        <select name="category">
+          <option value="Genel">Genel</option>
+          <option value="Antrenman">Antrenman</option>
+          <option value="Beslenme">Beslenme</option>
+          <option value="Deneyimler">Deneyimler</option>
+        </select>
+      </label>
+      <label data-i18n-label="title">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
+      <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
+      <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
+    </form>
+  </section>
+
+  <section id="detail" hidden>
+    <button id="back" type="button" data-i18n="back">← Tüm konular</button>
+    <div id="conversation"></div>
+    <div class="toolbar">
+      <button id="reply-prev" type="button" data-i18n="reply-prev">← Önceki yanıtlar</button>
+      <button id="reply-next" type="button" data-i18n="reply-next">Sonraki yanıtlar →</button>
+    </div>
+    <div id="reply-gate" class="gate" hidden>
+      <p data-i18n="reply-gate">Yanıt yazmak için giriş yap veya kayıt ol.</p>
+      <button type="button" id="reply-login" data-i18n="login-submit">Giriş yap</button>
+    </div>
+    <form id="reply-form" hidden>
+      <h2 data-i18n="reply-title">Sohbete katıl</h2>
+      <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label>
+      <button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button>
+    </form>
+  </section>
+  <footer>TestoTavan · Daha bilinçli bir topluluk.</footer>
+</main>
+</body>
+</html>
