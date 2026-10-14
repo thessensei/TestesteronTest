@@ -158,17 +158,8 @@ function changePage(pageId) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
 
-    const pageMap = {
-        'homePage': 0,
-        'physicalPage': 1,
-        'bloodPage': 2,
-        'blogPage': 3,
-        'aboutPage': 4,
-        'adminPage': -1
-    };
-
-    document.querySelectorAll('.nav-item').forEach((item, index) => {
-        const isCurrent = index === pageMap[pageId];
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const isCurrent = item.getAttribute('aria-controls') === pageId;
         item.classList.toggle('active', isCurrent);
         item.toggleAttribute('aria-current', isCurrent);
     });

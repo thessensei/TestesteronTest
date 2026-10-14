@@ -259,3 +259,27 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 ---
 
 © TestoTavan
+
+## Topluluk forumu
+
+- `/forum/`: ziyaretçiler rumuzla konu açabilir ve açık konulara yanıt verebilir.
+  Bu sürümde üyelik/kimlik doğrulaması yoktur; rumuzlar benzersiz veya doğrulanmış değildir.
+- Admin panelindeki **Forum yönetimini aç** bağlantısı `/forum/?manage=1` sayfasını açar.
+  Mevcut admin oturumu zorunludur. Bekleyen konuları/yanıtları onaylama, konu
+  kilitleme/kilidi açma ve kalıcı silme desteklenir. Konu silinince yanıtları da silinir.
+  Konu kartlarında bekleyen yanıt sayısı gösterilir; yanıtları incelemek için konuyu açın.
+- Tüm yeni gönderiler onay bekler; ziyaretçiler bekleyen içerikleri göremez.
+  Sayfalar 30 konu / 50 yanıtla sınırlıdır ve önceki/sonraki kontrolleri vardır.
+- Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
+  `ADMIN_PASSWORD` ortam değişkenlerini kullanır. İlk API isteği `forum_threads`,
+  `forum_replies`, `forum_limits` tablolarını ve yanıt indeksini otomatik oluşturur;
+  DB kullanıcısının CREATE yetkisi gerekir. Ek servis veya paket gerekmez.
+- IP'nin HMAC özetiyle DB üzerinde 30 saniyede bir gönderi sınırı uygulanır;
+  ham IP saklanmaz. Eski hız sınırı kayıtları sonraki gönderimlerde 24 saat sonra temizlenir.
+  Ters proxy `x-forwarded-for` başlığını güvenilir şekilde sağlamalıdır (Vercel dağıtımı).
+  Yoğun trafik için ayrıca platform/WAF hız sınırı önerilir.
+- Paylaşımlar düz metin olarak kaçışlanarak gösterilir. JSON yazma istekleri ve
+  cross-site istek kontrolü kullanılır; moderasyon sunucuda admin yetkisi gerektirir.
+- Yerelde `npm test` ve `npm run check:assets` çalıştırın. Gerçek ortamda iki ayrı
+  tarayıcı oturumuyla konu gönder → adminde onayla → ziyaretçide görüntüle → yanıt
+  gönder/onayla → kilitle (yanıt gönderilememeli) → sil akışını doğrulayın.
