@@ -1074,3 +1074,76 @@ function setLanguage(language){
 if (localStorage.getItem('testotavan_language') && localStorage.getItem('testotavan_language') !== 'tr') {
     loadOptionalFeatures();
 }
+
+// ========================================
+// ÇEREZ ONAYI & TEKİL ZİYARET SAYACI
+// ========================================
+let statsConsentOverride;
+const STATS_CONSENT_COOKIE = 'testotavan_cookie_consent';
+const STATS_VISITOR_COOKIE = 'testotavan_visitor_v1';
+const STATS_VISITOR_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function readStatsCookie(name) {
+    try {
+        const part = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(name + '='));
+        return part ? part.slice(name.length + 1) : '';
+    } catch { return ''; }
+}
+function writeStatsCookie(name, value, maxAge = 31536000) {
+    try {
+        document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+    } catch { /* Depolama engelliyse kullanıcı yine siteyi kullanabilir. */ }
+    return readStatsCookie(name) === value;
+}
+function openCookieSettings() {
+    const banner = document.getElementById('cookieBanner');
+    if (banner) {
+        banner.hidden = false;
+        document.getElementById('acceptCookies')?.focus();
+    }
+}
+function setStatsConsent(accepted) {
+    const saved = writeStatsCookie(STATS_CONSENT_COOKIE, accepted ? 'accepted' : 'rejected');
+    statsConsentOverride = accepted && saved ? 'accepted' : 'rejected';
+    if (!accepted) writeStatsCookie(STATS_VISITOR_COOKIE, '', 0);
+    const banner = document.getElementById('cookieBanner');
+    if (banner) banner.hidden = true;
+    const status = document.getElementById('cookieStatus');
+    if (status) status.textContent = saved ? '' : 'Çerez tercihi kaydedilemedi. Tarayıcınız çerezleri engelliyor; ziyaretiniz kaydedilmeyecek.';
+    return loadStats();
+}
+async function loadStats() {
+    let method = 'GET';
+    if ((statsConsentOverride ?? readStatsCookie(STATS_CONSENT_COOKIE)) === 'accepted') {
+        let visitor = readStatsCookie(STATS_VISITOR_COOKIE);
+        if (!STATS_VISITOR_PATTERN.test(visitor)) {
+            try { visitor = crypto.randomUUID(); } catch { visitor = ''; }
+            if (visitor) writeStatsCookie(STATS_VISITOR_COOKIE, visitor);
+        }
+        // Çerez saklanamıyorsa her açılışta yeni kimlikle sayacı artırma.
+        if (visitor && readStatsCookie(STATS_VISITOR_COOKIE) === visitor) method = 'POST';
+    }
+    try {
+        const response = await fetch('/api/stats', {
+            method, credentials: 'same-origin', cache: 'no-store',
+            ...(method === 'POST' ? { headers: { 'X-Testotavan-Stats': '1' } } : {})
+        });
+        if (!response.ok) throw new Error('İstatistik servisine ulaşılamadı.');
+        const data = await response.json();
+        if (!Number.isFinite(data.views) || data.views < 0) throw new Error('Geçersiz sayaç.');
+        const counter = document.getElementById('viewCounter');
+        if (counter) counter.textContent = `Toplam tekil ziyaret: ${data.views.toLocaleString('tr-TR')}`;
+    } catch {
+        const counter = document.getElementById('viewCounter');
+        if (counter) counter.textContent = 'Ziyaret sayısı şu anda yüklenemiyor.';
+    }
+}
+function initStatsConsent() {
+    const consent = readStatsCookie(STATS_CONSENT_COOKIE);
+    const banner = document.getElementById('cookieBanner');
+    if (banner) banner.hidden = consent === 'accepted' || consent === 'rejected';
+    document.getElementById('acceptCookies')?.addEventListener('click', () => setStatsConsent(true));
+    document.getElementById('rejectCookies')?.addEventListener('click', () => setStatsConsent(false));
+    document.getElementById('cookieSettings')?.addEventListener('click', openCookieSettings);
+    return loadStats();
+}
+document.addEventListener('DOMContentLoaded', initStatsConsent);

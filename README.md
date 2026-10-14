@@ -304,3 +304,13 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 - Yerelde `npm test` ve `npm run check:assets` çalıştırın. Gerçek ortamda iki ayrı
   tarayıcı oturumuyla konu gönder → adminde onayla → ziyaretçide görüntüle → yanıt
   gönder/onayla → kilitle (yanıt gönderilememeli) → sil akışını doğrulayın.
+
+### Çerez onayı ve sıfırdan başlayan tekil ziyaret sayacı
+
+- Ana sayfada **Çerezleri kabul et / Reddet** tercihi sunulur. Alt kısımdaki **Çerez tercihleri** düğmesiyle tercih değiştirilebilir.
+- Onay öncesinde ve reddedildiğinde `/api/stats` yalnızca `GET` ile okunur; ziyaretçi kaydı oluşturulmaz. Ret tercihi de hatırlanır.
+- Onay sonrasında rastgele UUID içeren `testotavan_visitor_v1` çerezi kullanılır. Tercih ve kimlik çerezleri 1 yıl geçerlidir (`Path=/`, `SameSite=Lax`, HTTPS üzerinde `Secure`). Çerezler engelliyse veya kimlik üretilemiyorsa ziyaret kaydı yapılmaz.
+- Sunucu kimliği `site_unique_visitors_v1` tablosuna birincil anahtar olarak ekler. `ON CONFLICT DO NOTHING` sayesinde aynı kimlikle yenileme, yeniden giriş, blog geçişi ve paralel istekler sayacı artırmaz. IP adresi veya tarayıcı parmak izi kaydedilmez.
+- **Sıfırlama dağıtımda devreye girer:** Eski `site_stats.page_views` toplamı artık okunmaz; yeni boş tekil ziyaretçi tablosuyla sayaç sıfırdan başlar. Eski veriler silinmez. Sonraki dağıtımlarda veya uygulama yeniden başlatıldığında yeni sayaç korunur. İlk onaylı ziyaretçiyle sayı 1 olur.
+- Bu değişiklik yerel kodu hazırlar; canlı veritabanında doğrudan bir işlem yapmaz. Yeni sürüm yayınlandığında, mevcut `DATABASE_URL` ile tablo otomatik oluşturulur. Servis hataları 0 gibi gösterilmez.
+- Bu bir kişi sayacı değil, **onay veren tarayıcı kimliği sayacıdır**. Çerezlerin silinmesi/süresinin dolması, gizli pencere, farklı cihaz veya tercihin geri çekilip yeniden onaylanması yeni kimlikle tekrar sayılmaya neden olabilir.

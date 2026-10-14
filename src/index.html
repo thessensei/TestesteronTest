@@ -947,6 +947,27 @@
             }
         }
 
+        /* Çerez tercihi ana sayfada da gösterilir; blog modülünü beklemez. */
+        .cookie-banner[hidden] { display: none; }
+        .cookie-banner {
+            position: fixed; z-index: 11000; bottom: calc(82px + env(safe-area-inset-bottom));
+            left: 16px; right: 16px; max-width: 460px; margin: 0 auto;
+            padding: 20px; border: 1px solid var(--gold-dark); border-radius: var(--radius);
+            background: var(--card); box-shadow: 0 12px 48px #0009;
+            max-height: 65vh; overflow-y: auto;
+        }
+        .cookie-banner h2 { font-size: 17px; margin-bottom: 8px; }
+        .cookie-banner p { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+        .cookie-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .cookie-actions button {
+            flex: 1 1 150px; min-height: 44px; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--gold); cursor: pointer; font: inherit; font-size: 12px;
+            background: transparent; color: var(--text-primary);
+        }
+        .cookie-actions .cookie-accept { background: var(--gold); color: var(--bg); font-weight: 700; }
+        .cookie-settings { color: var(--gold); background: none; border: 0; padding: 12px; cursor: pointer; text-decoration: underline; }
+        .cookie-actions button:focus-visible, .cookie-settings:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+        .cookie-footer { text-align: center; margin: 16px; font-size: 12px; color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -1818,7 +1839,7 @@
     </div>
     <div class="card blog-hero" style="margin-top:16px">
         <h3 style="font-size:19px; max-width:280px; line-height:1.25">Daha güçlü bir yaşam için uygulanabilir bilgiler.</h3>
-        <p style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:8px;max-width:330px">Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.</p><div id="viewCounter" style="margin-top:12px;color:var(--gold);font-size:10px">Okunma sayısı yükleniyor...</div>
+        <p style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:8px;max-width:330px">Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.</p><div id="viewCounter" style="margin-top:12px;color:var(--gold);font-size:10px">Ziyaret sayısı yükleniyor...</div>
     </div>
     <div class="ad-slot" aria-label="Reklam alanı" data-ad-slot="content-top">Sponsorlu içerik</div>
     <div class="content-toolbar"><input id="contentSearch" aria-label="Yazı veya tarif ara" class="form-input" type="search" placeholder="Yazı veya tarif ara..." oninput="renderContent()"></div>
@@ -1842,6 +1863,19 @@
     <button type="button" class="nav-item" aria-controls="blogPage" onclick="changePage('blogPage')"><svg class="ic" aria-hidden="true"><use href="#i-news"></use></svg><span>Blog</span></button>
     <button type="button" class="nav-item" aria-controls="aboutPage" onclick="changePage('aboutPage')"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>Hakkımızda</span></button>
 </nav>
+
+<footer class="cookie-footer">
+    <button type="button" class="cookie-settings" id="cookieSettings">Çerez tercihleri</button>
+    <p id="cookieStatus" role="status"></p>
+</footer>
+<section class="cookie-banner" id="cookieBanner" aria-labelledby="cookieTitle" hidden>
+    <h2 id="cookieTitle">Çerez tercihiniz</h2>
+    <p>Onay verirseniz, aynı tarayıcıdan tekrar girişlerinizi yeni ziyaret saymamak için rastgele bir ziyaretçi kimliği çerezi kullanırız. Tercihiniz ve kimliğiniz 1 yıl saklanır. Reddederseniz ziyaretiniz sayılmaz; yalnızca ret tercihiniz saklanır. Tercihinizi “Çerez tercihleri” bölümünden değiştirebilirsiniz.</p>
+    <div class="cookie-actions">
+        <button type="button" class="cookie-accept" id="acceptCookies">Çerezleri kabul et</button>
+        <button type="button" id="rejectCookies">Reddet</button>
+    </div>
+</section>
 
 <script defer src="js/validation.js"></script>
 <script defer src="js/app.js"></script>
