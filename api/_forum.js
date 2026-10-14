@@ -1,6 +1,17 @@
 import { prepareForumAuth } from './_forum-auth.js';
 
 export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler'];
+// Validate list controls before any database access. Search is a literal substring,
+// not SQL LIKE syntax, so user-supplied percent/underscore characters stay literal.
+export function parseForumQuery(query = {}) {
+  const category = query.category ?? '';
+  const q = query.q ?? '';
+  const sort = query.sort ?? 'active';
+  if (typeof category !== 'string' || (category && !CATEGORIES.includes(category))) throw new Error('Geçersiz kategori.');
+  if (typeof q !== 'string' || q.length > 120) throw new Error('Arama en fazla 120 karakter olmalı.');
+  if (!['active', 'newest', 'popular', 'unanswered'].includes(sort)) throw new Error('Geçersiz sıralama.');
+  return { category, search: q.trim(), sort };
+}
 export function validatePost(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Geçersiz istek.');
   const text = (key, min, max) => {

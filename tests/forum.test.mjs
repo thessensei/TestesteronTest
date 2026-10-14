@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validatePost, validId } from '../api/_forum.js';
+import { validatePost, validId, parseForumQuery } from '../api/_forum.js';
 import { createForumHandler } from '../api/forum.js';
 import { createSessionCookie } from '../api/_auth.js';
 const id = '12345678-1234-4123-8123-123456789abc';
@@ -50,8 +50,12 @@ test('public list excludes pending records and uses bounded pagination',async ()
   const h=harness([[{id}]]), res=await h.request('GET',{offset:'-10'});
   assert.equal(res.code,200); assert.equal(res.headers['Cache-Control'],'no-store');
   assert.deepEqual(res.data.threads,[{id}]);
-  assert.match(h.queries.at(-1).text,/t.approved=TRUE OR/);
-  assert.deepEqual(h.queries.at(-1).values,[false,false,false,0]);
+  const listQuery = h.queries.find(q => q.text.includes('WITH visible'));
+  assert.match(listQuery.text, /t.approved=TRUE OR/);
+  assert.match(listQuery.text, /LIMIT 31 OFFSET/);
+  assert.deepEqual(listQuery.values, [false, false, false, false, '', '', '', '', 'active', 'active', 'active', 0]);
+  assert.equal(res.data.hasMore, false);
+  assert.deepEqual(res.data.categories, []);
 });
 test('hidden or missing thread returns 404 without fetching replies',async () => {
   const h=harness();assert.equal((await h.request('GET',{id})).code,404);
@@ -114,4 +118,31 @@ test('navigation selection uses page targets rather than positional indexes', as
   const {readFileSync}=await import('node:fs');
   const source=readFileSync(new URL('../src/js/app.js',import.meta.url),'utf8');
   assert.ok(source.includes("item.getAttribute('aria-controls') === pageId"));
+});
+
+
+test('forum filters validate all values before querying the database', async () => {
+  assert.deepEqual(parseForumQuery({ q: '  protein  ', category: 'Beslenme', sort: 'popular' }), { search: 'protein', category: 'Beslenme', sort: 'popular' });
+  const h = harness();
+  for (const query of [{ q: ['x'] }, { q: 'x'.repeat(121) }, { category: 'Other' }, { category: ['Genel'] }, { sort: 'DROP TABLE' }, { sort: ['newest'] }]) {
+    assert.equal((await h.request('GET', query)).code, 400);
+  }
+  assert.equal(h.queries.length, 0);
+});
+
+test('lookahead pagination does not expose the extra row or create an empty last page', async () => {
+  for (const length of [0, 30, 31]) {
+    const h = harness([Array.from({ length }, () => ({ id }))]);
+    const res = await h.request('GET', { offset: '9999999' });
+    assert.equal(res.data.threads.length, Math.min(length, 30));
+    assert.equal(res.data.hasMore, length > 30);
+    assert.equal(h.queries.find(q => q.text.includes('WITH visible')).values.at(-1), 100000);
+  }
+  for (const length of [0, 50, 51]) {
+    const h = harness([[{ id }], Array.from({ length }, () => ({ id }))]);
+    const res = await h.request('GET', { id });
+    assert.equal(res.data.replies.length, Math.min(length, 50));
+    assert.equal(res.data.hasMore, length > 50);
+    assert.match(h.queries.at(-1).text, /LIMIT 51 OFFSET/);
+  }
 });

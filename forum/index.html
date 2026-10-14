@@ -17,9 +17,10 @@
   <script defer src="/forum/forum.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#forum-content" data-i18n="skip">Konulara geç</a>
 <main>
   <header>
-    <a class="brand" href="/">TestoTavan<span> / TOPLULUK</span></a>
+    <a class="brand" href="/">Testo<span class="brand-accent">Tavan</span><span class="brand-label" data-i18n="community">TOPLULUK FORUMU</span></a>
     <div class="header-actions">
       <label class="lang-label" for="forum-lang">Dil</label>
       <select id="forum-lang" aria-label="Dil">
@@ -40,25 +41,31 @@
     </div>
   </header>
 
-  <div class="eyebrow" data-i18n="eyebrow">BİRLİKTE ÖĞREN, DENEYİMİNİ PAYLAŞ</div>
-  <h1 id="page-title">Gelişim bir sohbetle başlar.</h1>
-  <p class="intro" data-i18n="intro">Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuş.</p>
-  <aside data-i18n="aside">Rumuz yerine hesabın görünür. Kişisel sağlık verilerini paylaşma. Buradaki paylaşımlar tıbbi tavsiye değildir. Saygılı ol; konu ve yanıtlar admin onayından sonra yayınlanır.</aside>
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/" data-i18n="home">Ana sayfa</a><span aria-hidden="true">/</span><a href="/forum/" data-i18n="forum">Forum</a><span id="breadcrumb-topic" hidden></span></nav>
+  <section class="hero" aria-labelledby="page-title">
+    <div>
+      <div class="eyebrow" data-i18n="eyebrow">BİRLİKTE ÖĞREN, DENEYİMİNİ PAYLAŞ</div>
+      <h1 id="page-title">Gelişim bir sohbetle başlar.</h1>
+      <p class="intro" data-i18n="intro">Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuş.</p>
+    </div>
+    <button id="create-topic" type="button" data-i18n="create">+ Yeni konu aç</button>
+  </section>
+  <div class="notice"><span class="notice-icon" aria-hidden="true">i</span><p data-i18n="notice">Deneyimini paylaş, birlikte gelişelim. Paylaşımlar admin onayından sonra yayınlanır; tıbbi tavsiye değildir.</p><a href="#community-rules" data-i18n="rules">Forum kuralları ↗</a></div>
   <p id="status" role="status" aria-live="polite"></p>
 
   <section id="auth-panel" hidden>
-    <div class="auth-tabs" role="tablist">
+    <div class="auth-tabs" role="tablist" aria-label="Hesap">
       <button type="button" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form">Giriş yap</button>
-      <button type="button" id="tab-register" class="secondary" role="tab" aria-selected="false" aria-controls="register-form">Kayıt ol</button>
+      <button type="button" id="tab-register" tabindex="-1" class="secondary" role="tab" aria-selected="false" aria-controls="register-form">Kayıt ol</button>
     </div>
-    <form id="login-form">
+    <form id="login-form" role="tabpanel" aria-labelledby="tab-login">
       <h2 data-i18n="login-title">Hesabınla devam et</h2>
       <p class="meta" data-i18n="login-help">Oturum 14 gün açık kalır. Paylaşımlarda kullanıcı adın görünür.</p>
       <label data-i18n-label="username">Kullanıcı adı<input name="username" required minlength="3" maxlength="20" autocomplete="username"></label>
       <label data-i18n-label="password">Şifre<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="current-password"></label>
       <button type="submit" data-i18n="login-submit">Giriş yap</button>
     </form>
-    <form id="register-form" hidden>
+    <form id="register-form" role="tabpanel" aria-labelledby="tab-register" hidden>
       <h2 data-i18n="register-title">Ücretsiz hesap oluştur</h2>
       <p class="meta" data-i18n="register-help">3–20 karakterlik bir kullanıcı adı ve en az 8 karakterlik, harf ile rakam içeren bir şifre seç.</p>
       <label class="hp" aria-hidden="true">Web sitesi<input name="website" tabindex="-1" autocomplete="off"></label>
@@ -69,60 +76,89 @@
     </form>
   </section>
 
-  <section id="listing">
-    <div class="toolbar">
-      <h2 data-i18n="topics">Konular</h2>
-      <button id="refresh" type="button" data-i18n="refresh">Yenile</button>
-    </div>
-    <div id="threads"></div>
-    <div class="toolbar">
-      <button id="previous" type="button" data-i18n="prev">← Önceki</button>
-      <span id="page"></span>
-      <button id="next" type="button" data-i18n="next">Sonraki →</button>
-    </div>
-    <div id="auth-gate" class="gate">
-      <h2 data-i18n="gate-title">Sohbete katılmak için hesap gerekir</h2>
-      <p data-i18n="gate-body">Konu açmak ve yanıt yazmak ücretsizdir. Önce giriş yap veya kayıt ol.</p>
-      <div class="toolbar">
-        <button type="button" id="gate-login" class="secondary" data-i18n="login-submit">Giriş yap</button>
-        <button type="button" id="gate-register" data-i18n="register-submit">Kayıt ol</button>
-      </div>
-    </div>
-    <form id="new-thread" hidden>
-      <h2 data-i18n="new-title">Yeni bir sohbet başlat</h2>
-      <p class="meta" id="composer-as"></p>
-      <label data-i18n-label="category">Kategori
-        <select name="category">
-          <option value="Genel">Genel</option>
-          <option value="Antrenman">Antrenman</option>
-          <option value="Beslenme">Beslenme</option>
-          <option value="Deneyimler">Deneyimler</option>
-        </select>
-      </label>
-      <label data-i18n-label="title">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
-      <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
-      <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
-    </form>
-  </section>
+  <div class="forum-layout">
+    <aside class="sidebar">
+      <section class="panel category-panel" aria-labelledby="category-heading">
+        <h2 id="category-heading" class="section-label" data-i18n="categories">FORUM KATEGORİLERİ</h2>
+        <nav id="category-nav" aria-labelledby="category-heading"></nav>
+      </section>
+      <section class="panel stats-panel" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" class="section-label" data-i18n="stats">TOPLULUK İSTATİSTİKLERİ</h2>
+        <dl><div><dt data-i18n="totalTopics">Konu</dt><dd id="total-topics">—</dd></div><div><dt data-i18n="totalReplies">Yanıt</dt><dd id="total-replies">—</dd></div></dl>
+        <p class="meta" id="stats-note" data-i18n="statsNote">Yayındaki paylaşımlar</p>
+      </section>
+      <section class="panel rules-panel" id="community-rules" tabindex="-1" aria-labelledby="rules-heading">
+        <span class="rules-icon" aria-hidden="true">↗</span>
+        <h2 id="rules-heading" data-i18n="rulesTitle">İyi bir sohbetin temeli</h2>
+        <ul><li data-i18n="ruleRespect">Fikirlere açık, insanlara saygılı ol.</li><li data-i18n="rulePrivacy">Kişisel sağlık verilerini paylaşma.</li><li data-i18n="ruleTitle">Açıklayıcı bir başlık ve doğru kategori seç.</li></ul>
+        <p class="meta" data-i18n="medical">Sağlık sorunlarında bir uzmana danış. Forum, tıbbi danışmanlığın yerini tutmaz.</p>
+      </section>
+    </aside>
+    <div class="forum-content" id="forum-content" tabindex="-1">
+      <section id="listing" tabindex="-1" aria-labelledby="list-heading">
+        <div class="panel thread-panel">
+          <div class="list-heading toolbar">
+            <div><h2 id="list-heading" data-i18n="allTopics">Tüm konular</h2><p class="meta" id="list-description" data-i18n="listDescription">Sorular, deneyimler ve yeni bakış açıları.</p></div>
+            <button id="refresh" class="secondary" type="button" data-i18n="refresh">Yenile</button>
+          </div>
+          <form id="search-form" role="search">
+            <label class="sr-only" for="topic-search" data-i18n="searchLabel">Konularda ara</label>
+            <div class="search-field"><span aria-hidden="true">⌕</span><input id="topic-search" name="q" type="search" maxlength="120" placeholder="Bir konu veya anahtar kelime ara…"><button type="submit" data-i18n="search">Ara</button></div>
+          </form>
+          <div class="filter-bar"><div id="sort-nav" class="sort-nav" role="group" aria-label="Sıralama"></div><button id="clear-filters" class="text-button" type="button" hidden data-i18n="clear">Filtreleri temizle</button></div>
+          <div class="thread-columns" aria-hidden="true"><span data-i18n="topicColumn">KONU / YAZAR</span><span data-i18n="replyColumn">YANIT</span><span data-i18n="activityColumn">SON HAREKET</span></div>
+          <div id="threads" aria-busy="false"></div>
+          <div class="toolbar pagination">
+            <button id="previous" type="button" data-i18n="prev">← Önceki</button>
+            <span id="page"></span>
+            <button id="next" type="button" data-i18n="next">Sonraki →</button>
+          </div>
+        </div>
+        <div id="auth-gate" class="gate">
+          <h2 data-i18n="gate-title">Sohbete katılmak için hesap gerekir</h2>
+          <p data-i18n="gate-body">Konu açmak ve yanıt yazmak ücretsizdir. Önce giriş yap veya kayıt ol.</p>
+          <div class="toolbar">
+            <button type="button" id="gate-login" class="secondary" data-i18n="login-submit">Giriş yap</button>
+            <button type="button" id="gate-register" data-i18n="register-submit">Kayıt ol</button>
+          </div>
+        </div>
+        <form id="new-thread" hidden>
+          <h2 data-i18n="new-title">Yeni bir sohbet başlat</h2>
+          <p class="meta" id="composer-as"></p>
+          <label data-i18n-label="category">Kategori
+            <select name="category">
+              <option value="Genel">Genel</option>
+              <option value="Antrenman">Antrenman</option>
+              <option value="Beslenme">Beslenme</option>
+              <option value="Deneyimler">Deneyimler</option>
+            </select>
+          </label>
+          <label data-i18n-label="titleField">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
+          <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
+          <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
+        </form>
+      </section>
 
-  <section id="detail" hidden>
-    <button id="back" type="button" data-i18n="back">← Tüm konular</button>
-    <div id="conversation"></div>
-    <div class="toolbar">
-      <button id="reply-prev" type="button" data-i18n="reply-prev">← Önceki yanıtlar</button>
-      <button id="reply-next" type="button" data-i18n="reply-next">Sonraki yanıtlar →</button>
+      <section id="detail" hidden>
+        <button id="back" type="button" data-i18n="back">← Tüm konular</button>
+        <div id="conversation" tabindex="-1"></div>
+        <div class="toolbar">
+          <button id="reply-prev" type="button" data-i18n="reply-prev">← Önceki yanıtlar</button>
+          <button id="reply-next" type="button" data-i18n="reply-next">Sonraki yanıtlar →</button>
+        </div>
+        <div id="reply-gate" class="gate" hidden>
+          <p data-i18n="reply-gate">Yanıt yazmak için giriş yap veya kayıt ol.</p>
+          <button type="button" id="reply-login" data-i18n="login-submit">Giriş yap</button>
+        </div>
+        <form id="reply-form" hidden>
+          <h2 data-i18n="reply-title">Sohbete katıl</h2>
+          <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label>
+          <button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button>
+        </form>
+      </section>
     </div>
-    <div id="reply-gate" class="gate" hidden>
-      <p data-i18n="reply-gate">Yanıt yazmak için giriş yap veya kayıt ol.</p>
-      <button type="button" id="reply-login" data-i18n="login-submit">Giriş yap</button>
-    </div>
-    <form id="reply-form" hidden>
-      <h2 data-i18n="reply-title">Sohbete katıl</h2>
-      <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label>
-      <button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button>
-    </form>
-  </section>
-  <footer>TestoTavan · Daha bilinçli bir topluluk.</footer>
+  </div>
+  <footer><span>TestoTavan <span class="footer-dot">·</span> <span data-i18n="footer">Daha bilinçli bir topluluk.</span></span><a href="#" data-i18n="top">Yukarı dön ↑</a></footer>
 </main>
 </body>
 </html>
