@@ -47,7 +47,6 @@ function localizedContent(item){
   ingredients};
 }
 function getAllContent(){ return [...sharedContent, ...seedContent].map(localizedContent); }
-async function loadStats(){ try { const r=await fetch('/api/stats',{method:'POST'}); const j=await r.json(); const el=document.getElementById('viewCounter'); if(el)el.textContent=`Toplam ziyaret: ${Number(j.views||0).toLocaleString('tr-TR')}`; } catch(e) { const el=document.getElementById('viewCounter'); if(el)el.textContent=''; } }
 async function loadSharedContent(){ try { const response=await fetch('/api/content'); if(response.ok){ sharedContent=await response.json(); renderContent(); } } catch(e){ console.warn('İçerikler yüklenemedi',e); } }
 function ensureBlogData(){
     if (blogDataRequested) return;
