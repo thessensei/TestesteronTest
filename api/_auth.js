@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 
 const COOKIE_NAME = 'testotavan_admin';
+const CAPTCHA_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const CAPTCHA_TTL_MS = 5 * 60 * 1000; // 5 dakika
 
 function secret() {
   return process.env.SESSION_SECRET || '';
@@ -35,10 +37,62 @@ export function isAdmin(req) {
   }
 }
 
+export function safeUsernameMatch(username) {
+  const expected = (process.env.ADMIN_USERNAME || 'admin').trim();
+  if (!expected || typeof username !== 'string') return false;
+  const a = Buffer.from(username.trim());
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export function safePasswordMatch(password) {
   const expected = process.env.ADMIN_PASSWORD || '';
   if (!expected || typeof password !== 'string') return false;
   const a = Buffer.from(password);
   const b = Buffer.from(expected);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * 6 karakterlik tek kullanımlık/süreli güvenlik doğrulama kodu (Captcha) ve
+ * stateless HMAC imzalı token üretir.
+ */
+export function createCaptchaChallenge(now = Date.now()) {
+  let code = '';
+  for (let i = 0; i < 6; i += 1) {
+    code += CAPTCHA_ALPHABET[crypto.randomInt(0, CAPTCHA_ALPHABET.length)];
+  }
+  const expires = now + CAPTCHA_TTL_MS;
+  const nonce = crypto.randomBytes(8).toString('hex');
+  const payload = `captcha.${expires}.${nonce}.${code}`;
+  const sig = signature(payload);
+  return {
+    code,
+    token: `${expires}.${nonce}.${sig}`,
+    expires
+  };
+}
+
+/**
+ * Kullanıcının girdiği doğrulama kodunu HMAC imzalı token ile doğrular.
+ */
+export function verifyCaptcha(inputCode, token, now = Date.now()) {
+  if (!secret()) return false;
+  if (typeof inputCode !== 'string' || typeof token !== 'string') return false;
+  const normalizedCode = inputCode.trim().toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(normalizedCode)) return false;
+
+  const parts = token.trim().split('.');
+  if (parts.length !== 3) return false;
+  const [expiresStr, nonce, receivedSig] = parts;
+  const expires = Number(expiresStr);
+  if (!Number.isFinite(expires) || expires < now) return false;
+  if (!/^[0-9a-f]{16}$/.test(nonce) || !/^[0-9a-f]{64}$/.test(receivedSig)) return false;
+
+  const expectedSig = signature(`captcha.${expires}.${nonce}.${normalizedCode}`);
+  try {
+    return crypto.timingSafeEqual(Buffer.from(receivedSig), Buffer.from(expectedSig));
+  } catch {
+    return false;
+  }
 }
