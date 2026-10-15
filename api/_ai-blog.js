@@ -206,7 +206,7 @@ export async function fetchNewsHtml(rawUrl, options = {}) {
         method: 'GET',
         redirect: 'manual',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; TestoTavanBot/1.0; +https://testotavan.vercel.app)',
+          'User-Agent': 'Mozilla/5.0 (compatible; TestoTavanBot/1.0; +https://testosteron-test.vercel.app)',
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
         },

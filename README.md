@@ -147,7 +147,7 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `SESSION_SECRET` | Oturum cookie ve doğrulama kodu (Captcha) imzası için gizli anahtar |
 | `PINTEREST_ACCESS_TOKEN` | Pinterest API v5 erişim tokenı (opsiyonel; yoksa pin gönderilmez) |
 | `PINTEREST_BOARD_ID` | Pinin ekleneceği board kimliği (opsiyonel; yoksa pin gönderilmez) |
-| `SITE_URL` | Yayındaki kök adres, ör. `https://testotavan.vercel.app` (opsiyonel) |
+| `SITE_URL` | Yayındaki kök adres, ör. `https://testosteron-test.vercel.app` (opsiyonel) |
 | `ENABLE_MACHINE_TRANSLATION` | `0` ise AI çevirisi eksik kaldığında yedek çeviri servisi çağrılmaz (opsiyonel) |
 | `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
 | `GEMINI_MODEL` | Gemini model kimliği (opsiyonel; varsayılan `gemini-3.8-flash`; kapatılmış 1.x/2.0 modelleri otomatik güncel modele taşınır) |
@@ -161,9 +161,16 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 
 ### Google'da dizine ekleme
 
-Site haritası `/sitemap.xml` ve tarama kuralları `/robots.txt` adreslerinde yayınlanır. Canonical, Open Graph, yapılandırılmış veri ve forum URL'leri mevcut dağıtım adresi `https://testotavan.vercel.app` ile eşleştirilmiştir. Başka bir özel alan adı kullanıyorsanız HTML dosyalarındaki bu adresleri, `sitemap.xml` ve `robots.txt` içindeki adresleri de yeni ana alan adınıza göre güncelleyin.
+Site haritası `/sitemap.xml` ve tarama kuralları `/robots.txt` adreslerinde yayınlanır. Canonical, Open Graph, yapılandırılmış veri ve forum URL'leri Vercel'deki canlı adres `https://testosteron-test.vercel.app` ile eşleştirilmiştir (`tests/seo.test.mjs` denetler). Başka bir özel alan adı kullanıyorsanız HTML dosyalarındaki bu adresleri, `sitemap.xml` ve `robots.txt` içindeki adresleri de yeni ana alan adınıza göre güncelleyin.
 
-Dağıtımdan sonra Google Search Console'da alan adını doğrulayın, `/sitemap.xml` haritasını gönderin ve URL Denetimi'nden ana sayfa için dizine ekleme isteyin. Kod tarafındaki ayarlar Google'ın taramasını kolaylaştırır; Google'ın dizine ekleme ve sonuçlarda gösterme kararı/zamanı garanti edilemez.
+**Search Console mülkü:** Mülk türü olarak **URL öneki** seçin ve `https://testosteron-test.vercel.app/` girin. İki doğrulama yöntemi zaten yayında:
+
+- **HTML etiketi** — `src/index.html` `<head>` bölümündeki `google-site-verification` meta etiketleri
+- **HTML dosyası** — kök dizindeki `google5ef2fba9d6d13dcc.html`
+
+Doğrulamadan sonra bu etiketleri ve dosyayı silmeyin; Google sahipliği belirli aralıklarla yeniden denetler (`npm test` silinmelerini engeller). **Alan adı** mülkü yalnızca DNS TXT kaydıyla (`google-site-verification=...`) doğrulanır. `*.vercel.app` alt alan adlarının DNS'i Vercel'e ait olduğundan bu yöntem ancak kendi alan adınızı bağladığınızda kullanılabilir.
+
+Doğrulamadan sonra `/sitemap.xml` haritasını gönderin ve URL Denetimi'nden ana sayfa için dizine ekleme isteyin. Kod tarafındaki ayarlar Google'ın taramasını kolaylaştırır; Google'ın dizine ekleme ve sonuçlarda gösterme kararı/zamanı garanti edilemez.
 
 ### Run Locally
 
@@ -237,11 +244,11 @@ Gönderilen kurumsal gövde:
   "board_id": "987654321",
   "title": "Sabah Rutininin Testosterona Etkisi",
   "description": "Gün ışığı, uyku düzeni ve kahvaltı tercihlerinin hormon dengesine etkisi.\n\n#HormonSagligi #TestoTavan #ErkekSagligi",
-  "link": "https://testotavan.vercel.app/?icerik=content-1760000000000-ab12cd34",
+  "link": "https://testosteron-test.vercel.app/?icerik=content-1760000000000-ab12cd34",
   "alt_text": "Sabah Rutininin Testosterona Etkisi — Hormon Sağlığı",
   "media_source": {
     "source_type": "image_url",
-    "url": "https://testotavan.vercel.app/api/media/media-1760000000000-ab12cd34"
+    "url": "https://testosteron-test.vercel.app/api/media/media-1760000000000-ab12cd34"
   }
 }
 ```
