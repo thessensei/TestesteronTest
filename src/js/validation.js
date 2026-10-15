@@ -818,18 +818,18 @@
     // TAHLİL METNİ AYRIŞTIRMA (PDF / foto okuma sonrası)
     // ========================================================================
     var PARSE_ALIASES = {
-        totalT: ['total testosteron', 'totaltestosteron', 'testosteron total', 'total testosterone', 'serum testosteron', 'testosteron,total', 'testosteron'],
-        freeT: ['serbest testosteron', 'free testosterone', 'free testosteron', 'testosteron serbest'],
-        shbg: ['shbg', 'seks hormon baglayici', 'seks hormonu baglayici globulin', 'sex hormone binding'],
-        lh: ['lh', 'luteinizan hormon', 'luteinizing hormone'],
-        fsh: ['fsh', 'folikul stimulan hormon', 'follicle stimulating'],
-        estradiol: ['estradiol', 'ostradiol', 'e2'],
-        cortisol: ['kortizol', 'cortisol'],
-        ferritin: ['ferritin', 'ferritin (serum)'],
-        vitD: ['25 oh vitamin d', '25-oh vitamin d', 'vitamin d', 'd vitamini', '25 hidroksi vitamin d', '25(oh)d'],
-        b12: ['vitamin b12', 'b12', 'kobalamin'],
-        zinc: ['cinko', 'zinc', 'zn'],
-        mg: ['magnezyum', 'magnesium']
+        totalT: ['total testosteron', 'totaltestosteron', 'testosteron (total)', 'testosteron total', 'total testosterone', 'serum testosteron', 'testosteron,total', 'testosteron, total', 'testosteron'],
+        freeT: ['serbest testosteron', 'testosteron (serbest)', 'free testosterone', 'free testosteron', 'testosteron serbest', 'serbest testo'],
+        shbg: ['shbg', 'seks hormon baglayici globulin', 'seks hormonu baglayici globulin', 'seks hormon baglayici', 'sex hormone binding globulin', 'sex hormone binding'],
+        lh: ['luteinizan hormon (lh)', 'luteinizan hormon', 'luteinizing hormone', 'lh'],
+        fsh: ['folikul stimulan hormon (fsh)', 'folikul stimulan hormon', 'follicle stimulating hormone', 'follicle stimulating', 'fsh'],
+        estradiol: ['estradiol (e2)', 'e2 (estradiol)', 'estradiol', 'ostradiol', 'e2'],
+        cortisol: ['kortizol (sabah)', 'sabah kortizol', 'serum kortizol', 'kortizol', 'cortisol'],
+        ferritin: ['ferritin (serum)', 'serum ferritin', 'ferritin'],
+        vitD: ['d vitamini (25-oh)', 'vitamin d (25-oh)', '25-oh vitamin d', '25 oh vitamin d', '25 hidroksi vitamin d', '25(oh) vitamin d', '25(oh)d', 'vitamin d3', 'vitamin d', 'd vitamini'],
+        b12: ['vitamin b12 (kobalamin)', 'vitamin b12', 'b12 vitamini', 'kobalamin', 'b12'],
+        zinc: ['cinko (zn)', 'zinc (zn)', 'serum cinko', 'cinko', 'zinc', 'zn'],
+        mg: ['magnezyum (mg)', 'serum magnezyum', 'magnezyum', 'magnesium']
     };
 
     var UNIT_PATTERNS = [
@@ -854,6 +854,12 @@
             .replace(/ş/g, 's').replace(/ğ/g, 'g')
             .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
             .replace(/[\t ]+/g, ' ');
+    }
+
+    // Etiket içindeki "(25-OH)", "(E2)", "(B12)" gibi alt kodları sayı yakalamadan önce temizler
+    function stripCodeTokens(fragment) {
+        return String(fragment || '')
+            .replace(/^\s*[\(\[\{]?\s*(?:25\s*[-–]?\s*oh(?:\s*d\d?)?|1\s*,\s*25\s*[-–]?\s*oh|e2|b12|d3|zn|mg|lh|fsh|total|serbest|serum)\s*[\)\]\}]?/gi, ' ');
     }
 
     /**
@@ -883,18 +889,35 @@
                         if (!boundary.test(line)) continue;
                     }
 
-                    var rest = line.slice(idx + alias.length);
+                    // "serbest testosteron" satırının yanlışlıkla "testosteron" (totalT) olarak okunmasını önle
+                    if (marker.key === 'totalT' && alias === 'testosteron' && /serbest|free/.test(line) && !/total/.test(line)) {
+                        continue;
+                    }
+
+                    var rest = stripCodeTokens(line.slice(idx + alias.length));
                     var numMatch = rest.match(/(-?\d{1,6}(?:[.,]\d{1,3})?)/);
+
+                    // OCR çok satırlı tablo çıktısı: etiket üst satırda, sayı hemen alt satırda olabilir
+                    if (!numMatch && i + 1 < lines.length) {
+                        var nextLine = lines[i + 1].trim();
+                        if (/^[:=\s]*\d/.test(nextLine)) {
+                            rest = nextLine;
+                            numMatch = rest.match(/(-?\d{1,6}(?:[.,]\d{1,3})?)/);
+                        }
+                    }
+
                     if (!numMatch) continue;
 
                     var value = parseNumber(numMatch[1]);
                     if (value === null || value <= 0) continue;
 
-                    // Birim tespiti
+                    // Birim tespiti (hem sayının hemen sağında hem de e-Nabız formatındaki gibi solunda aranır)
                     var unitCode = marker.unit;
-                    var tail = rest.slice(numMatch.index + numMatch[1].length, numMatch.index + numMatch[1].length + 24);
+                    var tail = rest.slice(numMatch.index + numMatch[1].length, numMatch.index + numMatch[1].length + 28);
+                    var head = rest.slice(0, numMatch.index);
+                    var unitWindow = tail + ' ' + head;
                     for (var u = 0; u < UNIT_PATTERNS.length; u++) {
-                        if (UNIT_PATTERNS[u].re.test(tail)) {
+                        if (UNIT_PATTERNS[u].re.test(unitWindow)) {
                             var candidate = UNIT_PATTERNS[u].code;
                             if (getUnit(marker, candidate) && getUnit(marker, candidate).code === candidate) {
                                 unitCode = candidate;
@@ -918,6 +941,226 @@
         var unmatched = MARKERS.filter(function (m) { return !values[m.id]; }).map(function (m) { return m.key; });
 
         return { values: values, units: units, matched: matched, unmatched: unmatched, lines: matchedLines };
+    }
+
+    // ========================================================================
+    // KİŞİSELLEŞTİRİLMİŞ MİKRO BESİN DİNAMİK KART ALGORİTMASI
+    // ========================================================================
+    var SYSTEM_MICRONUTRIENT_WARNING =
+        'Sistem Analizi Uyarısı: Çinko/D Vitamini eksikliğiniz LH sinyalinizi ve testosteron sentezinizi doğrudan zayıflatıyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin';
+
+    /**
+     * Laboratuvar normal aralıklarının altındaki mikro besin değerlerini (D Vitamini < 30 ng/mL,
+     * Çinko < 70 µg/dL, Magnezyum < 1.7 mg/dL, Ferritin < 24 ng/mL, B12 < 200 pg/mL)
+     * analiz ederek kişiye özel dinamik uyarı kartları üretir.
+     * @param {Object} values Kanonik birimlerde kan değerleri { vitD, zinc, mg, ferritin, b12, ... }
+     * @returns {Array<Object>}
+     */
+    function evaluateMicronutrientAlerts(values) {
+        values = values || {};
+        var alerts = [];
+
+        var hasVitD = values.vitD !== undefined && values.vitD !== null && isFinite(values.vitD);
+        var hasZinc = values.zinc !== undefined && values.zinc !== null && isFinite(values.zinc);
+        var hasMg = values.mg !== undefined && values.mg !== null && isFinite(values.mg);
+        var hasFerritin = values.ferritin !== undefined && values.ferritin !== null && isFinite(values.ferritin);
+        var hasB12 = values.b12 !== undefined && values.b12 !== null && isFinite(values.b12);
+
+        var lowVitD = hasVitD && values.vitD < MARKER_BY_KEY.vitD.ref[0];   // < 30 ng/mL
+        var lowZinc = hasZinc && values.zinc < MARKER_BY_KEY.zinc.ref[0];   // < 70 µg/dL
+        var lowMg = hasMg && values.mg < MARKER_BY_KEY.mg.ref[0];           // < 1.7 mg/dL
+        var lowFerritin = hasFerritin && values.ferritin < MARKER_BY_KEY.ferritin.ref[0]; // < 24 ng/mL
+        var lowB12 = hasB12 && values.b12 < MARKER_BY_KEY.b12.ref[0];       // < 200 pg/mL
+
+        if (lowVitD && lowZinc) {
+            alerts.push({
+                id: 'alert-zinc-vitd',
+                keys: ['vitD', 'zinc'],
+                status: (values.vitD < 12 || values.zinc < 50) ? STATUS.critical : STATUS.low,
+                title: 'Çinko & D Vitamini Kofaktör Eksikliği',
+                message: SYSTEM_MICRONUTRIENT_WARNING,
+                measuredText: 'D Vitamini: ' + formatNumber(values.vitD, 1) + ' ng/mL (Normal: 30–100) · Çinko: ' + formatNumber(values.zinc, 0) + ' µg/dL (Normal: 70–120)',
+                recommendations: [
+                    'Çinko Pikolinat / Bisglisinat (' + (values.zinc < 60 ? '30 mg/gün' : '15 mg/gün') + ') + Kabak çekirdeği içi, istiridye, kırmızı et',
+                    'D3 Vitamini + K2 MK-7 (' + (values.vitD < 20 ? '5.000 IU D3 + 200 mcg K2' : '3.000 IU D3 + 100 mcg K2') + '/gün) + Yabani somon, uskumru, yumurta sarısı',
+                    'Sinerjik Emilim Protokolü: Sabah yağlı öğünle D3+K2, akşam tok karnına Çinko + Magnezyum'
+                ]
+            });
+        } else if (lowVitD) {
+            alerts.push({
+                id: 'alert-vitd',
+                keys: ['vitD'],
+                status: values.vitD < 12 ? STATUS.critical : STATUS.low,
+                title: 'D Vitamini (25-OH) Eksikliği',
+                message: SYSTEM_MICRONUTRIENT_WARNING,
+                measuredText: 'D Vitamini (25-OH): ' + formatNumber(values.vitD, 1) + ' ng/mL (Lab normal aralığı: 30–100 ng/mL)',
+                recommendations: [
+                    'D3 Vitamini + K2 MK-7 (' + (values.vitD < 20 ? '5.000 IU D3 + 200 mcg K2' : '3.000 IU D3 + 100 mcg K2') + '/gün)',
+                    'Yağlı deniz balıkları (somon, uskumru, sardalya), merada yetişmiş yumurta sarısı ve avokado',
+                    'Leydig hücrelerindeki VDR reseptör aktivasyonu için yağ içeren ana öğünle birlikte kullanım'
+                ]
+            });
+        } else if (lowZinc) {
+            alerts.push({
+                id: 'alert-zinc',
+                keys: ['zinc'],
+                status: values.zinc < 50 ? STATUS.critical : STATUS.low,
+                title: 'Çinko (Zn) Eksikliği',
+                message: SYSTEM_MICRONUTRIENT_WARNING,
+                measuredText: 'Çinko: ' + formatNumber(values.zinc, 0) + ' µg/dL (Lab normal aralığı: 70–120 µg/dL)',
+                recommendations: [
+                    'Çinko Pikolinat veya Bisglisinat (' + (values.zinc < 60 ? '30 mg/gün' : '15 mg/gün') + ' — akşam öğünüyle)',
+                    'Çiğ kabak çekirdeği içi, kırmızı et, kuzu ciğeri, istiridye ve kaju',
+                    'Hipofiz-testis LH sinyali ve 17β-HSD enzim aktivitesi için fitat oranı düşük beslenme'
+                ]
+            });
+        }
+
+        if (lowMg) {
+            alerts.push({
+                id: 'alert-mg',
+                keys: ['mg'],
+                status: values.mg < 1.4 ? STATUS.critical : STATUS.low,
+                title: 'Magnezyum Eksikliği',
+                message: 'Sistem Analizi Uyarısı: Magnezyum eksikliğiniz SHBG bağlanmasını artırarak serbest testosteron biyoyararlanımınızı düşürüyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin',
+                measuredText: 'Magnezyum: ' + formatNumber(values.mg, 2) + ' mg/dL (Lab normal aralığı: 1,7–2,4 mg/dL)',
+                recommendations: [
+                    'Magnezyum Bisglisinat (200–400 mg / gece yatmadan 1 saat önce)',
+                    'Ham kakao, çiğ kabak çekirdeği, badem, ıspanak ve koyu yeşil yapraklılar'
+                ]
+            });
+        }
+
+        if (lowFerritin) {
+            alerts.push({
+                id: 'alert-ferritin',
+                keys: ['ferritin'],
+                status: values.ferritin < 15 ? STATUS.critical : STATUS.low,
+                title: 'Ferritin (Demir Deposu) Eksikliği',
+                message: 'Sistem Analizi Uyarısı: Ferritin düşüklüğünüz hücresel oksijen taşınmasını ve antrenman toparlanmasını doğrudan zayıflatıyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin',
+                measuredText: 'Ferritin: ' + formatNumber(values.ferritin, 0) + ' ng/mL (Lab normal aralığı: 24–336 ng/mL)',
+                recommendations: [
+                    'Hekim kontrolünde Demir Bisglisinat + C vitamini desteği',
+                    'Kırmızı et, ciğer ve C vitamini kaynakları (çay/kahve tüketimini öğünden 2 saat ayırın)'
+                ]
+            });
+        }
+
+        if (lowB12) {
+            alerts.push({
+                id: 'alert-b12',
+                keys: ['b12'],
+                status: values.b12 < 150 ? STATUS.critical : STATUS.low,
+                title: 'B12 (Kobalamin) Eksikliği',
+                message: 'Sistem Analizi Uyarısı: B12 eksikliğiniz nöro-endokrin enerji döngüsünü ve odak kapasitenizi baskılıyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin',
+                measuredText: 'B12: ' + formatNumber(values.b12, 0) + ' pg/mL (Lab normal aralığı: 200–900 pg/mL)',
+                recommendations: [
+                    'Dil altı Metilkobalamin (1.000–2.000 mcg / gün)',
+                    'Kırmızı et, somon, yumurta ve deniz ürünleri'
+                ]
+            });
+        }
+
+        return alerts;
+    }
+
+    // ========================================================================
+    // DAMAT ATOMU BESİN DEĞERİ HESAPLAYICI ÇEKİRDEĞİ
+    // ========================================================================
+    // Değerler 100 gram bazında USDA standart besin kompozisyon verileridir.
+    var DAMAT_ATOMU_INGREDIENTS = [
+        {
+            key: 'banana', id: 'atomBanana', label: 'Muz',
+            min: 0, max: 300, step: 5, defaultGrams: 120,
+            per100g: { kcal: 89, mg: 27, zinc: 0.15, protein: 1.1 }
+        },
+        {
+            key: 'honey', id: 'atomHoney', label: 'Doğal Bal (Çiçek / Çam)',
+            min: 0, max: 100, step: 5, defaultGrams: 30,
+            per100g: { kcal: 304, mg: 2, zinc: 0.22, protein: 0.3 }
+        },
+        {
+            key: 'nuts', id: 'atomNuts', label: 'Karışık Kuruyemiş (Ceviz · Badem · Fındık)',
+            min: 0, max: 150, step: 5, defaultGrams: 45,
+            per100g: { kcal: 607, mg: 232, zinc: 3.1, protein: 20.0 }
+        },
+        {
+            key: 'pumpkin', id: 'atomPumpkin', label: 'Kabak Çekirdeği İçi',
+            min: 0, max: 100, step: 5, defaultGrams: 30,
+            per100g: { kcal: 559, mg: 592, zinc: 7.81, protein: 30.2 }
+        },
+        {
+            key: 'tahin', id: 'atomTahin', label: 'Tahin & Ham Kakao',
+            min: 0, max: 100, step: 5, defaultGrams: 25,
+            per100g: { kcal: 510, mg: 185, zinc: 5.1, protein: 17.5 }
+        }
+    ];
+
+    var DAMAT_ATOMU_PRESETS = {
+        standard: { banana: 120, honey: 30, nuts: 45, pumpkin: 30, tahin: 25 },
+        highZinc: { banana: 100, honey: 20, nuts: 60, pumpkin: 65, tahin: 40 },
+        light:    { banana: 90,  honey: 15, nuts: 25, pumpkin: 20, tahin: 10 },
+        zero:     { banana: 0,   honey: 0,  nuts: 0,  pumpkin: 0,  tahin: 0  }
+    };
+
+    /**
+     * Damat Atomu karışımındaki malzeme gramajlarından anlık kalori, magnezyum,
+     * çinko, protein ve günlük karşılama oranlarını hesaplar.
+     * @param {Object} grams { banana: 120, honey: 30, nuts: 45, pumpkin: 30, tahin: 25 }
+     */
+    function computeDamatAtomuNutrition(grams) {
+        grams = grams || {};
+        var totalGrams = 0;
+        var totalKcal = 0;
+        var totalMg = 0;
+        var totalZinc = 0;
+        var totalProtein = 0;
+        var breakdown = [];
+
+        DAMAT_ATOMU_INGREDIENTS.forEach(function (ing) {
+            var rawG = grams[ing.key] !== undefined ? grams[ing.key] : (grams[ing.id] !== undefined ? grams[ing.id] : ing.defaultGrams);
+            var g = clamp(Number(rawG) || 0, 0, 1000);
+            var ratio = g / 100;
+            var itemKcal = ing.per100g.kcal * ratio;
+            var itemMg = ing.per100g.mg * ratio;
+            var itemZinc = ing.per100g.zinc * ratio;
+            var itemProtein = ing.per100g.protein * ratio;
+
+            totalGrams += g;
+            totalKcal += itemKcal;
+            totalMg += itemMg;
+            totalZinc += itemZinc;
+            totalProtein += itemProtein;
+
+            breakdown.push({
+                key: ing.key,
+                id: ing.id,
+                label: ing.label,
+                grams: round(g, 0),
+                kcal: round(itemKcal, 0),
+                mg: round(itemMg, 1),
+                zinc: round(itemZinc, 2),
+                protein: round(itemProtein, 1)
+            });
+        });
+
+        // Erişkin erkek günlük referans alım (RDA): Magnezyum 420 mg, Çinko 11 mg
+        var mgPct = Math.min(200, Math.round((totalMg / 420) * 100));
+        var zincPct = Math.min(200, Math.round((totalZinc / 11) * 100));
+
+        return {
+            totalGrams: round(totalGrams, 0),
+            kcal: round(totalKcal, 0),
+            mg: round(totalMg, 1),
+            zinc: round(totalZinc, 2),
+            protein: round(totalProtein, 1),
+            mgRdaPct: mgPct,
+            zincRdaPct: zincPct,
+            breakdown: breakdown,
+            logLine: '[CANLI BESİN LOGU] ' + round(totalGrams, 0) + 'g Karışım → ' +
+                     round(totalKcal, 0) + ' kcal | Magnezyum: ' + formatNumber(totalMg, 1) + ' mg (%' + mgPct + ' Günlük Hedef) | ' +
+                     'Çinko: ' + formatNumber(totalZinc, 2) + ' mg (%' + zincPct + ' Günlük Hedef) | Protein: ' + formatNumber(totalProtein, 1) + ' g'
+        };
     }
 
     // ========================================================================
@@ -976,7 +1219,13 @@
         estimateMarker: estimateMarker,
         scoreMarker: scoreMarker,
         computeOverallScore: computeOverallScore,
-        parseLabText: parseLabText
+        parseLabText: parseLabText,
+
+        SYSTEM_MICRONUTRIENT_WARNING: SYSTEM_MICRONUTRIENT_WARNING,
+        evaluateMicronutrientAlerts: evaluateMicronutrientAlerts,
+        DAMAT_ATOMU_INGREDIENTS: DAMAT_ATOMU_INGREDIENTS,
+        DAMAT_ATOMU_PRESETS: DAMAT_ATOMU_PRESETS,
+        computeDamatAtomuNutrition: computeDamatAtomuNutrition
     };
 
     if (typeof window !== 'undefined') {
