@@ -14,7 +14,7 @@
   <meta property="og:description" content="Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuşun. Paylaşımlar tıbbi tavsiye değildir.">
   <title>Topluluk Forumu | TestoTavan</title>
   <link rel="stylesheet" href="/forum/style.css">
-  <script defer src="/forum/forum.js"></script>
+  <script type="module" src="/forum/forum.js"></script>
 </head>
 <body>
 <main>
@@ -99,7 +99,7 @@
           <option value="Deneyimler">Deneyimler</option>
         </select>
       </label>
-      <label data-i18n-label="title">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
+      <label data-i18n-label="titleField">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
       <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
       <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
     </form>
@@ -118,6 +118,10 @@
     </div>
     <form id="reply-form" hidden>
       <h2 data-i18n="reply-title">Sohbete katıl</h2>
+      <div id="quote-chip" class="quote-chip" hidden>
+        <span id="quote-chip-text"></span>
+        <button type="button" id="quote-cancel" class="secondary" data-i18n="cancelQuote">Alıntıyı kaldır</button>
+      </div>
       <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label>
       <button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button>
     </form>

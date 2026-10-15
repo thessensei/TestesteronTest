@@ -49,9 +49,10 @@ test('write requests reject cross-site, non JSON and malformed input',async () =
 test('public list excludes pending records and uses bounded pagination',async () => {
   const h=harness([[{id}]]), res=await h.request('GET',{offset:'-10'});
   assert.equal(res.code,200); assert.equal(res.headers['Cache-Control'],'no-store');
-  assert.deepEqual(res.data.threads,[{id}]);
+  assert.deepEqual(res.data.threads,[{id,mine:false}]);
   assert.match(h.queries.at(-1).text,/t.approved=TRUE OR/);
-  assert.deepEqual(h.queries.at(-1).values,[false,false,false,0]);
+  assert.equal(h.queries.at(-1).values.at(-1),0);
+  assert.equal('user_id' in res.data.threads[0],false);
 });
 test('hidden or missing thread returns 404 without fetching replies',async () => {
   const h=harness();assert.equal((await h.request('GET',{id})).code,404);
@@ -87,7 +88,7 @@ test('admin can approve, lock, unlock and delete; missing record is 404',async (
   for (const action of ['approve','lock','unlock']) {
     const h=harness([[{id}]]);assert.equal((await h.request('PATCH',{id,kind:'thread'},{action},true)).code,200);
   }
-  const h=harness([[{id}]]);assert.equal((await h.request('DELETE',{id,kind:'reply'},{},true)).code,200);
+  const h=harness([[], [{id}]]);assert.equal((await h.request('DELETE',{id,kind:'reply'},{},true)).code,200);
   assert.equal((await harness().request('DELETE',{id,kind:'thread'},{},true)).code,404);
 });
 test('database failure produces a recoverable response',async () => {

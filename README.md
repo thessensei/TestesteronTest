@@ -266,7 +266,7 @@ Davranış kuralları:
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
 | `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
 | `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir (admin yetkisi ister) |
-| `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu ve yanıt için forum hesabı gerekir. Moderasyon admin oturumu ister |
+| `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
@@ -286,14 +286,41 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
   Şifreler düz metin saklanmaz (scrypt). Oturum `HttpOnly` çerezle 14 gün sürer.
 - Admin panelindeki **Forum yönetimini aç** bağlantısı `/forum/?manage=1` sayfasını açar.
   Mevcut admin oturumu zorunludur. Bekleyen konuları/yanıtları onaylama, konu
-  kilitleme/kilidi açma ve kalıcı silme desteklenir. Konu silinince yanıtları da silinir.
-  Konu kartlarında bekleyen yanıt sayısı gösterilir; yanıtları incelemek için konuyu açın.
+  kilitleme/kilidi açma, konu sabitleme (pin) ve kalıcı silme desteklenir. Konu silinince
+  yanıtları ve beğenileri de silinir. Konu kartlarında bekleyen yanıt sayısı gösterilir;
+  yanıtları incelemek için konuyu açın.
 - Tüm yeni gönderiler onay bekler; ziyaretçiler bekleyen içerikleri göremez.
   Sayfalar 30 konu / 50 yanıtla sınırlıdır ve önceki/sonraki kontrolleri vardır.
+- **Beğeni:** Konu ve yanıtlar beğenilebilir. Tek kişi–tek mesaj kaydı `forum_likes`
+  tablosunda benzersiz indeksle korunur; aynı uç nokta aç/kapa olarak çalışır ve güncel
+  sayıyı döner. Okuma herkese açıktır, beğenmek için forum hesabı gerekir
+  (`POST /api/forum` + `{ action: "like", kind, id }`). Hızlı tıklamaya karşı kullanıcı
+  başına saniyede bir istek sınırı vardır.
+- **Alıntı:** Yanıt, aynı konudaki **onaylı** bir yanıtı alıntılayabilir (`quoteId`).
+  Alıntı; kaynak kimliği, gönderim anındaki yazar adı ve 240 karakterlik tek satır özet
+  (`quote_id`, `quote_author`, `quote_excerpt`) olarak saklanır. Böylece kaynak mesaj
+  silinse veya düzenlense bile alıntı okunur kalır; alıntı bloğu kaynak mesaja atlar.
+- **Görüntülenme:** Konu detayı istemci tarafından `?view=1` ile yalnızca tarayıcı oturumu
+  başına bir kez sayılır. Onaysız konular ve yönetim görünümü sayacı değiştirmez.
+  Liste ve detay yanıtları `view_count`, `likes`, `liked`, `mine` alanlarını içerir.
+- **Düzenleme:** Yazar kendi konusunu veya yanıtını ilk **30 dakika** içinde düzenleyebilir
+  (`POST /api/forum` + `{ action: "edit", kind, id, body }`). Sahiplik ve süre tek SQL
+  ifadesinde doğrulanır (`user_id` + `created_at > NOW() - make_interval(...)`); süre
+  dolduğunda 403 döner ve `edited_at` işaretlenir. Düzenleme yeni bir onay turu başlatmaz,
+  bu yüzden pencere 30 dakikayla sınırlıdır. Saniyede bir düzenleme sınırı uygulanır.
+- **Üye rütbeleri:** Yazar panelinde onaylı mesaj sayısına göre rütbe (Yeni üye / Üye /
+  Aktif üye / Kıdemli üye), mesaj sayısı ve yanıtlarda **Konu sahibi** rozeti gösterilir.
+  Sayım tek sorguda, konudaki yazarlar için yapılır; kullanıcı kimliği (UUID) yanıtlarda
+  paylaşılmaz, yalnızca `mine` alanı döner.
+- **Kalıcı bağlantı:** Konu ve mesajlar `/forum/#thread=<uuid>&reply=<uuid>` biçiminde
+  paylaşılabilir; `?thread=<uuid>` adresi de okunur. Kopyala düğmesi bağlantıyı panoya
+  yazar, hedeflenen mesaj vurgulanır ve tarayıcının geri/ileri düğmeleri çalışır.
 - Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
   `ADMIN_PASSWORD` ortam değişkenlerini kullanır. İlk API isteği `forum_threads`,
-  `forum_replies`, `forum_limits`, `forum_users` ve `forum_sessions` tablolarını otomatik oluşturur;
-  DB kullanıcısının CREATE yetkisi gerekir. Ek servis veya paket gerekmez.
+  `forum_replies`, `forum_limits`, `forum_users`, `forum_sessions` ve `forum_likes`
+  tablolarını otomatik oluşturur; yeni alanlar (`view_count`, `pinned`, `edited_at`,
+  `quote_id`, `quote_author`, `quote_excerpt`) `ALTER TABLE ... IF NOT EXISTS` ile eklenir.
+  Elle migrasyon veya ek paket gerekmez; DB kullanıcısının CREATE/ALTER yetkisi gerekir.
 - Hesabın HMAC özetiyle DB üzerinde 30 saniyede bir gönderi sınırı uygulanır;
   ham IP saklanmaz. Giriş denemeleri 15 dakikada IP başına 10, kayıt denemeleri saatte 8 ile sınırlıdır.
   Eski hız sınırı kayıtları sonraki gönderimlerde 24 saat sonra temizlenir.
@@ -301,9 +328,14 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
   Yoğun trafik için ayrıca platform/WAF hız sınırı önerilir.
 - Paylaşımlar düz metin olarak kaçışlanarak gösterilir. JSON yazma istekleri ve
   cross-site istek kontrolü kullanılır; moderasyon sunucuda admin yetkisi gerektirir.
-- Yerelde `npm test` ve `npm run check:assets` çalıştırın. Gerçek ortamda iki ayrı
-  tarayıcı oturumuyla konu gönder → adminde onayla → ziyaretçide görüntüle → yanıt
-  gönder/onayla → kilitle (yanıt gönderilememeli) → sil akışını doğrulayın.
+- Yerelde `npm test` ve `npm run check:assets` çalıştırın. `tests/forum-features.test.mjs`
+  beğeni, alıntı, düzenleme, sabitleme, görüntülenme ve rütbe kurallarını; `tests/forum.test.mjs`
+  mevcut akışları sahte SQL bağdaştırıcısıyla sınar. `forum/forum-core.js` DOM'suz saf
+  yardımcıları ve dört dilli sözlüğü taşıdığı için doğrudan Node ile test edilir; tarayıcı
+  tarafı `tests/forum-features.test.mjs` içinde dosya düzeyinde doğrulanır.
+  Gerçek ortamda iki ayrı tarayıcı oturumuyla konu gönder → adminde onayla → ziyaretçide
+  görüntüle → yanıt gönder/onayla → alıntıla → beğen → kilitle (yanıt gönderilememeli) →
+  sil akışını doğrulayın.
 
 ### Çerez onayı ve sıfırdan başlayan tekil ziyaret sayacı
 
