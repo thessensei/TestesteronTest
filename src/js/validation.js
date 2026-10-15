@@ -1103,6 +1103,128 @@
         zero:     { banana: 0,   honey: 0,  nuts: 0,  pumpkin: 0,  tahin: 0  }
     };
 
+    // Tarif hesaplayıcısının küçük, yerleşik eşleştirme kataloğu; değerler 100 g içindir.
+    // Eşleşmeyen malzemeler görünür kalır ama toplama katılmaz.
+    var RECIPE_NUTRITION_FOODS = [
+        { key: 'pumpkin', label: 'Kabak çekirdeği', aliases: ['kabak çekirdeği', 'pumpkin seed', 'pumpkin seeds', 'kürbiskerne'], per100g: { kcal: 559, mg: 592, zinc: 7.81, protein: 30.2 } },
+        { key: 'chicken', label: 'Tavuk göğsü', aliases: ['tavuk göğsü', 'tavuk', 'chicken breast', 'chicken', 'hähnchenbrust', 'hähnchen'], pieceGrams: 120, per100g: { kcal: 165, mg: 29, zinc: 1.0, protein: 31.0 } },
+        { key: 'sunflower', label: 'Ay çekirdeği', aliases: ['ay çekirdeği', 'sunflower seed', 'sunflower seeds', 'sonnenblumenkerne'], per100g: { kcal: 584, mg: 325, zinc: 5.0, protein: 20.8 } },
+        { key: 'almond', label: 'Badem', aliases: ['badem', 'almond', 'almonds', 'mandel', 'mandeln'], pieceGrams: 1.2, per100g: { kcal: 579, mg: 270, zinc: 3.12, protein: 21.2 } },
+        { key: 'walnut', label: 'Ceviz', aliases: ['ceviz', 'walnut', 'walnuts', 'walnuss', 'walnüsse'], pieceGrams: 4, per100g: { kcal: 654, mg: 158, zinc: 3.09, protein: 15.2 } },
+        { key: 'hazelnut', label: 'Fındık', aliases: ['fındık', 'hazelnut', 'hazelnuts', 'haselnuss', 'haselnüsse'], pieceGrams: 1.3, per100g: { kcal: 628, mg: 163, zinc: 2.45, protein: 15.0 } },
+        { key: 'tahini', label: 'Tahin', aliases: ['tahin', 'tahini', 'sesampaste', 'sesampaste'], spoonGrams: 15, per100g: { kcal: 595, mg: 95, zinc: 4.6, protein: 17.0 } },
+        { key: 'cocoa', label: 'Kakao', aliases: ['kakao', 'cocoa', 'kakaopulver'], spoonGrams: 5, per100g: { kcal: 228, mg: 499, zinc: 6.8, protein: 19.6 } },
+        { key: 'oats', label: 'Yulaf', aliases: ['yulaf ezmesi', 'yulaf', 'rolled oats', 'oats', 'haferflocken', 'hafer'], cupGrams: 80, per100g: { kcal: 389, mg: 177, zinc: 3.97, protein: 16.9 } },
+        { key: 'egg', label: 'Yumurta', aliases: ['yumurta', 'egg', 'eggs', 'ei', 'eier'], pieceGrams: 50, per100g: { kcal: 143, mg: 12, zinc: 1.29, protein: 12.6 } },
+        { key: 'greek-yogurt', label: 'Süzme yoğurt', aliases: ['süzme yoğurt', 'greek yogurt', 'strained yogurt', 'griechischer joghurt'], cupGrams: 245, per100g: { kcal: 97, mg: 11, zinc: 0.52, protein: 9.0 } },
+        { key: 'yogurt', label: 'Yoğurt', aliases: ['yoğurt', 'yogurt', 'joghurt'], cupGrams: 245, per100g: { kcal: 61, mg: 11, zinc: 0.59, protein: 3.5 } },
+        { key: 'milk', label: 'Süt', aliases: ['süt', 'milk', 'milch'], cupGrams: 240, per100g: { kcal: 61, mg: 10, zinc: 0.4, protein: 3.2 } },
+        { key: 'olive-oil', label: 'Zeytinyağı', aliases: ['zeytinyağı', 'olive oil', 'olivenöl'], spoonGrams: 13.7, per100g: { kcal: 884, mg: 0, zinc: 0, protein: 0 } },
+        { key: 'honey', label: 'Bal', aliases: ['bal', 'honey', 'honig'], spoonGrams: 21, per100g: { kcal: 304, mg: 2, zinc: 0.22, protein: 0.3 } },
+        { key: 'banana', label: 'Muz', aliases: ['muz', 'banana', 'banane'], pieceGrams: 120, per100g: { kcal: 89, mg: 27, zinc: 0.15, protein: 1.1 } },
+        { key: 'salmon', label: 'Somon', aliases: ['somon', 'salmon', 'lachs'], pieceGrams: 150, per100g: { kcal: 208, mg: 29, zinc: 0.64, protein: 20.4 } },
+        { key: 'beef', label: 'Dana eti', aliases: ['dana eti', 'sığır eti', 'beef', 'rindfleisch'], per100g: { kcal: 250, mg: 22, zinc: 6.3, protein: 26.0 } },
+        { key: 'turkey', label: 'Hindi', aliases: ['hindi', 'turkey', 'putenfleisch'], per100g: { kcal: 135, mg: 28, zinc: 2.0, protein: 29.0 } },
+        { key: 'rice', label: 'Pirinç', aliases: ['pirinç', 'rice', 'reis'], cupGrams: 185, per100g: { kcal: 365, mg: 25, zinc: 1.1, protein: 7.1 } },
+        { key: 'bulgur', label: 'Bulgur', aliases: ['bulgur'], cupGrams: 140, per100g: { kcal: 342, mg: 164, zinc: 2.0, protein: 12.3 } },
+        { key: 'lentil', label: 'Mercimek', aliases: ['mercimek', 'lentil', 'lentils', 'linse', 'linsen'], cupGrams: 192, per100g: { kcal: 352, mg: 47, zinc: 3.3, protein: 24.6 } },
+        { key: 'chickpea', label: 'Nohut', aliases: ['nohut', 'chickpea', 'chickpeas', 'kichererbse', 'kichererbsen'], cupGrams: 164, per100g: { kcal: 364, mg: 115, zinc: 3.4, protein: 19.3 } },
+        { key: 'spinach', label: 'Ispanak', aliases: ['ıspanak', 'spinach', 'spinat'], cupGrams: 30, per100g: { kcal: 23, mg: 79, zinc: 0.53, protein: 2.9 } },
+        { key: 'avocado', label: 'Avokado', aliases: ['avokado', 'avocado', 'avocados'], pieceGrams: 150, per100g: { kcal: 160, mg: 29, zinc: 0.64, protein: 2.0 } },
+        { key: 'tomato', label: 'Domates', aliases: ['domates', 'tomato', 'tomatoes', 'tomate', 'tomaten'], pieceGrams: 120, per100g: { kcal: 18, mg: 11, zinc: 0.17, protein: 0.9 } },
+        { key: 'onion', label: 'Soğan', aliases: ['soğan', 'onion', 'onions', 'zwiebel', 'zwiebeln'], pieceGrams: 110, per100g: { kcal: 40, mg: 10, zinc: 0.17, protein: 1.1 } },
+        { key: 'garlic', label: 'Sarımsak', aliases: ['sarımsak', 'garlic', 'knoblauch'], pieceGrams: 5, per100g: { kcal: 149, mg: 25, zinc: 1.16, protein: 6.4 } },
+        { key: 'potato', label: 'Patates', aliases: ['patates', 'potato', 'potatoes', 'kartoffel', 'kartoffeln'], pieceGrams: 170, per100g: { kcal: 77, mg: 23, zinc: 0.3, protein: 2.0 } },
+        { key: 'flour', label: 'Un', aliases: ['un', 'flour', 'mehl'], cupGrams: 125, per100g: { kcal: 364, mg: 22, zinc: 0.7, protein: 10.3 } },
+        { key: 'bread', label: 'Ekmek', aliases: ['ekmek', 'bread', 'brot'], per100g: { kcal: 265, mg: 70, zinc: 1.6, protein: 9.0 } },
+        { key: 'cheese', label: 'Peynir', aliases: ['peynir', 'cheese', 'käse'], per100g: { kcal: 350, mg: 28, zinc: 3.1, protein: 25.0 } },
+        { key: 'butter', label: 'Tereyağı', aliases: ['tereyağı', 'butter', 'butter'], per100g: { kcal: 717, mg: 2, zinc: 0.09, protein: 0.9 } },
+        { key: 'lemon', label: 'Limon', aliases: ['limon', 'lemon', 'zitrone'], pieceGrams: 60, per100g: { kcal: 29, mg: 8, zinc: 0.06, protein: 1.1 } }
+    ];
+
+    function normalizeRecipeFoodText(value) {
+        return String(value || '').toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i')
+            .replace(/[^\p{L}\p{N}]+/gu, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function parseRecipeQuantity(text, food) {
+        var match = String(text || '').match(/(^|\s)(\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?)\s*(kg|kilogram(?:s)?|g|gr|gram(?:s)?|ml|millilit(?:er|re)|l|liter|litre|yemek\s+kaşığı|tatlı\s+kaşığı|çay\s+kaşığı|tbsp|tablespoon(?:s)?|tsp|teaspoon(?:s)?|su\s+bardağı|bardak|cup|cups?|adet|piece(?:s)?|pcs?)?/i);
+        if (!match) return 0;
+        var amountText = match[2].replace(/\s/g, '');
+        var fraction = amountText.split('/');
+        var amount = fraction.length === 2 ? Number(fraction[0]) / Number(fraction[1]) : Number(amountText.replace(',', '.'));
+        var unit = normalizeRecipeFoodText(match[3] || '');
+        if (!isFinite(amount) || amount <= 0) return 0;
+        if (/^(kg|kilogram)/.test(unit)) return amount * 1000;
+        if (/^(g|gr|gram)/.test(unit)) return amount;
+        if (/^(ml|milliliter)/.test(unit)) return amount;
+        if (/^(l|liter|litre)/.test(unit)) return amount * 1000;
+        if (/^(yemek kasigi|tbsp|tablespoon)/.test(unit)) return amount * (food.spoonGrams || 15);
+        if (/^(tatli kasigi)/.test(unit)) return amount * (food.spoonGrams || 10);
+        if (/^(cay kasigi|tsp|teaspoon)/.test(unit)) return amount * (food.spoonGrams || 5);
+        if (/^(su bardagi|bardak|cup)/.test(unit)) return amount * (food.cupGrams || 200);
+        return amount * (food.pieceGrams || 0);
+    }
+
+    function parseRecipeIngredients(ingredients) {
+        return (Array.isArray(ingredients) ? ingredients : []).map(function (raw, index) {
+            var label = String(raw || '').trim();
+            var normalized = normalizeRecipeFoodText(label);
+            var food = RECIPE_NUTRITION_FOODS.slice().sort(function (a, b) {
+                return Math.max.apply(null, b.aliases.map(function (alias) { return normalizeRecipeFoodText(alias).length; })) -
+                    Math.max.apply(null, a.aliases.map(function (alias) { return normalizeRecipeFoodText(alias).length; }));
+            }).find(function (candidate) {
+                return candidate.aliases.some(function (alias) {
+                    var term = normalizeRecipeFoodText(alias);
+                    return term && (' ' + normalized + ' ').includes(' ' + term + ' ');
+                });
+            });
+            var grams = food ? Math.round(parseRecipeQuantity(label, food)) : 0;
+            return {
+                index: index,
+                label: label,
+                key: food ? food.key : 'unknown-' + index,
+                matched: Boolean(food),
+                grams: grams,
+                maxGrams: Math.max(500, Math.ceil(Math.max(grams * 2, grams + 250) / 5) * 5),
+                per100g: food ? food.per100g : null
+            };
+        });
+    }
+
+    function computeRecipeNutrition(ingredients) {
+        var totalGrams = 0;
+        var totalKcal = 0;
+        var totalMg = 0;
+        var totalZinc = 0;
+        var totalProtein = 0;
+        var breakdown = [];
+        (Array.isArray(ingredients) ? ingredients : []).forEach(function (item) {
+            if (!item || !item.matched || !item.per100g) return;
+            var grams = clamp(Number(item.grams) || 0, 0, 10000);
+            var ratio = grams / 100;
+            var kcal = item.per100g.kcal * ratio;
+            var mg = item.per100g.mg * ratio;
+            var zinc = item.per100g.zinc * ratio;
+            var protein = item.per100g.protein * ratio;
+            totalGrams += grams;
+            totalKcal += kcal;
+            totalMg += mg;
+            totalZinc += zinc;
+            totalProtein += protein;
+            breakdown.push({ key: item.key, label: item.label, grams: round(grams, 0), kcal: round(kcal, 0), mg: round(mg, 1), zinc: round(zinc, 2), protein: round(protein, 1) });
+        });
+        var mgPct = Math.min(200, Math.round((totalMg / 420) * 100));
+        var zincPct = Math.min(200, Math.round((totalZinc / 11) * 100));
+        return {
+            totalGrams: round(totalGrams, 0), kcal: round(totalKcal, 0), mg: round(totalMg, 1), zinc: round(totalZinc, 2),
+            protein: round(totalProtein, 1), mgRdaPct: mgPct, zincRdaPct: zincPct, breakdown: breakdown,
+            logLine: 'Tarifte hesaplanabilen malzemeler: ' + round(totalGrams, 0) + ' g → ' + round(totalKcal, 0) +
+                ' kcal | Magnezyum ' + formatNumber(totalMg, 1) + ' mg (%' + mgPct + ') | Çinko ' +
+                formatNumber(totalZinc, 2) + ' mg (%' + zincPct + ') | Protein ' + formatNumber(totalProtein, 1) + ' g'
+        };
+    }
+
     /**
      * Damat Atomu karışımındaki malzeme gramajlarından anlık kalori, magnezyum,
      * çinko, protein ve günlük karşılama oranlarını hesaplar.
@@ -1225,7 +1347,10 @@
         evaluateMicronutrientAlerts: evaluateMicronutrientAlerts,
         DAMAT_ATOMU_INGREDIENTS: DAMAT_ATOMU_INGREDIENTS,
         DAMAT_ATOMU_PRESETS: DAMAT_ATOMU_PRESETS,
-        computeDamatAtomuNutrition: computeDamatAtomuNutrition
+        computeDamatAtomuNutrition: computeDamatAtomuNutrition,
+        RECIPE_NUTRITION_FOODS: RECIPE_NUTRITION_FOODS,
+        parseRecipeIngredients: parseRecipeIngredients,
+        computeRecipeNutrition: computeRecipeNutrition
     };
 
     if (typeof window !== 'undefined') {

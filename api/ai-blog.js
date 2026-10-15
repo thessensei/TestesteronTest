@@ -27,7 +27,9 @@ export function createAiBlogHandler(options = {}) {
       ...options,
       provider: body.provider,
       apiKey: body.apiKey,
-      model: body.model
+      model: body.model,
+      type: body.type,
+      forceTranslation: body.forceTranslation === true
     };
 
     if (body.mode === 'translate') {

@@ -11,14 +11,18 @@ import {
   extractArticleFromHtml,
   classifyArticleCategory,
   buildFallbackBlogPost,
+  buildFallbackRecipePost,
   normalizeGeneratedBlog,
+  normalizeGeneratedRecipe,
   resolveAiProvider,
   parseAiJson,
+  requestAiJson,
   callAiProvider,
   generateBlogFromArticle,
+  generateRecipeFromArticle,
   createBlogDraftFromUrl
 } from '../api/_ai-blog.js';
-import { isTranslationComplete, fieldLooksTranslated, machineTranslateText } from '../api/_translate.js';
+import { isTranslationComplete, fieldLooksTranslated, machineTranslateText, ensureCompleteTranslations } from '../api/_translate.js';
 import { createAiBlogHandler } from '../api/ai-blog.js';
 import {
   createSessionCookie,
@@ -54,6 +58,19 @@ const SAMPLE_NEWS_HTML = `<!doctype html>
   <footer>Tüm hakları saklıdır 2026</footer>
 </body>
 </html>`;
+
+const SAMPLE_RECIPE_HTML = `<!doctype html>
+<html lang="tr">
+<head>
+  <meta property="og:site_name" content="Örnek Tarif Haberleri">
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Recipe","name":"Tavuklu Bulgur Kasesi","description":"Tavuk ve bulgurla hazırlanan pratik bir öğün.","image":"/img/tavuk-bulgur.jpg","recipeIngredient":["150 g tavuk göğsü","1 su bardağı bulgur","2 adet yumurta","1 yemek kaşığı zeytinyağı"],"recipeInstructions":[{"@type":"HowToStep","text":"Bulguru yumuşayana kadar haşlayın."},{"@type":"HowToStep","text":"Tavuğu tavada pişirin ve yumurtayla servis edin."}],"recipeYield":"2 porsiyon","prepTime":"PT15M","cookTime":"PT25M","totalTime":"PT40M","nutrition":{"@type":"NutritionInformation","calories":"420 kcal","proteinContent":"32 g"}}
+  </script>
+</head>
+<body><h1>Tavuklu Bulgur Kasesi</h1></body>
+</html>`;
+
+const HTML_RECIPE_WITHOUT_JSON_LD = `<html lang="en"><head><title>Simple Oat Bowl</title><meta property="og:description" content="A simple breakfast recipe."></head><body><main><h1>Simple Oat Bowl</h1><h2>Ingredients</h2><ul class="recipe-ingredients"><li>80 g rolled oats</li><li>1 banana</li><li>200 ml milk</li></ul><h2>Directions</h2><ol><li>Cook the oats in milk for five minutes.</li><li>Slice the banana and serve.</li></ol></main></body></html>`;
 
 // -------------------------------------------------- URL doğrulama ve SSRF
 
@@ -130,6 +147,28 @@ test('extractArticleFromHtml JSON-LD NewsArticle verisini ve HTML entity diziler
   assert.equal(decodeHtmlEntities('Çinko &amp; D&#32;Vitamini'), 'Çinko & D Vitamini');
 });
 
+test('Recipe JSON-LD ve başlık/listelerinden malzeme, adım, porsiyon ve süre çıkarılır', () => {
+  const structured = extractArticleFromHtml(SAMPLE_RECIPE_HTML, 'https://yemek.ornek.com/tavuk-bulgur');
+  assert.equal(structured.ok, true);
+  assert.equal(structured.article.type, 'recipe');
+  assert.equal(structured.article.title, 'Tavuklu Bulgur Kasesi');
+  assert.deepEqual(structured.article.recipe.ingredients, [
+    '150 g tavuk göğsü', '1 su bardağı bulgur', '2 adet yumurta', '1 yemek kaşığı zeytinyağı'
+  ]);
+  assert.deepEqual(structured.article.recipe.instructions, [
+    'Bulguru yumuşayana kadar haşlayın.', 'Tavuğu tavada pişirin ve yumurtayla servis edin.'
+  ]);
+  assert.equal(structured.article.recipe.totalTime, '40 dk');
+  assert.equal(structured.article.recipe.yield, '2 porsiyon');
+  assert.match(structured.article.body, /Bulguru yumuşayana kadar haşlayın/);
+  assert.equal(structured.article.image, 'https://yemek.ornek.com/img/tavuk-bulgur.jpg');
+
+  const htmlOnly = extractArticleFromHtml(HTML_RECIPE_WITHOUT_JSON_LD, 'https://recipes.example.org/oat-bowl');
+  assert.equal(htmlOnly.article.type, 'recipe');
+  assert.deepEqual(htmlOnly.article.recipe.ingredients, ['80 g rolled oats', '1 banana', '200 ml milk']);
+  assert.deepEqual(htmlOnly.article.recipe.instructions, ['Cook the oats in milk for five minutes.', 'Slice the banana and serve.']);
+});
+
 // -------------------------------------------------- Kategori ve Anahtarsız Mod
 
 test('classifyArticleCategory ve buildFallbackBlogPost 4 dilde eksiksiz taslak üretir', () => {
@@ -168,17 +207,79 @@ test('classifyArticleCategory ve buildFallbackBlogPost 4 dilde eksiksiz taslak �
   assert.equal(fieldLooksTranslated(draft.title, draft.title, 'en'), false, 'kopya metin çeviri sayılmamalı');
 });
 
+test('tarif taslağı tam malzeme listesini korur ve kaynağa dayalı besin analizini ekler', () => {
+  const { article } = extractArticleFromHtml(SAMPLE_RECIPE_HTML, 'https://yemek.ornek.com/tavuk-bulgur');
+  const fallback = buildFallbackRecipePost(article);
+  assert.equal(fallback.type, 'recipe');
+  assert.equal(fallback.category, 'Yüksek Protein');
+  assert.deepEqual(fallback.ingredients, article.recipe.ingredients);
+  assert.match(fallback.body, /Hazırlanışı:/);
+  assert.match(fallback.body, /Tarif Analizi:/);
+  assert.match(fallback.body, /Besin Değeri Notu:/);
+  assert.match(fallback.body, /Kalori: 420 kcal/);
+  assert.match(fallback.time, /40 dk/);
+
+  const normalized = normalizeGeneratedRecipe({
+    title: article.title,
+    summary: article.description,
+    body: 'Hazırlanışı: Source steps. Tarif Analizi: Source-only facts.',
+    time: '40 dk',
+    ingredients: ['AI tarafından uydurulan malzeme'],
+    translations: {}
+  }, article);
+  assert.deepEqual(normalized.ingredients, article.recipe.ingredients, 'çıkarılan kaynak listesi AI listesinden öncelikli olmalı');
+  assert.equal(normalized.type, 'recipe');
+});
+
 // -------------------------------------------------- AI Sağlayıcıları ve Yedek Mod
 
-test('resolveAiProvider Gemini, OpenAI ve Groq anahtarlarını doğru tanır', () => {
+test('resolveAiProvider Gemini, OpenAI, Groq, Claude, Kimi ve DeepSeek anahtarlarını seçer', () => {
   assert.equal(resolveAiProvider({}, { GEMINI_API_KEY: 'AIzaSyTest123' }).provider, 'gemini');
   assert.equal(resolveAiProvider({}, { OPENAI_API_KEY: 'sk-test-123' }).provider, 'openai');
   assert.equal(resolveAiProvider({}, { GROQ_API_KEY: 'gsk_test_123' }).provider, 'groq');
   assert.equal(resolveAiProvider({}, { GROQ_API_KEY: 'gsk_test_123' }).model, 'openai/gpt-oss-120b');
   assert.equal(resolveAiProvider({ apiKey: 'gsk_custom' }, {}).provider, 'groq');
   assert.equal(resolveAiProvider({ apiKey: 'gsk_custom' }, {}).model, 'openai/gpt-oss-120b');
+  assert.equal(resolveAiProvider({ provider: 'claude', apiKey: 'sk-ant-test' }, {}).provider, 'claude');
+  assert.equal(resolveAiProvider({ provider: 'claude', apiKey: 'sk-ant-test' }, {}).model, 'claude-sonnet-4-5');
+  assert.equal(resolveAiProvider({ provider: 'kimi', apiKey: 'sk-kimi-test' }, {}).provider, 'kimi');
+  assert.equal(resolveAiProvider({ provider: 'kimi', apiKey: 'sk-kimi-test' }, {}).model, 'moonshot-v1-8k');
+  assert.equal(resolveAiProvider({ provider: 'deepseek', apiKey: 'sk-deepseek-test' }, {}).provider, 'deepseek');
+  assert.equal(resolveAiProvider({ provider: 'deepseek', apiKey: 'sk-deepseek-test' }, {}).model, 'deepseek-chat');
+  assert.equal(resolveAiProvider({ provider: 'claude' }, { ANTHROPIC_API_KEY: 'sk-ant-env' }).apiKey, 'sk-ant-env');
+  assert.equal(resolveAiProvider({ provider: 'kimi' }, { KIMI_API_KEY: 'sk-kimi-env' }).apiKey, 'sk-kimi-env');
+  assert.equal(resolveAiProvider({ provider: 'deepseek' }, { DEEPSEEK_API_KEY: 'sk-deepseek-env' }).apiKey, 'sk-deepseek-env');
   assert.equal(resolveAiProvider({}, {}), null);
   assert.deepEqual(parseAiJson('```json\n{"title":"Merhaba"}\n```'), { title: 'Merhaba' });
+});
+
+test('Claude Messages API, Kimi ve DeepSeek OpenAI-uyumlu uç noktaları kullanır', async () => {
+  for (const provider of ['claude', 'kimi', 'deepseek']) {
+    let seen;
+    const fetchImpl = async (url, init) => {
+      seen = { url: String(url), init, payload: JSON.parse(init.body) };
+      const data = provider === 'claude'
+        ? { content: [{ type: 'text', text: '{"title":"Translated"}' }] }
+        : { choices: [{ message: { content: '{"title":"Translated"}' } }] };
+      return { ok: true, status: 200, json: async () => data };
+    };
+    const config = resolveAiProvider({ provider, apiKey: 'test-key', model: 'test-model' }, {});
+    const result = await requestAiJson(config, { systemPrompt: 'JSON only', userPrompt: 'Translate this' }, { fetchImpl });
+    assert.equal(result.ok, true, provider);
+    assert.deepEqual(result.data, { title: 'Translated' });
+    assert.equal(seen.payload.model, 'test-model');
+    if (provider === 'claude') {
+      assert.equal(seen.url, 'https://api.anthropic.com/v1/messages');
+      assert.equal(seen.init.headers['x-api-key'], 'test-key');
+      assert.equal(seen.payload.system, 'JSON only');
+    } else if (provider === 'kimi') {
+      assert.equal(seen.url, 'https://api.moonshot.ai/v1/chat/completions');
+      assert.equal(seen.init.headers.Authorization, 'Bearer test-key');
+    } else {
+      assert.equal(seen.url, 'https://api.deepseek.com/chat/completions');
+      assert.equal(seen.init.headers.Authorization, 'Bearer test-key');
+    }
+  }
 });
 
 test('Gemini varsayılanı güncel, kapatılmış model ayarı otomatik olarak yenilenir', () => {
@@ -306,6 +407,34 @@ test('generateBlogFromArticle AI yanıtını 4 dilde normalize eder, hata olursa
   assert.notEqual(fallbackRes.item.translations.en.title, fallbackRes.item.title);
 });
 
+test('çeviri doğrulaması Türkçe kalan malzeme adlarını eksik kabul eder', () => {
+  const source = {
+    title: 'Tavuklu pratik kase',
+    summary: 'Tavuk ve sebzelerle hazırlanan hızlı bir öğün.',
+    body: 'Yumurtaları sebzelerle pişirip hızlı bir öğün olarak servis edin.',
+    ingredients: ['2 adet yumurta']
+  };
+  const translation = {
+    title: 'Quick chicken bowl',
+    summary: 'A quick meal made with chicken and vegetables.',
+    body: 'Cook the chicken and serve it with fresh vegetables for a quick meal.',
+    ingredients: ['2 pieces yumurta']
+  };
+  assert.equal(isTranslationComplete(translation, source, 'en'), false);
+  assert.equal(isTranslationComplete({ ...translation, ingredients: ['2 eggs'] }, source, 'en'), true);
+});
+
+test('yedek tarif çevirisi kısmen Türkçe kalan malzeme listesini gizler', async () => {
+  const { article } = extractArticleFromHtml(SAMPLE_RECIPE_HTML, 'https://yemek.ornek.com/tavuk-bulgur');
+  const fallback = buildFallbackRecipePost(article);
+  const result = await ensureCompleteTranslations(fallback, {
+    networkTranslate: false,
+    env: { ENABLE_MACHINE_TRANSLATION: '0' }
+  });
+  assert.equal(result.report.en, 'incomplete');
+  assert.deepEqual(result.item.translations.en.ingredients, []);
+});
+
 test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', async () => {
   const article = {
     title: 'Zencefil çayı her sabah içilmelidir',
@@ -371,6 +500,37 @@ test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', as
   assert.equal(result.item.translations.de.body, translated.de.body);
   assert.match(result.item.translations.ja.body, /生姜茶/);
   assert.equal(fieldLooksTranslated(article.body, article.body, 'en'), false);
+});
+
+test('zorunlu yeniden çeviri İngilizce/Almanca metni ve tarif malzemelerini AI ile yeniler', async () => {
+  const item = {
+    type: 'recipe', category: 'Yüksek Protein', title: 'Tavuklu bulgur kasesi',
+    summary: 'Tavuk, bulgur ve yoğurtla hazırlanan pratik bir öğün.',
+    body: 'Bulguru haşlayın. Tavuğu pişirin ve yoğurtla servis edin.', time: '40 dk',
+    ingredients: ['150 g tavuk göğsü'], translations: { en: { title: 'Old translation' } }
+  };
+  const translated = {
+    en: { category: 'High Protein', title: 'Chicken and bulgur bowl', summary: 'A quick meal made with chicken, bulgur and yogurt.', body: 'Cook the bulgur. Cook the chicken and serve it with yogurt.', time: '40 min', ingredients: ['150 g chicken breast'] },
+    de: { category: 'Proteinreich', title: 'Bulgur-Bowl mit Hähnchen', summary: 'Ein schnelles Gericht mit Hähnchen, Bulgur und Joghurt.', body: 'Den Bulgur kochen. Das Hähnchen garen und mit Joghurt servieren.', time: '40 Min.', ingredients: ['150 g Hähnchenbrust'] },
+    ja: { category: '高たんぱく', title: '鶏肉とブルグルのボウル', summary: '鶏肉、ブルグル、ヨーグルトを使った簡単な食事です。', body: 'ブルグルをゆでます。鶏肉を調理し、ヨーグルトを添えて出します。', time: '40分', ingredients: ['鶏むね肉 150 g'] }
+  };
+  let calls = 0;
+  let userPrompt = '';
+  const result = await ensureCompleteTranslations(item, {
+    forceTranslation: true,
+    networkTranslate: false,
+    requestAi: async (_system, prompt) => {
+      calls += 1;
+      userPrompt = prompt;
+      return { ok: true, data: translated };
+    }
+  });
+  assert.equal(calls, 1, 'tüm hedef diller tek turda istenmeli');
+  assert.match(userPrompt, /150 g tavuk göğsü/);
+  assert.equal(result.report.en, 'ai');
+  assert.equal(result.report.de, 'ai');
+  assert.equal(result.item.translations.en.ingredients[0], '150 g chicken breast');
+  assert.equal(result.item.translations.de.title, translated.de.title);
 });
 
 test('makine çevirisi paragrafları birleştirir ve kopyayı kabul etmez', async () => {
@@ -444,8 +604,31 @@ test('/api/ai-blog admin yetkisi, JSON başlığı ve URL güvenliğini denetler
   }, true);
   assert.equal(translated.code, 200);
   assert.equal(translated.data.ok, true);
-  assert.ok(translated.data.item.translations.en.body);
-  assert.ok(translated.data.translation);
+  assert.equal(translated.data.item.translations.en.body, '', 'kalitesiz yedek çeviri kaynak dilde gösterilmemeli');
+  assert.equal(translated.data.translation.en, 'incomplete');
+  assert.match(translated.data.warning, /EN/);
+});
+
+test('URL içe aktarma otomatik olarak tarifi algılar ve kaynak malzemelerini forma taşır', async () => {
+  const result = await createBlogDraftFromUrl('https://yemek.ornek.com/tavuk-bulgur', {
+    env: {},
+    networkTranslate: false,
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      url: 'https://yemek.ornek.com/tavuk-bulgur',
+      headers: new Map([['content-type', 'text/html; charset=utf-8']]),
+      text: async () => SAMPLE_RECIPE_HTML
+    })
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.detected_type, 'recipe');
+  assert.equal(result.item.type, 'recipe');
+  assert.deepEqual(result.item.ingredients, [
+    '150 g tavuk göğsü', '1 su bardağı bulgur', '2 adet yumurta', '1 yemek kaşığı zeytinyağı'
+  ]);
+  assert.match(result.item.body, /Tarif Analizi:/);
+  assert.equal(result.item.time, '40 dk');
 });
 
 // -------------------------------------------------- Admin Paneli Arayüzü ve Giriş Doğrulama Kodu
@@ -453,7 +636,11 @@ test('/api/ai-blog admin yetkisi, JSON başlığı ve URL güvenliğini denetler
 test('admin panelinde haber linkinden otomatik blog oluşturma ve doğrulama kodlu giriş tanımlı', () => {
   const adminHtml = fs.readFileSync(path.join(root, 'admin', 'index.html'), 'utf8');
   assert.match(adminHtml, /id="news_url"/, 'haber URL giriş alanı olmalı');
-  assert.match(adminHtml, /id="ai_generate_btn"/, 'AI blog üretim butonu olmalı');
+  assert.match(adminHtml, /id="ai_content_type"/, 'otomatik blog/tarif algılama seçeneği olmalı');
+  assert.match(adminHtml, /id="ai_generate_btn"/, 'AI taslak üretim butonu olmalı');
+  for (const provider of ['claude', 'kimi', 'deepseek']) assert.match(adminHtml, new RegExp(`value="${provider}"`), `${provider} sağlayıcısı panelde seçilebilmeli`);
+  assert.match(adminHtml, /id="ai_model"/, 'model kimliği geçersizse ayarlanabilmeli');
+  assert.match(adminHtml, /id="ai_retranslate_btn"/, 'EN/DE/JA yeniden çeviri düğmesi olmalı');
   assert.match(adminHtml, /function generateFromNewsUrl\(\)/, 'haber çekme işlevi olmalı');
   assert.match(adminHtml, /function applyGeneratedBlog\(/, 'form doldurma işlevi olmalı');
   assert.match(adminHtml, /fetch\('\/api\/ai-blog'/, 'admin paneli /api/ai-blog ucunu çağırmalı');

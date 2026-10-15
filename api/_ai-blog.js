@@ -27,6 +27,9 @@ export const MAX_HTML_CHARS = 500_000;
 export const MAX_REDIRECTS = 3;
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
+export const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5';
+export const DEFAULT_KIMI_MODEL = 'moonshot-v1-8k';
+export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-chat';
 
 const RETIRED_GEMINI_MODEL = /^gemini-(?:1\.0|1\.5|2\.0)(?:-|$)/i;
 const RETIRED_GROQ_MODELS = new Set([
@@ -288,11 +291,9 @@ function stripTags(fragment) {
     .trim();
 }
 
-/** JSON-LD bloklarından makale verisini (başlık, özet, gövde, görsel) çıkarır. */
-function extractJsonLdArticle(html) {
+/** JSON-LD script bloklarını bozuk sayfaları atlayarak dolaşır. */
+function visitJsonLd(html, predicate) {
   const scripts = [...String(html ?? '').matchAll(/<script[^>]+type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
-  const articleTypes = new Set(['newsarticle', 'article', 'blogposting', 'reportagenewsarticle', 'medicalwebpage', 'webpage']);
-
   const visit = node => {
     if (!node || typeof node !== 'object') return null;
     if (Array.isArray(node)) {
@@ -302,40 +303,166 @@ function extractJsonLdArticle(html) {
       }
       return null;
     }
-    const rawType = Array.isArray(node['@type']) ? node['@type'] : [node['@type']];
-    const types = rawType.filter(Boolean).map(t => String(t).toLowerCase());
-    if (types.some(t => articleTypes.has(t)) && (node.headline || node.articleBody || node.description)) {
-      let image = '';
-      if (typeof node.image === 'string') image = node.image;
-      else if (Array.isArray(node.image)) {
-        const first = node.image[0];
-        image = typeof first === 'string' ? first : (first?.url || '');
-      } else if (node.image?.url) {
-        image = node.image.url;
-      }
-      return {
-        title: decodeHtmlEntities(node.headline || node.name || '').replace(/\s+/g, ' ').trim(),
-        description: decodeHtmlEntities(node.description || '').replace(/\s+/g, ' ').trim(),
-        body: decodeHtmlEntities(node.articleBody || '').replace(/\r\n/g, '\n').trim(),
-        image: String(image || '').trim()
-      };
+    const found = predicate(node);
+    if (found) return found;
+    for (const value of Object.values(node)) {
+      if (!value || typeof value !== 'object') continue;
+      const nested = visit(value);
+      if (nested) return nested;
     }
-    if (node['@graph']) return visit(node['@graph']);
     return null;
   };
 
   for (const match of scripts) {
     try {
-      const cleanedJson = match[1].trim();
-      if (!cleanedJson) continue;
-      const parsed = JSON.parse(cleanedJson);
+      const parsed = JSON.parse(match[1].trim());
       const found = visit(parsed);
       if (found) return found;
     } catch {
-      // Bozuk JSON-LD blokları yoksayılır
+      // Bozuk JSON-LD blokları yoksayılır.
     }
   }
   return null;
+}
+
+function schemaTypes(node) {
+  const raw = Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']];
+  return raw.filter(Boolean).map(type => String(type).toLowerCase().split(/[\/#]/).filter(Boolean).at(-1));
+}
+
+function jsonLdImage(value) {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return jsonLdImage(value[0]);
+  return String(value?.url || value?.contentUrl || '').trim();
+}
+
+function normalizeRecipeText(value) {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return decodeHtmlEntities(String(value)).replace(/\s+/g, ' ').trim();
+  }
+  if (Array.isArray(value)) return value.map(normalizeRecipeText).filter(Boolean).join(', ');
+  if (value && typeof value === 'object') {
+    return normalizeRecipeText(value.text || value.name || value.description || '');
+  }
+  return '';
+}
+
+function collectHowToSteps(value, output = []) {
+  if (typeof value === 'string' || typeof value === 'number') {
+    const text = normalizeRecipeText(value);
+    if (text) output.push(text);
+    return output;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(item => collectHowToSteps(item, output));
+    return output;
+  }
+  if (!value || typeof value !== 'object') return output;
+  if (value.itemListElement) return collectHowToSteps(value.itemListElement, output);
+  const text = normalizeRecipeText(value.text || value.description || '');
+  if (text) output.push(text);
+  else if (value.name && schemaTypes(value).includes('howtostep')) output.push(normalizeRecipeText(value.name));
+  return output;
+}
+
+function formatIsoDuration(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/^P(?:T(?:(\d+(?:[.,]\d+)?)H)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)S)?)$/i);
+  if (!match) return '';
+  const hours = Number(String(match[1] || 0).replace(',', '.'));
+  const minutes = Number(String(match[2] || 0).replace(',', '.'));
+  const seconds = Number(String(match[3] || 0).replace(',', '.'));
+  const total = Math.round(hours * 60 + minutes + seconds / 60);
+  if (total >= 60 && total % 60 === 0) return `${total / 60} saat`;
+  return total ? `${total} dk` : '';
+}
+
+function extractJsonLdArticle(html) {
+  const articleTypes = new Set(['newsarticle', 'article', 'blogposting', 'reportagenewsarticle', 'medicalwebpage', 'webpage']);
+  return visitJsonLd(html, node => {
+    if (!schemaTypes(node).some(type => articleTypes.has(type)) || !(node.headline || node.articleBody || node.description)) return null;
+    return {
+      title: normalizeRecipeText(node.headline || node.name || ''),
+      description: normalizeRecipeText(node.description || ''),
+      body: decodeHtmlEntities(node.articleBody || '').replace(/\r\n/g, '\n').trim(),
+      image: jsonLdImage(node.image)
+    };
+  });
+}
+
+function extractJsonLdRecipe(html) {
+  return visitJsonLd(html, node => {
+    if (!schemaTypes(node).includes('recipe')) return null;
+    const ingredients = Array.isArray(node.recipeIngredient) ? node.recipeIngredient : (node.recipeIngredient ? [node.recipeIngredient] : []);
+    const nutrition = node.nutrition && typeof node.nutrition === 'object' ? node.nutrition : {};
+    const nutritionFacts = {};
+    for (const key of ['calories', 'proteinContent', 'fatContent', 'carbohydrateContent', 'fiberContent', 'sodiumContent']) {
+      const value = normalizeRecipeText(nutrition[key]);
+      if (value) nutritionFacts[key] = value;
+    }
+    return {
+      name: normalizeRecipeText(node.name || node.headline || ''),
+      description: normalizeRecipeText(node.description || ''),
+      ingredients: ingredients.map(normalizeRecipeText).filter(Boolean).slice(0, 100),
+      instructions: collectHowToSteps(node.recipeInstructions).slice(0, 100),
+      yield: normalizeRecipeText(node.recipeYield || ''),
+      category: normalizeRecipeText(node.recipeCategory || ''),
+      prepTime: formatIsoDuration(node.prepTime),
+      cookTime: formatIsoDuration(node.cookTime),
+      totalTime: formatIsoDuration(node.totalTime),
+      nutrition: nutritionFacts,
+      image: jsonLdImage(node.image)
+    };
+  });
+}
+
+function extractHtmlRecipeSections(html) {
+  const source = String(html || '');
+  const sectionItems = patterns => {
+    const headings = [...source.matchAll(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi)];
+    for (let index = 0; index < headings.length; index += 1) {
+      const headingText = stripTags(headings[index][2]).toLocaleLowerCase('tr');
+      if (!patterns.test(headingText)) continue;
+      const end = headings[index + 1]?.index ?? source.length;
+      const section = source.slice(headings[index].index + headings[index][0].length, end).slice(0, 12000);
+      const listItems = [...section.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+        .map(match => stripTags(match[1])).filter(Boolean);
+      if (listItems.length) return listItems;
+      const paragraphs = [...section.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+        .map(match => stripTags(match[1])).filter(Boolean);
+      if (paragraphs.length) return paragraphs;
+    }
+    return [];
+  };
+
+  const ingredientValues = [];
+  const itempropPattern = /<([a-z][\w:-]*)\b([^>]*\bitemprop\s*=\s*["']recipeIngredient["'][^>]*)>(?:([\s\S]*?)<\/\1\s*>)?/gi;
+  let match;
+  while ((match = itempropPattern.exec(source)) !== null) {
+    const content = match[2].match(/\bcontent\s*=\s*["']([^"']+)["']/i)?.[1] || match[3] || '';
+    const text = stripTags(content).replace(/\s+/g, ' ').trim();
+    if (text && !ingredientValues.includes(text)) ingredientValues.push(text);
+  }
+
+  if (!ingredientValues.length) {
+    const ingredientListPattern = /<(ul|ol)\b([^>]*(?:class|id)\s*=\s*["'][^"']*(?:ingredient|malzeme|zutat)[^"']*["'][^>]*)>([\s\S]*?)<\/\1>/gi;
+    const list = ingredientListPattern.exec(source);
+    if (list) {
+      ingredientValues.push(...[...list[3].matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map(item => stripTags(item[1])).filter(Boolean));
+    }
+  }
+  if (!ingredientValues.length) {
+    ingredientValues.push(...sectionItems(/\b(ingredients?|malzemeler|malzeme listesi|zutaten)\b/i));
+  }
+
+  const instructions = sectionItems(/\b(method|directions?|instructions?|preparation|hazırlanış|hazırlanışı|nasıl yapılır|zubereitung)\b/i);
+  return {
+    name: '',
+    description: '',
+    ingredients: [...new Set(ingredientValues)].slice(0, 100),
+    instructions: [...new Set(instructions)].slice(0, 100),
+    yield: '', category: '', prepTime: '', cookTime: '', totalTime: '', nutrition: {}, image: ''
+  };
 }
 
 /** Görsel bağlantısını kaynak URL'ye göre mutlaklaştırır ve güvenli HTTPS ise döner. */
@@ -360,6 +487,7 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
   }
 
   const ld = extractJsonLdArticle(source);
+  const jsonRecipe = extractJsonLdRecipe(source);
 
   const ogTitle = getMetaContent(source, ['og:title', 'twitter:title']);
   const ogDesc = getMetaContent(source, ['og:description', 'twitter:description', 'description']);
@@ -373,6 +501,16 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
   const cleanedHtml = source
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<(script|style|noscript|svg|iframe|form|nav|footer|aside|header)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ');
+
+  const htmlRecipe = extractHtmlRecipeSections(cleanedHtml);
+  const recipe = jsonRecipe || (htmlRecipe.ingredients.length ? htmlRecipe : null);
+  if (recipe && jsonRecipe) {
+    if (!recipe.instructions.length) recipe.instructions = htmlRecipe.instructions;
+    if (!recipe.ingredients.length) recipe.ingredients = htmlRecipe.ingredients;
+    if (!recipe.name) recipe.name = htmlRecipe.name;
+    if (!recipe.description) recipe.description = htmlRecipe.description;
+    if (!recipe.image) recipe.image = htmlRecipe.image;
+  }
 
   // Varsa <article> veya <main> alanına odaklan
   const articleMatch = cleanedHtml.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i);
@@ -409,6 +547,9 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
   if (!bodyText) {
     bodyText = stripTags(contentZone).slice(0, 12000);
   }
+  if (recipe?.instructions?.length) {
+    bodyText = recipe.instructions.map((step, index) => `${index + 1}. ${step}`).join('\n\n');
+  }
   bodyText = bodyText.slice(0, 12000).trim();
 
   const cleanedTitleTag = titleTagMatch
@@ -416,6 +557,7 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
     : '';
 
   const rawTitle = (
+    recipe?.name ||
     ld?.title ||
     ogTitle ||
     (h1Match ? stripTags(h1Match[1]) : '') ||
@@ -428,13 +570,14 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
     .trim() || rawTitle;
 
   const description = (
+    recipe?.description ||
     ld?.description ||
     ogDesc ||
     blocks[0] ||
     bodyText.slice(0, 240)
   ).replace(/\s+/g, ' ').trim();
 
-  const image = resolveSafeImage(ogImage || ld?.image || '', sourceUrl);
+  const image = resolveSafeImage(ogImage || ld?.image || recipe?.image || '', sourceUrl);
 
   let hostname = '';
   try {
@@ -453,7 +596,9 @@ export function extractArticleFromHtml(html, sourceUrl = '') {
       title: cleanTitle || 'Sağlık ve Yaşam Haberi',
       description,
       body: bodyText || description,
-      image
+      image,
+      type: recipe?.ingredients?.length ? 'recipe' : 'blog',
+      recipe: recipe?.ingredients?.length ? recipe : null
     }
   };
 }
@@ -554,6 +699,76 @@ export function buildFallbackBlogPost(article) {
  * Üretilen ham AI çıktısını /api/content şemasına ve karakter sınırlarına göre temizler.
  * Eksik kalan alanları yerleşik yedek taslaktan tamamlar.
  */
+export function buildFallbackRecipePost(article) {
+  const recipe = article?.recipe || {};
+  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients.map(value => clean(value, 200)).filter(Boolean).slice(0, 100) : [];
+  const instructions = Array.isArray(recipe.instructions) ? recipe.instructions.map(value => clean(value, 2000)).filter(Boolean).slice(0, 100) : [];
+  const title = clean(recipe.name || article?.title || 'Yemek Tarifi', 100);
+  const category = clean(recipe.category, 60) || CATEGORY_MAP.protein.tr;
+  const time = clean(recipe.totalTime || [recipe.prepTime, recipe.cookTime].filter(Boolean).join(' + ') || recipe.prepTime || recipe.cookTime || '', 30) || 'Süre belirtilmemiş';
+  const summary = clean(article?.description || `${title}: kaynakta ${ingredients.length} malzeme${recipe.yield ? ` ve ${recipe.yield} porsiyon bilgisi` : ''} listeleniyor.`, 240);
+  const nutritionLabels = { calories: 'Kalori', proteinContent: 'Protein', fatContent: 'Yağ', carbohydrateContent: 'Karbonhidrat', fiberContent: 'Lif', sodiumContent: 'Sodyum' };
+  const facts = recipe.nutrition && typeof recipe.nutrition === 'object' ? Object.entries(recipe.nutrition) : [];
+  const nutritionText = facts.length
+    ? facts.map(([key, value]) => `${nutritionLabels[key] || key}: ${value}`).join(' · ')
+    : 'Kaynak sayfada porsiyon başına besin değerleri verilmediği için kesin kalori veya makro değeri çıkarılmadı. Hesaplayıcı, tanınan malzemeler ve girilen gramajlar üzerinden yaklaşık değer gösterir.';
+  const bodyParts = [
+    instructions.length
+      ? `Hazırlanışı:\n${instructions.map((step, index) => `${index + 1}. ${step}`).join('\n')}`
+      : 'Hazırlanış adımları kaynak sayfadan alınamadı; bu adımları yayınlamadan önce ekleyip doğrulayın.',
+    `Tarif Analizi:\nKaynakta ${ingredients.length} malzeme${recipe.yield ? ` ve ${recipe.yield}` : ''} bilgisi bulunuyor. Tarifin içeriği aşağıdaki malzeme listesine dayanır; kaynakta olmayan miktarlar veya sağlık etkileri varsayılmamıştır.`,
+    `Besin Değeri Notu:\n${nutritionText}`,
+    article?.siteName ? `Kaynak: ${article.siteName}${article?.url ? ` (${article.url})` : ''}` : (article?.url ? `Kaynak: ${article.url}` : '')
+  ].filter(Boolean);
+  const body = clean(bodyParts.join('\n\n'), 20000);
+  const source = { category, title, summary, body, time, ingredients };
+  return {
+    type: 'recipe', category, title, emoji: '🍽️', time, summary, body,
+    cover_url: resolveSafeImage(article?.image || recipe.image || '', article?.url || ''),
+    ingredients,
+    translations: {
+      en: localTranslateFields(source, 'en'),
+      de: localTranslateFields(source, 'de'),
+      ja: localTranslateFields(source, 'ja')
+    }
+  };
+}
+
+export function normalizeGeneratedRecipe(raw, article) {
+  const fallback = buildFallbackRecipePost(article);
+  const recipe = article?.recipe || {};
+  const rawIngredients = Array.isArray(raw?.ingredients) ? raw.ingredients : [];
+  // The extracted source list takes precedence so an LLM cannot silently omit or invent items.
+  const ingredients = (recipe.ingredients?.length ? recipe.ingredients : rawIngredients)
+    .map(value => clean(value, 200)).filter(Boolean).slice(0, 100);
+  const title = clean(raw?.title, 100) || fallback.title;
+  const summary = clean(raw?.summary, 240) || fallback.summary;
+  const body = clean(raw?.body, 20000) || fallback.body;
+  const category = clean(raw?.category, 60) || fallback.category;
+  const emoji = clean(raw?.emoji, 8) || fallback.emoji;
+  const time = clean(raw?.time, 30) || fallback.time;
+  const cover_url = isSafeCoverUrl(raw?.cover_url || article?.image || fallback.cover_url);
+  const source = { category, title, summary, body, time, ingredients };
+  const translations = cleanTranslations(collectedTranslations(raw));
+
+  for (const lang of ['en', 'de', 'ja']) {
+    const current = translations[lang];
+    const backup = fallback.translations[lang];
+    current.category = current.category || backup.category;
+    current.title = clean(preferTranslated(current.title, backup.title, title, lang), 100);
+    current.summary = clean(preferTranslated(current.summary, backup.summary, summary, lang), 240);
+    current.body = clean(preferTranslated(current.body, backup.body, body, lang), 20000);
+    current.time = current.time || backup.time || localizeDuration(time, lang);
+    current.ingredients = current.ingredients.length ? current.ingredients : backup.ingredients;
+    const repaired = repairTranslation(current, source, lang);
+    current.category = repaired.category || current.category;
+    current.time = repaired.time || current.time;
+    current.ingredients = repaired.ingredients;
+  }
+
+  return { type: 'recipe', category, title, emoji, time, summary, body, cover_url, ingredients, translations };
+}
+
 function collectedTranslations(raw) {
   const bag = { ...(raw?.translations && typeof raw.translations === 'object' ? raw.translations : {}) };
   for (const lang of ['en', 'de', 'ja']) {
@@ -620,36 +835,70 @@ export function normalizeGeneratedBlog(raw, article) {
 /**
  * Ortam değişkenlerinden veya istek seçeneklerinden kullanılacak AI sağlayıcısını çözer.
  */
+function canonicalProvider(value) {
+  const provider = String(value || '').trim().toLowerCase();
+  if (provider === 'anthropic') return 'claude';
+  if (provider === 'moonshot') return 'kimi';
+  return ['gemini', 'openai', 'groq', 'claude', 'kimi', 'deepseek'].includes(provider) ? provider : '';
+}
+
+function providerEnvironment(provider, env) {
+  const entries = {
+    gemini: { key: env.GEMINI_API_KEY, model: env.GEMINI_MODEL },
+    openai: { key: env.OPENAI_API_KEY, model: env.OPENAI_MODEL },
+    groq: { key: env.GROQ_API_KEY, model: env.GROQ_MODEL },
+    claude: { key: env.ANTHROPIC_API_KEY || env.CLAUDE_API_KEY, model: env.CLAUDE_MODEL || env.ANTHROPIC_MODEL },
+    kimi: { key: env.MOONSHOT_API_KEY || env.KIMI_API_KEY, model: env.KIMI_MODEL || env.MOONSHOT_MODEL },
+    deepseek: { key: env.DEEPSEEK_API_KEY, model: env.DEEPSEEK_MODEL }
+  };
+  return entries[provider] || { key: '', model: '' };
+}
+
+function providerConfig(provider, apiKey, model, env) {
+  const configured = providerEnvironment(provider, env);
+  const modelValue = String(model || configured.model || '').trim();
+  const defaults = {
+    gemini: resolveGeminiModel(modelValue),
+    openai: modelValue || 'gpt-4o-mini',
+    groq: resolveGroqModel(modelValue),
+    claude: modelValue || DEFAULT_CLAUDE_MODEL,
+    kimi: modelValue || DEFAULT_KIMI_MODEL,
+    deepseek: modelValue || DEFAULT_DEEPSEEK_MODEL
+  };
+  return { provider, apiKey: String(apiKey || '').trim(), model: defaults[provider] };
+}
+
 export function resolveAiProvider(options = {}, env = process.env) {
   const explicitKey = String(options.apiKey ?? '').trim();
-  const explicitProvider = String(options.provider ?? '').trim().toLowerCase();
+  const requested = String(options.provider ?? '').trim();
+  const explicitProvider = canonicalProvider(requested);
+
+  if (requested && !explicitProvider) return null;
+  if (explicitProvider) {
+    const configured = providerEnvironment(explicitProvider, env);
+    const key = explicitKey || String(configured.key || '').trim();
+    return key ? providerConfig(explicitProvider, key, options.model, env) : null;
+  }
 
   if (explicitKey) {
-    if (explicitProvider === 'gemini' || explicitKey.startsWith('AIza')) {
-      return { provider: 'gemini', apiKey: explicitKey, model: resolveGeminiModel(options.model || env.GEMINI_MODEL) };
-    }
-    if (explicitProvider === 'groq' || explicitKey.startsWith('gsk_')) {
-      return { provider: 'groq', apiKey: explicitKey, model: resolveGroqModel(options.model || env.GROQ_MODEL) };
-    }
-    return { provider: 'openai', apiKey: explicitKey, model: options.model || env.OPENAI_MODEL || 'gpt-4o-mini' };
+    let inferred = 'openai';
+    if (explicitKey.startsWith('AIza')) inferred = 'gemini';
+    else if (explicitKey.startsWith('gsk_')) inferred = 'groq';
+    else if (explicitKey.startsWith('sk-ant-')) inferred = 'claude';
+    return providerConfig(inferred, explicitKey, options.model, env);
   }
 
-  if (env.GEMINI_API_KEY) {
-    return { provider: 'gemini', apiKey: env.GEMINI_API_KEY.trim(), model: resolveGeminiModel(env.GEMINI_MODEL) };
-  }
-  if (env.OPENAI_API_KEY) {
-    return { provider: 'openai', apiKey: env.OPENAI_API_KEY.trim(), model: env.OPENAI_MODEL || 'gpt-4o-mini' };
-  }
-  if (env.GROQ_API_KEY) {
-    return { provider: 'groq', apiKey: env.GROQ_API_KEY.trim(), model: resolveGroqModel(env.GROQ_MODEL) };
+  for (const provider of ['gemini', 'openai', 'claude', 'kimi', 'deepseek', 'groq']) {
+    const configured = providerEnvironment(provider, env);
+    if (configured.key) return providerConfig(provider, configured.key, configured.model, env);
   }
   if (env.AI_API_KEY) {
-    const key = env.AI_API_KEY.trim();
-    if (key.startsWith('AIza')) return { provider: 'gemini', apiKey: key, model: resolveGeminiModel(env.AI_MODEL) };
-    if (key.startsWith('gsk_')) return { provider: 'groq', apiKey: key, model: resolveGroqModel(env.AI_MODEL) };
-    return { provider: 'openai', apiKey: key, model: env.AI_MODEL || 'gpt-4o-mini' };
+    const key = String(env.AI_API_KEY).trim();
+    const inferred = key.startsWith('AIza') ? 'gemini'
+      : key.startsWith('gsk_') ? 'groq'
+        : key.startsWith('sk-ant-') ? 'claude' : 'openai';
+    return providerConfig(inferred, key, env.AI_MODEL, env);
   }
-
   return null;
 }
 
@@ -706,6 +955,41 @@ function buildAiPrompts(article) {
   return { systemPrompt, userPrompt };
 }
 
+function buildRecipeAiPrompts(article) {
+  const recipe = article?.recipe || {};
+  const sourceIngredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+  const sourceSteps = Array.isArray(recipe.instructions) ? recipe.instructions : [];
+  const nutrition = recipe.nutrition && typeof recipe.nutrition === 'object' ? recipe.nutrition : {};
+  const systemPrompt = [
+    'Sen TestoTavan için deneyimli bir tarif editörü ve beslenme içeriği denetçisisin.',
+    'Kaynak sayfadan çıkarılan tarifi düzenle, tam ve anlaşılır bir tarif taslağı hazırla, yalnızca kaynak verilerinin desteklediği ölçüde beslenme analizi ekle ve TR/EN/DE/JA dillerinde JSON döndür.',
+    'Yalnızca geçerli JSON döndür; markdown veya açıklama ekleme.',
+    'Kaynakta çıkarılan Türkçe malzeme listesini bire bir koru: hiçbir malzemeyi atlama, ekleme, miktarını değiştirme veya ikame etme. Üst düzey ingredients alanı kaynak dizisiyle aynı sırada ve aynı metinle olmalı.',
+    'Kaynak adımlarını eksiksiz koru. Kaynakta hazırlama adımı yoksa yeni adım uydurma; body içinde adımların kaynakta bulunmadığını açıkça söyle.',
+    'Body içinde "Hazırlanışı", "Tarif Analizi" ve "Besin Değeri Notu" başlıkları olsun. Tarif Analizi porsiyon, süre ve listelenen içerikleri özetlesin.',
+    'Kaynakta porsiyon başına besin değerleri varsa yalnızca verilen değerleri ve birimleri aktar. Yoksa kesin kalori/protein/yağ iddiası üretme; eksik veriyi açıkça belirt ve gramaj bazlı hesaplamanın yaklaşık olduğunu söyle.',
+    'Hastalık, hormon, tedavi veya kesin sağlık yararı iddiası ekleme. Kaynağa dayanmayan besin miktarı, porsiyon veya sağlık etkisi uydurma.',
+    'Türkçe, İngilizce ve Almanca doğal, akıcı ve eksiksiz olmalı. Her çeviride başlık, özet, gövde, kategori, süre ve her bir malzeme bulunmalı. Malzeme miktarını ve sırasını koru.',
+    'Japonca çeviriler doğal Japonca yazı sistemiyle yazılmalı. JSON gövde şeması:',
+    '{"type":"recipe","category":"Yüksek Protein","emoji":"🍽️","title":"...","summary":"...","body":"...","time":"... dk","ingredients":["..."],"translations":{"en":{"category":"High Protein","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]},"de":{"category":"Proteinreich","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]},"ja":{"category":"高たんぱく","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]}}}'
+  ].join('\n');
+  const userPrompt = [
+    `Kaynak bağlantısı: ${article?.url || ''}`,
+    `Kaynak site: ${article?.siteName || ''}`,
+    `Tarif başlığı: ${recipe.name || article?.title || ''}`,
+    `Kaynak özeti: ${recipe.description || article?.description || ''}`,
+    `Porsiyon: ${recipe.yield || 'belirtilmemiş'}`,
+    `Hazırlama süresi: ${recipe.prepTime || 'belirtilmemiş'}`,
+    `Pişirme süresi: ${recipe.cookTime || 'belirtilmemiş'}`,
+    `Toplam süre: ${recipe.totalTime || 'belirtilmemiş'}`,
+    `Kaynak besin değerleri: ${Object.keys(nutrition).length ? JSON.stringify(nutrition) : 'belirtilmemiş'}`,
+    `Kaynak malzemeler (metin ve sıralama aynen korunmalı):\n${sourceIngredients.map((value, index) => `${index + 1}. ${value}`).join('\n')}`,
+    `Kaynak hazırlanış adımları:\n${sourceSteps.length ? sourceSteps.map((value, index) => `${index + 1}. ${value}`).join('\n') : 'Kaynakta yapılandırılmış hazırlanış adımı bulunamadı.'}`,
+    `Sayfadan alınan ek metin:\n${String(article?.body || '').slice(0, 6000)}`
+  ].join('\n\n');
+  return { systemPrompt, userPrompt, temperature: 0.2, maxTokens: 8192 };
+}
+
 /**
  * Sağlayıcıya serbest sistem/kullanıcı istemi gönderir ve JSON nesnesi döndürür.
  * Çeviri turu da aynı istemciyi kullanır; anahtar veya gövde günlüğe yazılmaz.
@@ -739,12 +1023,34 @@ export async function requestAiJson(config, prompts, options = {}) {
         }),
         signal: controller.signal
       });
+    } else if (config.provider === 'claude') {
+      response = await fetchImpl('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': config.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          max_tokens: maxTokens,
+          temperature,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        }),
+        signal: controller.signal
+      });
     } else {
+      const providers = {
+        openai: 'https://api.openai.com/v1/chat/completions',
+        groq: 'https://api.groq.com/openai/v1/chat/completions',
+        kimi: 'https://api.moonshot.ai/v1/chat/completions',
+        deepseek: 'https://api.deepseek.com/chat/completions'
+      };
       const isGroq = config.provider === 'groq';
       const isGroqGptOss = isGroq && /^openai\/gpt-oss-(?:20b|120b)$/i.test(config.model);
-      const endpoint = isGroq
-        ? 'https://api.groq.com/openai/v1/chat/completions'
-        : 'https://api.openai.com/v1/chat/completions';
+      const endpoint = providers[config.provider];
+      if (!endpoint) return { ok: false, error: 'Desteklenmeyen AI sağlayıcısı.' };
       response = await fetchImpl(endpoint, {
         method: 'POST',
         headers: {
@@ -774,7 +1080,9 @@ export async function requestAiJson(config, prompts, options = {}) {
 
     const rawText = config.provider === 'gemini'
       ? data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || ''
-      : data?.choices?.[0]?.message?.content || '';
+      : config.provider === 'claude'
+        ? data?.content?.filter(block => block?.type === 'text').map(block => block.text || '').join('') || ''
+        : data?.choices?.[0]?.message?.content || '';
 
     const parsed = parseAiJson(rawText);
     if (!parsed || typeof parsed !== 'object') {
@@ -803,6 +1111,9 @@ function isModelUnavailable(result) {
 function currentModelFor(provider) {
   if (provider === 'gemini') return DEFAULT_GEMINI_MODEL;
   if (provider === 'groq') return DEFAULT_GROQ_MODEL;
+  if (provider === 'claude') return DEFAULT_CLAUDE_MODEL;
+  if (provider === 'kimi') return DEFAULT_KIMI_MODEL;
+  if (provider === 'deepseek') return DEFAULT_DEEPSEEK_MODEL;
   return '';
 }
 
@@ -817,11 +1128,13 @@ async function requestAiJsonWithFallback(config, prompts, options = {}) {
 }
 
 /**
- * Seçilen AI sağlayıcısına (Gemini / OpenAI / Groq) istek gönderip JSON yanıtı alır.
+ * Seçilen AI sağlayıcısına istek gönderip JSON yanıtı alır.
  */
 export async function callAiProvider(article, config, options = {}) {
-  const { systemPrompt, userPrompt } = buildAiPrompts(article);
-  const result = await requestAiJsonWithFallback(config, { systemPrompt, userPrompt, temperature: 0.4 }, options);
+  const prompts = article?.type === 'recipe' || article?.recipe?.ingredients?.length
+    ? buildRecipeAiPrompts(article)
+    : buildAiPrompts(article);
+  const result = await requestAiJsonWithFallback(config, prompts, options);
   if (!result.ok) return result;
   return { ...result, provider: config.provider, model: result.model || config.model };
 }
@@ -848,6 +1161,47 @@ async function finishWithTranslations(item, options, aiConfig, canRepairWithAi) 
  * yerleşik akıllı modla 4 dilde taslağı kesintisiz oluşturur.
  * EN/DE/JA alanları kaynak metnin kopyasıysa ayrı bir tam çeviri turu çalışır.
  */
+export async function generateRecipeFromArticle(article, options = {}) {
+  const recipeArticle = { ...article, type: 'recipe' };
+  const ingredients = recipeArticle.recipe?.ingredients || [];
+  if (!ingredients.length) {
+    return { ok: false, error: 'Bu bağlantıdan tarif malzemesi çıkarılamadı. Kaynakta malzeme listesi olduğundan emin olun veya blog türünü seçin.' };
+  }
+
+  const aiConfig = resolveAiProvider(options, options.env || process.env);
+  let mode = 'fallback';
+  let provider = 'builtin';
+  let model;
+  let warning;
+  let raw = {};
+
+  if (aiConfig) {
+    const aiResult = await callAiProvider(recipeArticle, aiConfig, options);
+    if (aiResult.ok) {
+      mode = 'ai';
+      provider = aiResult.provider;
+      model = aiResult.model;
+      raw = aiResult.data || {};
+    } else {
+      warning = aiResult.error;
+      console.warn(`[ai-recipe] ${aiConfig.provider} hatası, yerleşik moda geçiliyor:`, aiResult.error);
+    }
+  }
+
+  const item = normalizeGeneratedRecipe(raw, recipeArticle);
+  const repaired = await finishWithTranslations(item, options, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
+  if (repaired.warning) warning = [warning, repaired.warning].filter(Boolean).join(' ');
+  return {
+    ok: true,
+    mode,
+    provider,
+    model,
+    warning,
+    translation: repaired.report,
+    item: repaired.item
+  };
+}
+
 export async function generateBlogFromArticle(article, options = {}) {
   const aiConfig = resolveAiProvider(options, options.env || process.env);
   let mode = 'fallback';
@@ -894,15 +1248,18 @@ export async function completeBlogTranslations(rawItem, options = {}) {
   if (!title || !summary || !body) {
     return { ok: false, error: 'Çeviri için başlık, özet ve içerik gerekli.' };
   }
-  const article = { title, description: summary, body, image: rawItem?.cover_url || '' };
   const aiConfig = resolveAiProvider(options, options.env || process.env);
-  const item = normalizeGeneratedBlog({
+  const item = {
     ...rawItem,
+    type: rawItem?.type === 'recipe' ? 'recipe' : 'blog',
+    category: clean(rawItem?.category, 60),
     title,
     summary,
     body,
-    translations: rawItem?.translations || {}
-  }, article);
+    time: clean(rawItem?.time, 30),
+    ingredients: Array.isArray(rawItem?.ingredients) ? rawItem.ingredients.map(value => clean(value, 200)).filter(Boolean).slice(0, 100) : [],
+    translations: cleanTranslations(rawItem?.translations)
+  };
   const repaired = await finishWithTranslations(item, options, aiConfig, Boolean(aiConfig));
   return {
     ok: true,
@@ -925,11 +1282,21 @@ export async function createBlogDraftFromUrl(url, options = {}) {
   const extracted = extractArticleFromHtml(fetched.html, fetched.finalUrl);
   if (!extracted.ok) return extracted;
 
-  const generated = await generateBlogFromArticle(extracted.article, options);
+  const requestedType = String(options.type || 'auto').trim().toLowerCase();
+  const forceRecipe = requestedType === 'recipe';
+  const forceBlog = requestedType === 'blog';
+  const isRecipe = forceRecipe || (!forceBlog && extracted.article.type === 'recipe');
+  const articleForGeneration = isRecipe
+    ? { ...extracted.article, type: 'recipe' }
+    : { ...extracted.article, type: 'blog', recipe: null };
+  const generated = isRecipe
+    ? await generateRecipeFromArticle(articleForGeneration, options)
+    : await generateBlogFromArticle(articleForGeneration, options);
   return {
     ...generated,
     source_url: fetched.finalUrl,
     source_title: extracted.article.title,
-    source_site: extracted.article.siteName
+    source_site: extracted.article.siteName,
+    detected_type: extracted.article.type || 'blog'
   };
 }

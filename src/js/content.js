@@ -80,19 +80,66 @@ function renderContent(){
     const items=getAllContent().filter(x=>(activeContentFilter==='all'||x.type===activeContentFilter)&&(!query||`${x.title} ${x.category} ${x.summary}`.toLocaleLowerCase('tr').includes(query)));
     list.innerHTML=items.length?items.map(x=>`<article class="card content-card" role="button" tabindex="0" aria-label="${escapeHTML(x.title)} içeriğini aç" onclick="showContent('${escapeHTML(x.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showContent('${escapeHTML(x.id)}')}"><div class="content-cover ${x.type}"${x.cover_url&&(/^https:\/\//i.test(x.cover_url)||/^\/api\/media\/[\w-]+$/i.test(x.cover_url))?` style="background-image:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,.05)),url('${escapeHTML(x.cover_url)}')"`:''}><span class="badge ${x.type==='recipe'?'badge-low':'badge-high'}">${escapeHTML(tLabel(x.type==='recipe'?'Yemek Tarifi':'Blog'))}</span><span class="content-emoji">${IC(x.type==='recipe'?'i-utensils':'i-news')}</span></div><div class="content-body"><div class="eyebrow">${escapeHTML(x.category)}</div><h3 style="font-size:16px;margin-top:5px">${escapeHTML(x.title)}</h3><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${IC('i-calendar')}${escapeHTML(x.date)}</span></div><p class="content-summary">${escapeHTML(x.summary)}</p></div></article>`).join(''):'<div class="empty-state"><svg class="ic empty-ic" aria-hidden="true"><use href="#i-search"></use></svg><p style="margin-top:10px">Aramanızla eşleşen içerik bulunamadı.</p></div>';
 }
-function jumpToDamatAtomu(){
-    closeContentModal();
-    const widget=document.getElementById('damatAtomuWidget');
-    if(widget&&typeof widget.scrollIntoView==='function') widget.scrollIntoView({behavior:'smooth',block:'start'});
+function recipeNutritionMarkup(item){
+    const nutritionApi=window.TestoValidation;
+    const parsed=nutritionApi?.parseRecipeIngredients?.(Array.isArray(item.ingredients)?item.ingredients:[])||[];
+    window.activeRecipeNutritionItems=parsed;
+    const known=parsed.filter(value=>value.matched);
+    const rows=parsed.map((ingredient,index)=>{
+        if(!ingredient.matched)return `<div class="atom-slider-row"><div class="atom-slider-head"><span>${escapeHTML(ingredient.label)}</span><span class="atom-gram-badge">${escapeHTML(tLabel('Besin verisi bulunamadı'))}</span></div><div class="muted">${escapeHTML(tLabel('Bu malzeme veri eşleşmesi olmadığı için toplama katılmıyor.'))}</div></div>`;
+        const amountNote=ingredient.grams>0?'':`<div class="muted" style="margin:5px 0">${escapeHTML(tLabel('Kaynakta gramaj belirtilmemiş; hesaplamak için gramajı ayarlayın.'))}</div>`;
+        return `<div class="atom-slider-row"><div class="atom-slider-head"><label for="recipeNutritionInput-${index}">${escapeHTML(ingredient.label)}</label><span class="atom-gram-badge" id="recipeNutritionValue-${index}">${ingredient.grams} g</span></div>${amountNote}<input type="range" class="atom-range" id="recipeNutritionInput-${index}" min="0" max="${ingredient.maxGrams}" step="5" value="${ingredient.grams}" oninput="updateRecipeNutritionCalculator()"></div>`;
+    }).join('');
+    const emptyNote=known.length?'':`<p class="muted" style="margin:12px 0 0">${escapeHTML(tLabel('Bu tarifte hesaplanabilir malzeme eşleşmedi.'))}</p>`;
+    return `<section class="card atom-widget recipe-nutrition-widget" id="recipeNutritionCalculator" aria-labelledby="recipeNutritionTitle"><div class="card-header"><div class="card-icon icon-gold"><svg class="ic" aria-hidden="true"><use href="#i-bolt"></use></svg></div><div><div class="eyebrow">${escapeHTML(tLabel('Damat Atomu Besin Değeri Hesaplayıcı'))}</div><h3 class="card-title" id="recipeNutritionTitle">${escapeHTML(tLabel('Bu tarife özel besin hesaplayıcı'))}</h3><div class="card-subtitle">${escapeHTML(item.title)}</div></div></div><p class="muted" style="margin:10px 0">${escapeHTML(tLabel('Bu hesaplayıcı yalnızca bu tarifteki malzemeleri kullanır. Miktarları ayarlayın; sonuçlar yaklaşık olarak güncellenir.'))}</p><p class="muted" style="margin:0">${known.length}/${parsed.length} ${escapeHTML(tLabel('Eşleşen malzeme'))}</p><div class="recipe-nutrition-ingredients">${rows}</div><div class="atom-metrics-grid" role="region" aria-live="polite" aria-label="${escapeHTML(tLabel('Bu tarife özel besin hesaplayıcı'))}"><div class="atom-metric-box"><div class="atom-metric-label">${escapeHTML(tLabel('Enerji'))}</div><div class="atom-metric-val" id="recipeNutritionKcal">0 kcal</div><div class="atom-metric-sub" id="recipeNutritionGrams">0 g</div></div><div class="atom-metric-box"><div class="atom-metric-label">${escapeHTML(tLabel('Magnezyum'))}</div><div class="atom-metric-val" id="recipeNutritionMg">0 mg</div><div class="atom-metric-sub" id="recipeNutritionMgPct">%0 ${escapeHTML(tLabel('Günlük hedef'))}</div></div><div class="atom-metric-box"><div class="atom-metric-label">${escapeHTML(tLabel('Çinko'))}</div><div class="atom-metric-val" id="recipeNutritionZinc">0 mg</div><div class="atom-metric-sub" id="recipeNutritionZincPct">%0 ${escapeHTML(tLabel('Günlük hedef'))}</div></div><div class="atom-metric-box"><div class="atom-metric-label">${escapeHTML(tLabel('Protein'))}</div><div class="atom-metric-val" id="recipeNutritionProtein">0 g</div><div class="atom-metric-sub">${escapeHTML(tLabel('Hesaplanan miktar'))}</div></div></div><div class="atom-rda-bars"><div><div class="progress-head"><span>${escapeHTML(tLabel('Magnezyum'))} · 420 mg</span><span id="recipeNutritionMgBarLabel">%0</span></div><div class="progress-track"><div class="progress-fill" id="recipeNutritionMgBar" style="width:0%"></div></div></div><div><div class="progress-head"><span>${escapeHTML(tLabel('Çinko'))} · 11 mg</span><span id="recipeNutritionZincBarLabel">%0</span></div><div class="progress-track"><div class="progress-fill" id="recipeNutritionZincBar" style="width:0%"></div></div></div></div><div class="atom-log-box" id="recipeNutritionLog" role="status" aria-live="polite"></div>${emptyNote}<p class="muted" style="margin:10px 0 0">${escapeHTML(tLabel('Yaklaşık değerlerdir; ürün, marka ve pişirme yöntemine göre değişebilir.'))}</p></section>`;
+}
+function updateRecipeNutritionCalculator(){
+    const nutritionApi=window.TestoValidation;
+    if(!nutritionApi?.computeRecipeNutrition)return null;
+    const source=Array.isArray(window.activeRecipeNutritionItems)?window.activeRecipeNutritionItems:[];
+    const items=source.map((ingredient,index)=>{
+        const input=document.getElementById('recipeNutritionInput-'+index);
+        const grams=input?Number(input.value):ingredient.grams;
+        const value=Number.isFinite(grams)?grams:0;
+        const badge=document.getElementById('recipeNutritionValue-'+index);
+        if(badge)badge.textContent=`${value} g`;
+        return {...ingredient,grams:value};
+    });
+    const stats=nutritionApi.computeRecipeNutrition(items);
+    const lang=localStorage.getItem('testotavan_language')||'tr';
+    const number=(value,digits=0)=>new Intl.NumberFormat(lang,{maximumFractionDigits:digits}).format(value);
+    const set=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value};
+    set('recipeNutritionKcal',`${number(stats.kcal)} kcal`);
+    set('recipeNutritionMg',`${number(stats.mg,1)} mg`);
+    set('recipeNutritionZinc',`${number(stats.zinc,2)} mg`);
+    set('recipeNutritionProtein',`${number(stats.protein,1)} g`);
+    set('recipeNutritionGrams',`${number(stats.totalGrams)} g ${tLabel('Hesaplanan miktar')}`);
+    set('recipeNutritionMgPct',`%${stats.mgRdaPct} ${tLabel('Günlük hedef')}`);
+    set('recipeNutritionZincPct',`%${stats.zincRdaPct} ${tLabel('Günlük hedef')}`);
+    set('recipeNutritionMgBarLabel',`%${stats.mgRdaPct}`);
+    set('recipeNutritionZincBarLabel',`%${stats.zincRdaPct}`);
+    const mgBar=document.getElementById('recipeNutritionMgBar');
+    const zincBar=document.getElementById('recipeNutritionZincBar');
+    if(mgBar)mgBar.style.width=`${Math.min(100,stats.mgRdaPct)}%`;
+    if(zincBar)zincBar.style.width=`${Math.min(100,stats.zincRdaPct)}%`;
+    const log=document.getElementById('recipeNutritionLog');
+    if(log){
+        const rows=stats.breakdown.filter(row=>row.grams>0).map(row=>`<li>${escapeHTML(row.label)} (${row.grams} g): ${row.kcal} kcal · Mg ${number(row.mg,1)} mg · Zn ${number(row.zinc,2)} mg · ${number(row.protein,1)} g ${escapeHTML(tLabel('Protein'))}</li>`).join('');
+        log.innerHTML=`<div class="atom-log-head">${escapeHTML(stats.logLine)}</div>${rows?`<ul class="plain-list atom-log-list">${rows}</ul>`:''}`;
+    }
+    window.activeRecipeNutritionItems=items;
+    return stats;
 }
 function showContent(id){
     const x=getAllContent().find(i=>i.id===id); if(!x)return;
+    window.activeRecipeNutritionItems=[];
     const ingredients=x.type==='recipe'&&x.ingredients?.length?`<h3 style="margin-top:20px">${escapeHTML(tLabel('Malzemeler'))}</h3><ul class="ingredient-list">${x.ingredients.map(i=>`<li>${IC('i-check')} ${escapeHTML(i)}</li>`).join('')}</ul><h3 style="margin:20px 0 10px">${escapeHTML(tLabel('Hazırlanışı'))}</h3>`:'';
-    const atomCta=(x.type==='recipe'||/atom|macun|karışım/i.test(`${x.title} ${x.category}`))?`<button type="button" class="btn-secondary" style="margin-top:16px" onclick="jumpToDamatAtomu()">${IC('i-bolt')} &nbsp;${escapeHTML(tLabel('Damat Atomu Besin Değeri Hesaplayıcı'))}</button>`:'';
-    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div>${atomCta}<div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
+    const nutrition=x.type==='recipe'&&x.ingredients?.length?recipeNutritionMarkup(x):'';
+    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div>${nutrition}<div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
     document.getElementById('contentModal').classList.add('show'); document.body.style.overflow='hidden';
+    updateRecipeNutritionCalculator();
 }
-function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
+function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; window.activeRecipeNutritionItems=[]; }
 function openAdmin(){ window.location.href='/admin/'; }
 // Pinterest pinlerinin hedef bağlantısı: /?icerik=<id> → ilgili yazıyı modalda açar.
 function openSharedContent(id){
@@ -823,6 +870,49 @@ const remainingStaticTranslations = {
  }
 };
 Object.keys(remainingStaticTranslations).forEach(lang=>Object.assign(staticUiTranslations[lang],remainingStaticTranslations[lang]));
+
+const recipeCalculatorTranslations = {
+ en: {
+  'Bu tarife özel besin hesaplayıcı':'Nutrition calculator for this recipe',
+  'Bu hesaplayıcı yalnızca bu tarifteki malzemeleri kullanır. Miktarları ayarlayın; sonuçlar yaklaşık olarak güncellenir.':'This calculator uses only ingredients in this recipe. Adjust the amounts to update the estimates.',
+  'Eşleşen malzeme':'matched ingredients',
+  'Besin verisi bulunamadı':'Nutrition data unavailable',
+  'Bu malzeme veri eşleşmesi olmadığı için toplama katılmıyor.':'This ingredient has no matching data and is excluded from the totals.',
+  'Kaynakta gramaj belirtilmemiş; hesaplamak için gramajı ayarlayın.':'No weight was listed in the source; adjust the amount to calculate it.',
+  'Bu tarifte hesaplanabilir malzeme eşleşmedi.':'No ingredients in this recipe could be matched to nutrition data.',
+  'Enerji':'Energy',
+  'Hesaplanan miktar':'Calculated amount',
+  'Günlük hedef':'Daily target',
+  'Yaklaşık değerlerdir; ürün, marka ve pişirme yöntemine göre değişebilir.':'Estimates only; values may vary by product, brand and cooking method.'
+ },
+ de: {
+  'Bu tarife özel besin hesaplayıcı':'Nährwertrechner für dieses Rezept',
+  'Bu hesaplayıcı yalnızca bu tarifteki malzemeleri kullanır. Miktarları ayarlayın; sonuçlar yaklaşık olarak güncellenir.':'Dieser Rechner verwendet nur Zutaten aus diesem Rezept. Passen Sie die Mengen an, um die Schätzwerte zu aktualisieren.',
+  'Eşleşen malzeme':'erkannte Zutaten',
+  'Besin verisi bulunamadı':'Keine Nährwertdaten verfügbar',
+  'Bu malzeme veri eşleşmesi olmadığı için toplama katılmıyor.':'Für diese Zutat wurden keine Daten gefunden; sie wird nicht in die Summe einbezogen.',
+  'Kaynakta gramaj belirtilmemiş; hesaplamak için gramajı ayarlayın.':'In der Quelle ist keine Menge angegeben; passen Sie das Gewicht für die Berechnung an.',
+  'Bu tarifte hesaplanabilir malzeme eşleşmedi.':'Für keine Zutat dieses Rezepts wurden passende Nährwertdaten gefunden.',
+  'Enerji':'Energie',
+  'Hesaplanan miktar':'Berechnete Menge',
+  'Günlük hedef':'Tagesbedarf',
+  'Yaklaşık değerlerdir; ürün, marka ve pişirme yöntemine göre değişebilir.':'Es handelt sich um Schätzwerte; Produkt, Marke und Zubereitung können die Werte verändern.'
+ },
+ ja: {
+  'Bu tarife özel besin hesaplayıcı':'このレシピ専用の栄養計算機',
+  'Bu hesaplayıcı yalnızca bu tarifteki malzemeleri kullanır. Miktarları ayarlayın; sonuçlar yaklaşık olarak güncellenir.':'この計算機はこのレシピの材料のみを使用します。分量を調整すると推定値が更新されます。',
+  'Eşleşen malzeme':'照合できた材料',
+  'Besin verisi bulunamadı':'栄養データがありません',
+  'Bu malzeme veri eşleşmesi olmadığı için toplama katılmıyor.':'この材料のデータが見つからないため、合計には含まれません。',
+  'Kaynakta gramaj belirtilmemiş; hesaplamak için gramajı ayarlayın.':'出典に重量がないため、計算するには量を調整してください。',
+  'Bu tarifte hesaplanabilir malzeme eşleşmedi.':'このレシピには栄養データと照合できる材料がありません。',
+  'Enerji':'エネルギー',
+  'Hesaplanan miktar':'計算量',
+  'Günlük hedef':'1日の目安',
+  'Yaklaşık değerlerdir; ürün, marka ve pişirme yöntemine göre değişebilir.':'概算値です。製品、ブランド、調理法によって異なります。'
+ }
+};
+Object.keys(recipeCalculatorTranslations).forEach(lang=>Object.assign(i18n[lang],recipeCalculatorTranslations[lang]));
 
 const completeRangeTranslations = {
  en: { accepted: 'Accepted input range:', lab: 'Normal laboratory range:' },
