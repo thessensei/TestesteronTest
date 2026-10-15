@@ -18,7 +18,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-168%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-197%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
@@ -30,13 +30,24 @@ We offer natural, safe, and alternative solutions to address the decline in test
     kilo adımları + takviye dozları) sonuçla birlikte **doğrudan ve tam** gösterilir
   - **Kan Testi ile Doğrulama** — 12 parametre (total/serbest testosteron, SHBG, LH, FSH, estradiol, kortizol,
     ferritin, D vitamini, B12, çinko, magnezyum); yalnızca Total T zorunlu, diğerleri opsiyonel
-- **Tahlil yükleme** — PDF’teki değerler tarayıcı içinde okunup forma yazılır (dosya sunucuya gönderilmez);
-  metin yapıştırma ve elle giriş alternatif yollardır
+- **Tahlil yükleme + OCR boru hattı** — PDF’teki değerler tarayıcı içinde okunup forma yazılır (dosya sunucuya gönderilmez);
+  **fotoğraflar ve taranmış PDF’ler** Tesseract.js (tur+eng, WASM) ile tamamen cihazda OCR’dan geçirilir,
+  taranmış PDF sayfaları pdf.js ile boyanır, OCR çıktısındaki rakam/harf karışmaları (`6O,5` → `60,5`)
+  otomatik düzeltilir; metin yapıştırma ve elle giriş alternatif yollardır
+- **Mikro besin dinamik uyarı kartları** — D vitamini 30 ng/mL veya çinko 70 µg/dL altı gibi
+  referans-altı değerlerde rapor, kişiye özel **“Sistem Analizi Uyarısı”** kartları basar:
+  eksikliğin LH sinyali / testosteron sentezi üzerindeki etkisi, besin çipleri ve doz önerisiyle birlikte
+- **Damat Atomu besin değeri hesaplayıcı** — Blog & Tarifler sayfasının altında ve “Damat Atomu” tarif
+  detayında interaktif widget: bal, muz, ceviz, badem ve hurma gramajları kaydırıcıyla değiştikçe
+  magnezyum, çinko ve kalori dökümü USDA tablosundan anlık hesaplanır (günlük referans yüzdeleriyle)
 - **Birim desteği** — her satırda birim kolonu ve nmol/L ↔ ng/dL gibi anında dönüşüm
 - **Gerçek laboratuvar aralıkları** — geçerli sonuçlar reddedilmez; alışılmadık değer reddedilmek yerine
   “emin misiniz?” uyarısı ve hekim yönlendirmesiyle kabul edilir
 - **Şeffaf Genel Değerlendirme skoru** — ağırlıkların ve kapsama oranının açıklandığı tooltip
-- **KVKK açık rızası** — sağlık verisi için ayrı, boş başlangıçlı onay kutusu
+- **KVKK açık rızası + veri güvenliği kalkanı** — sağlık verisi için ayrı, boş başlangıçlı onay kutusu;
+  kutu işaretlendiği an **yeşil kalkan animasyonu** devreye girer: “Verileriniz kesinlikle sunucuya
+  gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir”
+  ( hareket azaltma tercihine saygılı, `prefers-reduced-motion` )
 - **Numune koşulları ve lojistik** — sabah 07:00–10:00, açlık, biotin kesme; nerede/kaça/kaç günde bilgisi
 - **Anlık sonuç raporu** ve doğal destek önerileri
 - **Blog & Tarifler** — admin panelinden yönetilen içerikler (blog yazıları ve tarifler; kategori, malzeme listesi, kapak görseli)
@@ -76,7 +87,9 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── index.html        #   Ana SPA (analiz, blog, tarifler, hakkında) — okunabilir CSS ile
 │   └── js/
 │       ├── validation.js #   Laboratuvar çekirdeği: referans aralıkları, birimler,
-│       │                 #     doğrulama/uyarı, tahmin motoru, tahlil metni okuma
+│       │                 #     doğrulama/uyarı, tahmin motoru, tahlil metni okuma,
+│       │                 #     OCR metin temizliği, mikro besin uyarı motoru,
+│       │                 #     Damat Atomu besin değeri motoru
 │       ├── app.js        #   Analiz ekranlarının arayüzü (adım göstergesi, kartlar, rapor)
 │       └── content.js    #   Blog + çeviri; yalnızca ihtiyaç halinde yüklenir
 ├── index.html            # ÜRETİLMİŞ: stil bloğu küçültülmüş, script yolları hash'li
@@ -102,7 +115,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── build.mjs                     # src/ → yayın dosyaları (CSS/JS küçültme + hash)
 │   ├── analysis-pages.template.html  # Semptom + kan testi ekranlarının şablonu
 │   └── build-analysis-pages.mjs      # Form satırlarını referans aralıklarından üretir
-├── tests/                # node --test testleri (validation, content, media, build)
+├── tests/                # node --test testleri (validation, content, media, build, feature-upgrade, feature-dom)
 ├── vercel.json           # Güvenlik başlıkları + önbellek politikası
 ├── .vercelignore         # Kaynak/test dosyaları yayına gönderilmez
 ├── sitemap.xml           # SEO site haritası

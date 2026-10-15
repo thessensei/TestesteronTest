@@ -9,6 +9,9 @@
  *  - estimate*     : semptomlardan nokta tahmin + güven aralığı
  *  - computeOverallScore : "Genel Değerlendirme" skorunun şeffaf hesabı (tooltip için)
  *  - parseLabText  : PDF/foto metninden laboratuvar değeri yakalama (OCR sonrası adım)
+ *  - cleanOcrText  : OCR çıktısındaki rakam/harf karışmalarını düzeltme
+ *  - micronutrientWarnings : değer referans altındaysa "Sistem Analizi Uyarısı" kartı üretir
+ *  - computeDamatAtomuMix   : Damat Atomu widget'ının magnezyum/çinko/kalori motoru
  */
 (function () {
     'use strict';
@@ -920,6 +923,192 @@
         return { values: values, units: units, matched: matched, unmatched: unmatched, lines: matchedLines };
     }
 
+// ========================================================================
+// OCR METİN TEMİZLİĞİ — Tesseract çıktısındaki yaygın karışmaları düzeltir
+// (yalnızca rakam bağlamındaki harf/rakam karışmalarına dokunulur; sözcükler
+// korunur, böylece "Testosteron" gibi etiketler zarar görmez)
+// ========================================================================
+function cleanOcrText(text) {
+    var source = String(text || '');
+    if (!source.trim()) return '';
+
+    var cleaned = source
+        .replace(/\u00A0/g, ' ')                                    // kırılmayan boşluk
+        .replace(/[\u2018\u2019]/g, "'")                            // tipografik kesme
+        .replace(/[\u201C\u201D]/g, '"')                            // tipografik tırnak
+        .replace(/[\u2013\u2014]/g, '-')                            // uzun tire
+        .replace(/\r/g, '');
+
+    // Rakam arasında okunan harfler: O→0, I/l→1, S→5, B→8, Z→2
+    // (harften sonra rakam veya ondalık ayıracı geliyorsa düzeltilir: "6O,5" → "60,5")
+    // (lookbehind kullanılmaz — eski Safari motorları script'i bloke eder)
+    cleaned = cleaned
+        .replace(/(\d)[Oo](?=[\d,.])/g, function (m, d) { return d + '0'; })
+        .replace(/(\d)[Il](?=[\d,.])/g, function (m, d) { return d + '1'; })
+        .replace(/(\d)[Ss](?=[\d,.])/g, function (m, d) { return d + '5'; })
+        .replace(/(\d)[Bb](?=[\d,.])/g, function (m, d) { return d + '8'; })
+        .replace(/(\d)[Zz](?=[\d,.])/g, function (m, d) { return d + '2'; })
+        // Ondalık ayraç komşuluğunda okunan I/l/S/O: "7,l" → "7,1", "4,S" → "4,5"
+        // (yalnızca ayraçtan önce rakam varsa — düz yazıdaki ",Sonra" gibi örüntülere dokunmaz)
+        .replace(/(\d[.,])[Il](?=\s|$)/g, function (m, d) { return d + '1'; })
+        .replace(/(\d,)[Ss](?=\s|$)/g, function (m, d) { return d + '5'; })
+        .replace(/(\d,)[Oo](?=\s|$)/g, function (m, d) { return d + '0'; });
+
+    // Sayının sonunda kalan karışmış harfler: "1.08O" → "1.080", "3B" → "38", "5Z" → "52"
+    cleaned = cleaned
+        .replace(/(\d)[Oo](?=\s|$)/g, function (m, d) { return d + '0'; })
+        .replace(/(\d)[Bb](?=\s|$)/g, function (m, d) { return d + '8'; })
+        .replace(/(\d)[Ss](?=\s|$)/g, function (m, d) { return d + '5'; })
+        .replace(/(\d)[Zz](?=\s|$)/g, function (m, d) { return d + '2'; });
+
+    // Satır sonu artıkları ve seyrek boşluklar
+    cleaned = cleaned.replace(/[ \t]{3,}/g, '  ').replace(/\n{3,}/g, '\n\n');
+
+    return cleaned.trim();
+}
+
+// ========================================================================
+// KİŞİSELLEŞTİRİLMİŞ MİKRO BESİN DİNAMİK UYARI KARTLARI
+// Kullanıcının girdiği değer laboratuvar normal aralığının altındaysa
+// ("Sistem Analizi Uyarısı") raporunda kişiye özel dinamik kart üretilir.
+// Eşikler MARKERS referans aralıklarıyla uyumludur (D vit. 30, çinko 70 …).
+// ========================================================================
+var MICRONUTRIENT_RULES = [
+    {
+        key: 'zinc', threshold: 70, criticalBelow: 60,
+        effect: 'LH sinyalinizi ve testosteron sentezinizi doğrudan zayıflatıyor',
+        foods: ['Kabak çekirdeği (30 g)', 'Kırmızı et (150 g)', 'Karides', 'Yumurta', 'Nohut ve baklagiller'],
+        dose: 'Çinko pikolinat 15–30 mg/gün (akşam yemeğiyle); 8–12 haftada kontrol tahlili'
+    },
+    {
+        key: 'vitD', threshold: 30, criticalBelow: 20,
+        effect: 'LH sinyalinizi ve testosteron sentezinizi doğrudan zayıflatıyor',
+        foods: ['Somon (150 g)', 'Yumurta sarısı', 'Güneş 15–20 dk/gün', 'D3 + K2 takviyesi', 'Takviyeli süt ürünleri'],
+        dose: 'D3 vitamini 3000–5000 IU + K2 100 mcg/gün (değer 20 altıysa hekimle doz planı)'
+    },
+    {
+        key: 'mg', threshold: 1.7, criticalBelow: 1.3,
+        effect: 'SHBG dengesini bozarak serbest testosteronunuzu düşürüyor',
+        foods: ['Kabak çekirdeği (30 g)', 'Badem (30 g)', 'Ispanak ve koyu yeşillik', 'Karabuğday', 'Bitter çikolata (%70+)'],
+        dose: 'Magnezyum bisglisinat 200–400 mg/gece'
+    },
+    {
+        key: 'b12', threshold: 200, criticalBelow: 150,
+        effect: 'enerji ve odak sisteminizi testosterondan bağımsız olarak zayıflatıyor',
+        foods: ['Kırmızı et (150 g)', 'Karaciğer (haftada 1)', 'Sardalya', 'Yumurta', 'Metilkobalamin takviyesi'],
+        dose: 'B12 (metilkobalamin) 1000–2000 mcg/gün; değer 150 altıysa hekim kontrolü'
+    },
+    {
+        key: 'ferritin', threshold: 30, criticalBelow: 15,
+        effect: 'yorgunluk ve toparlanma sisteminizi doğrudan zayıflatıyor',
+        foods: ['Kırmızı et (150 g)', 'Karaciğer (haftada 1)', 'Liftohum ve ıspanak (C vitaminiyle)', 'Baklagiller'],
+        dose: 'Demir takviyesi yalnızca hekim kontrolünde; ferritin 15 altı acil hekim değerlendirmesi ister'
+    }
+];
+
+/**
+ * Kan değerlerinden (kanonik birim) dinamik mikro besin uyarı kartları üretir.
+ * @param {Object} values { zinc: 58, vitD: 22, ... } — girilmeyen parametre kart üretmez.
+ * @returns {Array<{key,label,value,valueText,refText,threshold,severity,title,headline,foods,dose}>}
+ */
+function micronutrientWarnings(values) {
+    values = values || {};
+    var warnings = [];
+
+    MICRONUTRIENT_RULES.forEach(function (rule) {
+        var value = values[rule.key];
+        if (value === null || value === undefined || !isFinite(value)) return;
+        if (value >= rule.threshold) return; // aralık altı değil → kart yok
+
+        var marker = MARKER_BY_KEY[rule.key];
+        var severity = value < rule.criticalBelow ? 'critical' : 'high';
+
+        warnings.push({
+            key: rule.key,
+            label: marker.label,
+            value: value,
+            valueText: formatNumber(round(value, 2), 2) + ' ' + marker.unit,
+            refText: describeRange(marker, marker.unit, 'ref'),
+            threshold: rule.threshold,
+            severity: severity,
+            title: 'Sistem Analizi Uyarısı',
+            headline: 'Sistem Analizi Uyarısı: ' + marker.label + ' eksikliğiniz (' +
+                formatNumber(round(value, 2), 2) + ' ' + marker.unit + ', referans alt sınırı ' +
+                formatNumber(rule.threshold, 2) + ') ' + rule.effect +
+                ', acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin.',
+            foods: rule.foods.slice(),
+            dose: rule.dose
+        });
+    });
+
+    // Kritik eksiklik önce gösterilir
+    var rank = { critical: 0, high: 1 };
+    return warnings.sort(function (a, b) { return rank[a.severity] - rank[b.severity]; });
+}
+
+// ========================================================================
+// DAMAT ATOMU BESİN DEĞERİ MOTORU — tarif widget'ının hesap çekirdeği
+// Besin değerleri 100 g ürün başına USDA besin veritabanı ortalamalarıdır.
+//   kcal: kilokalori · mg: magnezyum (mg) · zn: çinko (mg)
+// ========================================================================
+var DAMAT_ATOMU_INGREDIENTS = [
+    { id: 'bal',   label: 'Bal',            emoji: '🍯', defaultGrams: 30,  max: 150, step: 5,  kcal: 304, mg: 2,   zn: 0.22 },
+    { id: 'muz',   label: 'Muz',            emoji: '🍌', defaultGrams: 120, max: 300, step: 10, kcal: 89,  mg: 27,  zn: 0.15 },
+    { id: 'ceviz', label: 'Ceviz',          emoji: '🌰', defaultGrams: 30,  max: 150, step: 5,  kcal: 654, mg: 158, zn: 3.09 },
+    { id: 'badem', label: 'Badem',          emoji: '🥜', defaultGrams: 20,  max: 150, step: 5,  kcal: 579, mg: 270, zn: 3.12 },
+    { id: 'hurma', label: 'Hurma (medjool)', emoji: '🫒', defaultGrams: 50,  max: 250, step: 5,  kcal: 277, mg: 54,  zn: 0.44 }
+];
+
+// Erişkin erkek günlük referans alım değerleri (etiket/göstergeler için)
+var DAMAT_ATOMU_DAILY = { kcal: 2500, mg: 400, zn: 11 };
+
+/**
+ * Gramajlardan karışımın magnezyum, çinko ve kalori dökümünü üretir.
+ * @param {Object} grams { bal: 30, muz: 120, ceviz: 30, badem: 20, hurma: 50 }
+ * @returns {{rows:Array, totals:{kcal,mg,zn,grams}, daily:{kcalPct,mgPct,znPct}}}
+ */
+function computeDamatAtomuMix(grams) {
+    grams = grams || {};
+    var rows = [];
+    var totals = { kcal: 0, mg: 0, zn: 0, grams: 0 };
+
+    DAMAT_ATOMU_INGREDIENTS.forEach(function (item) {
+        var raw = Number(grams[item.id]);
+        var g = isFinite(raw) && raw > 0 ? Math.min(raw, item.max) : 0;
+        var factor = g / 100;
+
+        var row = {
+            id: item.id,
+            label: item.label,
+            emoji: item.emoji,
+            grams: g,
+            kcal: round(item.kcal * factor, 1),
+            mg: round(item.mg * factor, 1),
+            zn: round(item.zn * factor, 2)
+        };
+
+        totals.kcal += row.kcal;
+        totals.mg += row.mg;
+        totals.zn += row.zn;
+        totals.grams += g;
+        rows.push(row);
+    });
+
+    totals.kcal = round(totals.kcal, 0);
+    totals.mg = round(totals.mg, 1);
+    totals.zn = round(totals.zn, 2);
+
+    return {
+        rows: rows,
+        totals: totals,
+        daily: {
+            kcalPct: round((totals.kcal / DAMAT_ATOMU_DAILY.kcal) * 100, 0),
+            mgPct: round((totals.mg / DAMAT_ATOMU_DAILY.mg) * 100, 0),
+            znPct: round((totals.zn / DAMAT_ATOMU_DAILY.zn) * 100, 0)
+        }
+    };
+}
+
     // ========================================================================
     // NUMUNE KOŞULLARI VE LOJİSTİK (ekranlarda tek kaynaktan gösterilir)
     // ========================================================================
@@ -976,7 +1165,14 @@
         estimateMarker: estimateMarker,
         scoreMarker: scoreMarker,
         computeOverallScore: computeOverallScore,
-        parseLabText: parseLabText
+        parseLabText: parseLabText,
+
+        cleanOcrText: cleanOcrText,
+        MICRONUTRIENT_RULES: MICRONUTRIENT_RULES,
+        micronutrientWarnings: micronutrientWarnings,
+        DAMAT_ATOMU_INGREDIENTS: DAMAT_ATOMU_INGREDIENTS,
+        DAMAT_ATOMU_DAILY: DAMAT_ATOMU_DAILY,
+        computeDamatAtomuMix: computeDamatAtomuMix
     };
 
     if (typeof window !== 'undefined') {

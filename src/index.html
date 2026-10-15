@@ -862,6 +862,111 @@
         .warn-card { border-color:rgba(245,166,35,.22); }
         .danger-card { border-color:rgba(255,82,82,.18); background:rgba(255,82,82,.02); }
 
+        /* ========== MİKRO BESİN DİNAMİK UYARI KARTLARI ========== */
+        .micronutrient-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+                              padding:16px; margin-bottom:12px; position:relative; overflow:hidden; }
+        .micronutrient-card.severity-high { border-left:3px solid var(--gold); background:rgba(245,166,35,.03); }
+        .micronutrient-card.severity-critical { border-left:3px solid var(--red); background:rgba(255,82,82,.03); }
+        .micronutrient-card::before { content:""; position:absolute; inset:0 auto 0 0; width:34%;
+                                      background:linear-gradient(90deg, rgba(245,166,35,.07), transparent); pointer-events:none; }
+        .micronutrient-card.severity-critical::before { background:linear-gradient(90deg, rgba(255,82,82,.07), transparent); }
+        .micro-head { display:flex; align-items:flex-start; gap:10px; }
+        .micro-icon { width:34px; height:34px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center;
+                      background:rgba(245,166,35,.13); color:var(--gold); }
+        .micronutrient-card.severity-critical .micro-icon { background:rgba(255,82,82,.13); color:var(--red); }
+        .micro-icon .ic { width:19px; height:19px; }
+        .micro-title { flex:1; min-width:0; }
+        .micro-title h4 { font-size:12.5px; font-weight:900; letter-spacing:.3px; text-transform:uppercase; }
+        .micro-title p { font-size:10.5px; color:var(--text-secondary); margin-top:3px; line-height:1.5; }
+        .micro-title p b { color:var(--text-primary); }
+        .micro-headline { font-size:11.5px; line-height:1.65; margin:10px 0 10px; color:var(--text-primary); }
+        .micro-foods { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+        .food-chip { font-size:10px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid rgba(0,230,118,.25);
+                     background:rgba(0,230,118,.07); color:var(--green); display:inline-flex; align-items:center; gap:4px; }
+        .food-chip .ic { width:11px; height:11px; }
+        .micro-dose { font-size:10.5px; color:var(--text-secondary); line-height:1.6; border-top:1px dashed var(--border); padding-top:9px; }
+        .micro-dose .ic { color:var(--gold); }
+
+        /* ========== KVKK VERİ GÜVENLİĞİ KALKANI (yeşil kalkan efekti) ========== */
+        .kvkk-shield { display:flex; align-items:center; gap:14px; margin-top:12px; padding:14px; border-radius:var(--radius-sm);
+                       border:1px solid rgba(0,230,118,.3); background:rgba(0,230,118,.04);
+                       opacity:0; transform:translateY(6px); transition:opacity .45s ease, transform .45s ease; }
+        .kvkk-shield[hidden] { display:none; }
+        .kvkk-shield.active { opacity:1; transform:translateY(0);
+                              animation:shieldPop .55s cubic-bezier(.2,1.4,.4,1); }
+        .shield-visual { position:relative; width:46px; height:46px; flex:none; display:flex; align-items:center; justify-content:center; }
+        .shield-svg { width:34px; height:34px; overflow:visible; }
+        .shield-body { fill:rgba(0,230,118,.12); stroke:var(--green); stroke-width:1.7; stroke-linejoin:round; }
+        .shield-check { fill:none; stroke:var(--green); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round;
+                        stroke-dasharray:14; stroke-dashoffset:14; }
+        .kvkk-shield.active .shield-check { animation:shieldCheck .5s ease-out .3s forwards; }
+        .kvkk-shield.active .shield-body { animation:shieldGlow 2.4s ease-in-out .4s infinite; }
+        .shield-ring { position:absolute; inset:0; border-radius:50%; border:1.5px solid rgba(0,230,118,.5); opacity:0; }
+        .kvkk-shield.active .shield-ring { animation:shieldRing 2.2s ease-out .45s infinite; }
+        .kvkk-shield.active { box-shadow:0 0 18px rgba(0,230,118,.14), inset 0 0 24px rgba(0,230,118,.04); }
+        .shield-text strong { display:block; font-size:10.5px; font-weight:900; letter-spacing:.8px; color:var(--green);
+                              text-transform:uppercase; }
+        .shield-text p { font-size:11px; color:var(--text-primary); line-height:1.6; margin-top:4px; }
+        @keyframes shieldPop { 0% { transform:scale(.94); opacity:0; } 60% { transform:scale(1.02); } 100% { transform:scale(1); opacity:1; } }
+        @keyframes shieldCheck { to { stroke-dashoffset:0; } }
+        @keyframes shieldGlow { 0%,100% { filter:drop-shadow(0 0 2px rgba(0,230,118,.35)); } 50% { filter:drop-shadow(0 0 9px rgba(0,230,118,.85)); } }
+        @keyframes shieldRing { 0% { transform:scale(.72); opacity:.9; } 80% { transform:scale(1.28); opacity:0; } 100% { opacity:0; } }
+
+        /* ========== DAMAT ATOMU BESİN DEĞERİ WIDGET'I ========== */
+        .da-widget { margin-top:4px; }
+        .da-tiles { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+        .da-tile { background:var(--input); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 10px;
+                   text-align:center; min-width:0; }
+        .da-tile-label { font-size:9px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--text-secondary); }
+        .da-tile strong { display:block; font-size:21px; font-weight:900; margin-top:4px; }
+        .da-tile.kcal strong { color:var(--gold); }
+        .da-tile.mg strong { color:var(--green); }
+        .da-tile.zn strong { color:var(--blue); }
+        .da-tile-unit { font-size:9.5px; color:var(--text-secondary); }
+        .da-bar { height:4px; border-radius:99px; background:rgba(255,255,255,.06); margin:8px 0 5px; overflow:hidden; }
+        .da-bar i { display:block; height:100%; width:0; border-radius:99px; transition:width .18s ease; }
+        .da-tile.kcal .da-bar i { background:linear-gradient(90deg, var(--gold), var(--gold-light)); }
+        .da-tile.mg .da-bar i { background:linear-gradient(90deg, var(--green), #7CFFB2); }
+        .da-tile.zn .da-bar i { background:linear-gradient(90deg, var(--blue), #82B1FF); }
+        .da-tile-pct { font-size:8.5px; color:var(--text-secondary); line-height:1.3; display:block; }
+        .da-sliders { margin-top:14px; display:flex; flex-direction:column; gap:13px; }
+        .da-slider-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+        .da-name { font-size:12px; font-weight:700; }
+        .da-gram { font-size:11px; font-weight:900; color:var(--gold); background:rgba(245,166,35,.1);
+                   padding:3px 9px; border-radius:8px; font-variant-numeric:tabular-nums; }
+        .da-widget input[type="range"] { -webkit-appearance:none; appearance:none; width:100%; height:26px; background:transparent; cursor:pointer; }
+        .da-widget input[type="range"]:focus-visible { outline:2px solid var(--gold); outline-offset:4px; border-radius:99px; }
+        .da-widget input[type="range"]::-webkit-slider-runnable-track { height:6px; border-radius:99px;
+                     background:linear-gradient(90deg, rgba(245,166,35,.55), rgba(245,166,35,.12)); }
+        .da-widget input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+                     background:linear-gradient(135deg, var(--gold), var(--gold-dark)); border:2px solid #0A0A0F; margin-top:-7px;
+                     box-shadow:0 0 0 3px rgba(245,166,35,.18); }
+        .da-widget input[type="range"]::-moz-range-track { height:6px; border-radius:99px;
+                     background:linear-gradient(90deg, rgba(245,166,35,.55), rgba(245,166,35,.12)); }
+        .da-widget input[type="range"]::-moz-range-thumb { width:16px; height:16px; border-radius:50%;
+                     background:linear-gradient(135deg, var(--gold), var(--gold-dark)); border:2px solid #0A0A0F;
+                     box-shadow:0 0 0 3px rgba(245,166,35,.18); }
+        .da-log { margin-top:14px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--input);
+                  padding:10px 12px; display:flex; flex-direction:column; gap:7px; }
+        .da-log-row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:10.5px; }
+        .da-log-name { color:var(--text-secondary); font-weight:600; }
+        .da-log-values { color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+        .da-log-values b { color:var(--gold); }
+        .da-log-values b.mg { color:var(--green); }
+        .da-log-values b.zn { color:var(--blue); }
+        .da-foot { margin-top:10px; display:flex; flex-direction:column; gap:6px; text-align:center; }
+        .da-note { font-size:9.5px; color:var(--text-secondary); line-height:1.6; }
+        .da-note .ic { color:var(--blue); }
+        @media (max-width: 400px) { .da-tiles { grid-template-columns:1fr 1fr 1fr; gap:6px; } .da-tile strong { font-size:18px; } }
+
+        /* Hareket azaltma tercihi: kalkan/parlama animasyonları kapanır */
+        @media (prefers-reduced-motion: reduce) {
+            .kvkk-shield.active, .kvkk-shield.active .shield-check, .kvkk-shield.active .shield-body,
+            .kvkk-shield.active .shield-ring { animation:none; }
+            .kvkk-shield.active .shield-check { stroke-dashoffset:0; }
+            .da-bar i { transition:none; }
+        }
+
         /* ========== HAKKIMIZDA IZGARA DÜZENİ ========== */
         #aboutPage { --about-gap: 12px; }
         [data-about-field] { white-space: pre-line; overflow-wrap: anywhere; }
@@ -1299,7 +1404,7 @@
         <div class="upload-drop">
             <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <p class="upload-title">Tahlil PDF’i veya fotoğrafı</p>
-            <p class="upload-sub">PDF’teki değerleri tarayıcınızda okuyup forma yazıyoruz. Dosya sunucuya gönderilmez.</p>
+            <p class="upload-sub">PDF’teki ve fotoğraftaki değerleri tarayıcınızda OCR ile okuyup forma yazıyoruz. Dosya sunucuya gönderilmez; motor ilk kullanımda cihazınıza indirilir.</p>
             <label class="btn-primary" for="reportFile" style="display:block; text-align:center; cursor:pointer">
                 <svg class="ic" aria-hidden="true"><use href="#i-arrow-up"></use></svg> &nbsp;DOSYA SEÇ
             </label>
@@ -1547,6 +1652,21 @@
             </label>
         </div>
         <p class="consent-error" id="consentError">Devam etmek için açık rıza kutusunu işaretlemeniz gerekiyor.</p>
+
+        <!-- KVKK VERİ GÜVENLİĞİ KALKANI — onay işaretlenince yeşil kalkan parlar -->
+        <div class="kvkk-shield" id="privacyShield" role="status" aria-live="polite" hidden>
+            <div class="shield-visual" aria-hidden="true">
+                <span class="shield-ring"></span>
+                <svg class="shield-svg" viewBox="0 0 24 24">
+                    <path class="shield-body" d="M12 2.3 4.6 5.2v6c0 4.6 3.1 8.4 7.4 10.1 4.3-1.7 7.4-5.5 7.4-10.1v-6z"/>
+                    <polyline class="shield-check" points="8.2 12.1 10.9 14.7 15.9 9.4"/>
+                </svg>
+            </div>
+            <div class="shield-text">
+                <strong>KVKK VERİ GÜVENLİĞİ KALKANI AKTİF</strong>
+                <p>Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir.</p>
+            </div>
+        </div>
     </div>
 
     <!-- Lojistik: nerede, nasıl, kaç günde -->
@@ -1722,6 +1842,21 @@
         <button class="filter-chip" data-filter="recipe" onclick="setContentFilter('recipe',this)">Yemek Tarifleri</button>
     </div>
     <div id="contentList"></div>
+
+    <!-- DAMAT ATOMU BESİN DEĞERİ HESAPLAYICI — malzeme gramajlarını kaydırın,
+         magnezyum / çinko / kalori dökümü cihazınızda anlık hesaplanır -->
+    <div class="card" id="damatAtomuCard" style="margin-top:16px">
+        <div class="card-header">
+            <div class="card-icon icon-green">
+                <svg class="ic" aria-hidden="true"><use href="#i-utensils"></use></svg>
+            </div>
+            <div>
+                <div class="card-title">Damat Atomu Besin Değeri Hesaplayıcı</div>
+                <div class="card-subtitle">Malzemelerin gramajını kaydırın — magnezyum, çinko ve kalori anında hesaplanır</div>
+            </div>
+        </div>
+        <div id="damatAtomuMount"></div>
+    </div>
 </div>
 </main>
 

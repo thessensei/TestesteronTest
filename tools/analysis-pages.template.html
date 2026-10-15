@@ -157,7 +157,7 @@
         <div class="upload-drop">
             <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
             <p class="upload-title">Tahlil PDF’i veya fotoğrafı</p>
-            <p class="upload-sub">PDF’teki değerleri tarayıcınızda okuyup forma yazıyoruz. Dosya sunucuya gönderilmez.</p>
+            <p class="upload-sub">PDF’teki ve fotoğraftaki değerleri tarayıcınızda OCR ile okuyup forma yazıyoruz. Dosya sunucuya gönderilmez; motor ilk kullanımda cihazınıza indirilir.</p>
             <label class="btn-primary" for="reportFile" style="display:block; text-align:center; cursor:pointer">
                 <svg class="ic" aria-hidden="true"><use href="#i-arrow-up"></use></svg> &nbsp;DOSYA SEÇ
             </label>
@@ -227,6 +227,21 @@
             </label>
         </div>
         <p class="consent-error" id="consentError">Devam etmek için açık rıza kutusunu işaretlemeniz gerekiyor.</p>
+
+        <!-- KVKK VERİ GÜVENLİĞİ KALKANI — onay işaretlenince yeşil kalkan parlar -->
+        <div class="kvkk-shield" id="privacyShield" role="status" aria-live="polite" hidden>
+            <div class="shield-visual" aria-hidden="true">
+                <span class="shield-ring"></span>
+                <svg class="shield-svg" viewBox="0 0 24 24">
+                    <path class="shield-body" d="M12 2.3 4.6 5.2v6c0 4.6 3.1 8.4 7.4 10.1 4.3-1.7 7.4-5.5 7.4-10.1v-6z"/>
+                    <polyline class="shield-check" points="8.2 12.1 10.9 14.7 15.9 9.4"/>
+                </svg>
+            </div>
+            <div class="shield-text">
+                <strong>KVKK VERİ GÜVENLİĞİ KALKANI AKTİF</strong>
+                <p>Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir.</p>
+            </div>
+        </div>
     </div>
 
     <!-- Lojistik: nerede, nasıl, kaç günde -->

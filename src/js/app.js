@@ -530,47 +530,242 @@ function setConsent(checkbox) {
     state.consent = !!checkbox.checked;
     const note = document.getElementById('consentError');
     if (note && state.consent) note.classList.remove('visible');
+
+    // KVKK / VERİ GÜVENLİĞİ KALKANI — onay işaretlendiği an yeşil kalkan parlar
+    setPrivacyShield(state.consent);
+}
+
+// Yeşil kalkan efektini açar/kapatır; her açılışta animasyon yeniden tetiklenir
+function setPrivacyShield(active) {
+    const shield = document.getElementById('privacyShield');
+    if (!shield) return;
+
+    if (!active) {
+        shield.hidden = true;
+        shield.classList.remove('active');
+        return;
+    }
+
+    shield.hidden = false;
+    shield.classList.remove('active');
+    void shield.offsetWidth; // animasyonu yeniden başlat
+    shield.classList.add('active');
+    showToast(IC('i-lock') + ' KVKK kalkanı aktif — verileriniz %100 cihazınızda işleniyor.', 'green');
 }
 
 // ========================================
-// TAHLİL YÜKLEME (PDF metni / yapıştırılan metin)
+// TAHLİL YÜKLEME — PDF metni / fotoğraf OCR / yapıştırılan metin
 // ========================================
+// OCR BORU HATTI (tamamı tarayıcı içinde):
+//   fotoğraf  → ön işleme (küçültme + gri tonlama) → Tesseract.js (WASM)
+//   taranmış PDF → pdf.js ile sayfa boyama → Tesseract.js
+// Motor dosyaları yalnızca ilk kullanımda CDN'den indirilir (~4 MB);
+// tahlil fotoğrafı/PDF'si hiçbir aşamada sunucuya gönderilmez.
+// Motor yüklenemezse (çevrimdışı/reklam engelleyici) yapıştırma ve elle
+// giriş yolları her zaman açık kalır.
+const OCR_LANGS = 'tur+eng';
+const TESSERACT_URLS = {
+    script: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',
+    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
+    langPath: 'https://tessdata.projectnaptha.com/4.0.0_fast'
+};
+const PDFJS_URLS = {
+    module: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs',
+    worker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs'
+};
+const OCR_STAGE_LABELS = {
+    'loading tesseract core': 'OCR çekirdeği indiriliyor',
+    'initializing tesseract': 'OCR motoru başlatılıyor',
+    'loading language traineddata': 'Türkçe + İngilizce dil paketi indiriliyor',
+    'initializing api': 'OCR altyapısı hazırlanıyor',
+    'recognizing text': 'Metin tanınıyor'
+};
+const OCR_MAX_PDF_PAGES = 3;
+const OCR_MAX_IMAGE_SIDE = 1800;
+
+let externalScriptPromises = {};
+function loadExternalScript(url) {
+    if (!externalScriptPromises[url]) {
+        externalScriptPromises[url] = new Promise((resolve, reject) => {
+            const el = document.createElement('script');
+            el.src = url;
+            el.async = true;
+            el.onload = () => resolve();
+            el.onerror = () => {
+                delete externalScriptPromises[url];
+                reject(new Error('Harici betik yüklenemedi: ' + url));
+            };
+            document.head.appendChild(el);
+        });
+    }
+    return externalScriptPromises[url];
+}
+
+let ocrStatusSink = null;
+let ocrWorkerPromise = null;
+function getOcrWorker() {
+    if (!ocrWorkerPromise) {
+        ocrWorkerPromise = loadExternalScript(TESSERACT_URLS.script).then(() => {
+            const T = window.Tesseract;
+            if (!T || typeof T.createWorker !== 'function') {
+                throw new Error('Tesseract motoru başlatılamadı.');
+            }
+            return T.createWorker(OCR_LANGS, 1, {
+                workerPath: TESSERACT_URLS.workerPath,
+                corePath: TESSERACT_URLS.corePath,
+                langPath: TESSERACT_URLS.langPath,
+                logger: m => { if (ocrStatusSink && m && typeof m.progress === 'number') ocrStatusSink(m); }
+            });
+        }).catch(err => {
+            ocrWorkerPromise = null;
+            throw err;
+        });
+    }
+    return ocrWorkerPromise;
+}
+
+async function runOcr(imageLike, onStatus) {
+    ocrStatusSink = onStatus || null;
+    const worker = await getOcrWorker();
+    const { data } = await worker.recognize(imageLike);
+    return (data && data.text) || '';
+}
+
+// Fotoğrafı OCR için hazırlar: EXIF yönü düzelt, çok büyükse küçült, gri tonlama.
+async function prepareImageForOcr(file) {
+    const bitmap = await loadBitmap(file);
+    const scale = Math.min(1, OCR_MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    if (bitmap.close) bitmap.close();
+
+    // Gri tonlama: Tesseract'ın ikilileştirme adımı için gürültüyü azaltır
+    const img = ctx.getImageData(0, 0, w, h);
+    const px = img.data;
+    for (let i = 0; i < px.length; i += 4) {
+        const gray = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        px[i] = px[i + 1] = px[i + 2] = gray;
+    }
+    ctx.putImageData(img, 0, 0);
+    return canvas;
+}
+
+async function loadBitmap(file) {
+    try {
+        return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch (_) {
+        // createImageBitmap desteklenmiyorsa <img> + object URL yedeği
+        return await new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Görsel açılamadı.')); };
+            img.src = url;
+        });
+    }
+}
+
+// Taranmış PDF'i boyanabilir sayfa tuvallerine çevirir (pdf.js, ESM, tembel yüklenir)
+async function renderPdfPagesForOcr(file) {
+    const pdfjs = await import(PDFJS_URLS.module);
+    pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_URLS.worker;
+
+    const data = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjs.getDocument({ data }).promise;
+
+    const pageCount = Math.min(pdf.numPages, OCR_MAX_PDF_PAGES);
+    const canvases = [];
+    for (let i = 1; i <= pageCount; i++) {
+        const page = await pdf.getPage(i);
+        const base = page.getViewport({ scale: 1 });
+        const scale = Math.max(1.5, Math.min(2.5, OCR_MAX_IMAGE_SIDE / Math.max(base.width, base.height)));
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        canvases.push(canvas);
+    }
+    return canvases;
+}
+
+function setUploadStatus(html, tone) {
+    const status = document.getElementById('uploadStatus');
+    if (!status) return;
+    status.className = 'upload-status ' + (tone || '');
+    status.innerHTML = html;
+}
+
+// Tüm tuvalleri sırayla OCR'dan geçirir ve ilerlemeyi canlı bildirir
+async function runOcrPipeline(canvases) {
+    let text = '';
+    for (let i = 0; i < canvases.length; i++) {
+        const index = i;
+        const part = await runOcr(canvases[i], m => {
+            const label = OCR_STAGE_LABELS[m.status] || 'OCR çalışıyor';
+            const pct = Math.round(((index + Math.min(1, m.progress)) / canvases.length) * 100);
+            setUploadStatus(
+                `${IC('i-clock')} ${label} — ${canvases.length > 1 ? `sayfa ${index + 1}/${canvases.length} · ` : ''}%${pct}`,
+                'busy'
+            );
+        });
+        text += '\n' + part;
+    }
+    return text;
+}
+
+function openManualFallback(warnHtml) {
+    setUploadStatus(warnHtml, 'warn');
+    togglePasteBox(true);
+    toggleManualEntry(true);
+}
+
 async function handleReportFile(inputEl) {
     const file = inputEl.files && inputEl.files[0];
     if (!file) return;
 
-    const status = document.getElementById('uploadStatus');
-    const setStatus = (html, tone) => {
-        if (!status) return;
-        status.className = 'upload-status ' + (tone || '');
-        status.innerHTML = html;
-    };
-
-    setStatus(`${IC('i-clock')} ${file.name} okunuyor…`, 'busy');
+    setUploadStatus(`${IC('i-clock')} ${file.name} okunuyor…`, 'busy');
 
     try {
         if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') {
             const text = await extractPdfText(file);
-            if (!text || text.replace(/\s/g, '').length < 20) {
-                setStatus(`${IC('i-warning')} PDF taranmış görüntü olabilir; metin çıkarılamadı. Tahlil metnini yapıştırabilir ya da elle girebilirsiniz.`, 'warn');
-                togglePasteBox(true);
-                toggleManualEntry(true);
+            if (text && text.replace(/\s/g, '').length >= 20) {
+                // PDF'te metin katmanı var → doğrudan ayrıştır
+                applyParsedReport(text, file.name);
                 return;
             }
-            applyParsedReport(text, file.name);
+
+            // Metin katmanı yok → taranmış PDF: sayfaları boyayıp OCR'dan geçir
+            setUploadStatus(`${IC('i-clock')} PDF taranmış görünüyor — sayfalar tarayıcınızda OCR'dan geçiriliyor…`, 'busy');
+            const pages = await renderPdfPagesForOcr(file);
+            const ocrText = await runOcrPipeline(pages);
+            applyParsedReport(V().cleanOcrText(ocrText), file.name);
         } else if (/^image\//.test(file.type)) {
-            setStatus(`${IC('i-warning')} Fotoğrafı aldık. Görüntüden otomatik okuma şu an yalnızca PDF metinlerinde çalışıyor — tahlil metnini yapıştırın veya değerleri elle girin.`, 'warn');
-            togglePasteBox(true);
-            toggleManualEntry(true);
+            // FOTOĞRAF → tamamen tarayıcı içinde OCR (dosya cihazdan çıkmaz)
+            setUploadStatus(`${IC('i-clock')} Fotoğraf hazırlanıyor — OCR tarayıcınızda çalışır, dosya cihazınızdan çıkmaz…`, 'busy');
+            const canvas = await prepareImageForOcr(file);
+            const ocrText = await runOcrPipeline([canvas]);
+            applyParsedReport(V().cleanOcrText(ocrText), file.name);
         } else {
             const text = await file.text();
             applyParsedReport(text, file.name);
         }
     } catch (error) {
         console.warn(error);
-        setStatus(`${IC('i-warning')} Dosya okunamadı. Tahlil metnini yapıştırabilir ya da elle girebilirsiniz.`, 'warn');
-        togglePasteBox(true);
-        toggleManualEntry(true);
+        openManualFallback(
+            `${IC('i-warning')} Fotoğraf/PDF okunamadı (OCR motoru indirilemedi — çevrimdışı olabilirsiniz). ` +
+            'Tahlil metnini yapıştırabilir ya da değerleri elle girebilirsiniz.'
+        );
     }
 }
 
@@ -584,7 +779,9 @@ function parsePastedText() {
 }
 
 function applyParsedReport(text, sourceName) {
-    const parsed = V().parseLabText(text);
+    // cleanOcrText: OCR çıktısındaki rakam/harf karışmalarını düzeltir;
+    // yapıştırlan metne de zararsızdır (yalnızca rakam bağlamına dokunur)
+    const parsed = V().parseLabText(V().cleanOcrText(text));
     const status = document.getElementById('uploadStatus');
     const found = parsed.matched.length;
 
@@ -764,6 +961,11 @@ function renderBloodReport(result) {
         .filter(item => item.status.key !== 'normal')
         .sort((a, b) => a.status.rank - b.status.rank);
 
+    // KİŞİSELLEŞTİRİLMİŞ MİKRO BESİN DİNAMİK UYARI KARTLARI
+    // D vitamini 30 ng/mL veya çinko 70 µg/dL altı gibi durumlarda rapor,
+    // standart metin yerine kişiye özel "Sistem Analizi Uyarısı" kartları basar.
+    const microWarnings = V().micronutrientWarnings(result.values);
+
     const warningList = Object.keys(result.warnings).map(id => {
         const m = V().MARKER_BY_ID[id];
         return `<li><b>${m.short}:</b> ${result.warnings[id]}</li>`;
@@ -846,6 +1048,30 @@ function renderBloodReport(result) {
                 <p class="lab-card-explain">${T(item.marker.explain)}</p>
             </article>`;
         }).join('')}` : ''}
+
+        ${microWarnings.length ? `
+        <div class="section-title">
+            <h3>Mikro Besin Uyarı Sistemi</h3>
+            <p>${microWarnings.length} eksiklik tespit edildi · kişiye özel dinamik kartlar</p>
+        </div>
+        ${microWarnings.map(w => `
+            <article class="micronutrient-card severity-${w.severity}">
+                <header class="micro-head">
+                    <span class="micro-icon">${IC('i-warning')}</span>
+                    <div class="micro-title">
+                        <h4>${T(w.title)}</h4>
+                        <p>${w.label}: <b>${w.valueText}</b> · laboratuvar aralığı <b>${w.refText}</b></p>
+                    </div>
+                    <span class="badge ${w.severity === 'critical' ? 'badge-critical' : 'badge-low'}">
+                        ${w.severity === 'critical' ? 'Kritik eksiklik' : 'Eksiklik'}
+                    </span>
+                </header>
+                <p class="micro-headline">${T(w.headline)}</p>
+                <div class="micro-foods">
+                    ${w.foods.map(food => `<span class="food-chip">${IC('i-check')} ${T(food)}</span>`).join('')}
+                </div>
+                <p class="micro-dose">${IC('i-pill')} ${T(w.dose)}</p>
+            </article>`).join('')}` : ''}
 
         ${warningList ? `
         <section class="card warn-card">
@@ -988,6 +1214,125 @@ function renderSupplementCard(supplements, title, subtitle) {
         }).join('')}
     </section>`;
 }
+
+// ========================================
+// DAMAT ATOMU BESİN DEĞERİ HESAPLAYICI WIDGET
+// ========================================
+// Hesap motoru (USDA tablosu) validation.js içindeki computeDamatAtomuMix'te;
+// burada yalnızca arayüz üretilir ve kaydırıcılara bağlanır. Aynı widget hem
+// Blog & Tarifler sayfasının altına (damatAtomuMount) hem de "Damat Atomu"
+// tarif detayında (content.js → modalDamatAtomuMount) bağlanır.
+function damatAtomuWidgetHtml(scope) {
+    const items = V().DAMAT_ATOMU_INGREDIENTS;
+    const daily = V().DAMAT_ATOMU_DAILY;
+
+    const tile = (nutrient, cls, label, unit) => `
+        <div class="da-tile ${cls}">
+            <span class="da-tile-label">${T(label)}</span>
+            <strong id="${scope}-${nutrient}">—</strong>
+            <span class="da-tile-unit">${unit}</span>
+            <div class="da-bar" role="presentation"><i id="${scope}-${nutrient}Bar"></i></div>
+            <span class="da-tile-pct" id="${scope}-${nutrient}Pct"></span>
+        </div>`;
+
+    return `
+    <div class="da-widget" data-da-scope="${scope}">
+        <div class="da-tiles">
+            ${tile('kcal', 'kcal', 'Kalori', 'kcal')}
+            ${tile('mg', 'mg', 'Magnezyum', 'mg')}
+            ${tile('zn', 'zn', 'Çinko', 'mg')}
+        </div>
+
+        <div class="da-sliders">
+            ${items.map(item => `
+            <div class="da-slider-row">
+                <div class="da-slider-head">
+                    <span class="da-name">${item.emoji} ${T(item.label)}</span>
+                    <output class="da-gram" id="${scope}-gram-${item.id}" for="${scope}-range-${item.id}">${item.defaultGrams} g</output>
+                </div>
+                <input type="range" id="${scope}-range-${item.id}" min="0" max="${item.max}" step="${item.step}"
+                       value="${item.defaultGrams}" aria-label="${T(item.label)} gramajı"
+                       oninput="updateDamatAtomu('${scope}')">
+            </div>`).join('')}
+        </div>
+
+        <div class="da-log" id="${scope}-log" role="log" aria-live="polite"></div>
+
+        <div class="da-foot">
+            <button type="button" class="link-btn" onclick="resetDamatAtomu('${scope}')">${T('Tarif gramajını sıfırla')}</button>
+            <p class="da-note">${IC('i-info')} ${T('Değerler 100 g ürün başına USDA ortalamasıdır; günlük referans: 2500 kcal · 400 mg magnezyum · 11 mg çinko. Bilgi amaçlıdır, tıbbi tavsiye değildir.')}</p>
+        </div>
+    </div>`;
+}
+
+// Kaydırıcılar her değiştiğinde karışımın magnezyum/çinko/kalori dökümü anlık yenilenir
+function updateDamatAtomu(scope) {
+    if (!V() || !document.getElementById(`${scope}-kcal`)) return;
+
+    const grams = {};
+    V().DAMAT_ATOMU_INGREDIENTS.forEach(item => {
+        const range = document.getElementById(`${scope}-range-${item.id}`);
+        grams[item.id] = range ? Number(range.value) : 0;
+    });
+
+    const mix = V().computeDamatAtomuMix(grams);
+
+    // Kaydırıcı yanındaki gram etiketleri anlık güncellenir
+    V().DAMAT_ATOMU_INGREDIENTS.forEach(item => {
+        const gramEl = document.getElementById(`${scope}-gram-${item.id}`);
+        if (gramEl) gramEl.textContent = `${fmt(grams[item.id])} g`;
+    });
+
+    // Sonuç karoları + günlük referans çubukları
+    const setTile = (nutrient, value, decimals, unit, pct) => {
+        const valueEl = document.getElementById(`${scope}-${nutrient}`);
+        const barEl = document.getElementById(`${scope}-${nutrient}Bar`);
+        const pctEl = document.getElementById(`${scope}-${nutrient}Pct`);
+        if (valueEl) valueEl.textContent = fmt(value, decimals);
+        if (barEl) barEl.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        if (pctEl) pctEl.textContent = `${fmt(pct)}% ${T('günlük referans')} · ${unit}`;
+    };
+    setTile('kcal', mix.totals.kcal, 0, 'kcal', mix.daily.kcalPct);
+    setTile('mg', mix.totals.mg, 1, 'mg', mix.daily.mgPct);
+    setTile('zn', mix.totals.zn, 2, 'mg', mix.daily.znPct);
+
+    // Canlı malzeme logu: her satır o malzemenin katkısını gösterir
+    const log = document.getElementById(`${scope}-log`);
+    if (log) {
+        log.innerHTML = mix.rows
+            .filter(row => row.grams > 0)
+            .map(row => `
+                <div class="da-log-row">
+                    <span class="da-log-name">${row.emoji} ${T(row.label)} · ${fmt(row.grams)} g</span>
+                    <span class="da-log-values">
+                        <b>${fmt(row.kcal)}</b> kcal ·
+                        <b class="mg">${fmt(row.mg, 1)}</b> mg Mg ·
+                        <b class="zn">${fmt(row.zn, 2)}</b> mg Zn
+                    </span>
+                </div>`)
+            .join('') || `<div class="da-log-row muted">${T('Tüm kaydırıcılar sıfır — gramaj ekleyin, karışım canlı hesaplanır.')}</div>`;
+    }
+}
+
+function resetDamatAtomu(scope) {
+    V().DAMAT_ATOMU_INGREDIENTS.forEach(item => {
+        const range = document.getElementById(`${scope}-range-${item.id}`);
+        if (range) range.value = String(item.defaultGrams);
+    });
+    updateDamatAtomu(scope);
+}
+
+// Widget'ı bir kapsayıcıya bağlar (benzersiz scope = kapsayıcı kimliği)
+function mountDamatAtomuWidget(containerId) {
+    const host = document.getElementById(containerId);
+    if (!host || !V()) return;
+    host.innerHTML = damatAtomuWidgetHtml(containerId);
+    updateDamatAtomu(containerId);
+}
+
+// content.js (tarif modalı) buradan çağırır
+window.mountDamatAtomuWidget = mountDamatAtomuWidget;
+document.addEventListener('DOMContentLoaded', () => mountDamatAtomuWidget('damatAtomuMount'));
 
 // ========================================
 // SPONSOR ALANLARI (sol / sağ)

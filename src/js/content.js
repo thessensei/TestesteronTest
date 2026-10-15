@@ -83,8 +83,11 @@ function renderContent(){
 function showContent(id){
     const x=getAllContent().find(i=>i.id===id); if(!x)return;
     const ingredients=x.type==='recipe'&&x.ingredients?.length?`<h3 style="margin-top:20px">${escapeHTML(tLabel('Malzemeler'))}</h3><ul class="ingredient-list">${x.ingredients.map(i=>`<li>${IC('i-check')} ${escapeHTML(i)}</li>`).join('')}</ul><h3 style="margin:20px 0 10px">${escapeHTML(tLabel('Hazırlanışı'))}</h3>`:'';
-    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div><div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
+    // DAMAT ATOMU: tarif başlığı/içeriği eşleşirse altına besin değeri widget'ı bağlanır
+    const isDamatAtomu=x.type==='recipe'&&/damat\s*atomu/i.test([x.title,x.category,x.summary,x.body,(x.ingredients||[]).join(' ')].join(' '));
+    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div>${isDamatAtomu?'<div id="modalDamatAtomuMount" style="margin-top:18px"></div>':''}<div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
     document.getElementById('contentModal').classList.add('show'); document.body.style.overflow='hidden';
+    if(isDamatAtomu&&typeof window.mountDamatAtomuWidget==='function')window.mountDamatAtomuWidget('modalDamatAtomuMount');
 }
 function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
 function openAdmin(){ window.location.href='/admin/'; }
@@ -772,6 +775,65 @@ const remainingStaticTranslations = {
  }
 };
 Object.keys(remainingStaticTranslations).forEach(lang=>Object.assign(staticUiTranslations[lang],remainingStaticTranslations[lang]));
+
+/*
+ * Yeni kurumsal özellikler: OCR yükleme, mikro besin uyarı kartları,
+ * Damat Atomu hesaplayıcı ve KVKK kalkanı metinleri.
+ */
+const featureUpgradeTranslations = {
+ en: {
+  'Damat Atomu Besin Değeri Hesaplayıcı':'Damat Atomu Nutrition Calculator',
+  'Malzemelerin gramajını kaydırın — magnezyum, çinko ve kalori anında hesaplanır':'Drag the ingredient sliders — magnesium, zinc and calories are calculated instantly',
+  'Kalori':'Calories',
+  'günlük referans':'of daily reference',
+  'Tarif gramajını sıfırla':'Reset recipe amounts',
+  'Değerler 100 g ürün başına USDA ortalamasıdır; günlük referans: 2500 kcal · 400 mg magnezyum · 11 mg çinko. Bilgi amaçlıdır, tıbbi tavsiye değildir.':'Values are USDA averages per 100 g; daily reference: 2500 kcal · 400 mg magnesium · 11 mg zinc. For information only, not medical advice.',
+  'Bal':'Honey','Muz':'Banana','Ceviz':'Walnuts','Badem':'Almonds','Hurma (medjool)':'Dates (medjool)',
+  'Tüm kaydırıcılar sıfır — gramaj ekleyin, karışım canlı hesaplanır.':'All sliders are at zero — add some grams and the mix is calculated live.',
+  'Mikro Besin Uyarı Sistemi':'Micronutrient Warning System',
+  'Sistem Analizi Uyarısı':'System Analysis Warning',
+  'Kritik eksiklik':'Critical deficiency','Eksiklik':'Deficiency',
+  'KVKK VERİ GÜVENLİĞİ KALKANI AKTİF':'DATA SECURITY SHIELD ACTIVE',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir.':'Your data is never sent to or stored on a server; it is processed instantly in your browser (local device) with 100% security.',
+  'KVKK kalkanı aktif — verileriniz %100 cihazınızda işleniyor.':'KVKK shield active — your data is processed 100% on your device.',
+  'PDF’teki ve fotoğraftaki değerleri tarayıcınızda OCR ile okuyup forma yazıyoruz. Dosya sunucuya gönderilmez; motor ilk kullanımda cihazınıza indirilir.':'We read the values from your PDF or photo with in-browser OCR and fill the form. The file is never sent to a server; the engine is downloaded to your device on first use.'
+ },
+ de: {
+  'Damat Atomu Besin Değeri Hesaplayıcı':'Damat-Atomu Nährwertrechner',
+  'Malzemelerin gramajını kaydırın — magnezyum, çinko ve kalori anında hesaplanır':'Schieben Sie die Mengenregler — Magnesium, Zink und Kalorien werden sofort berechnet',
+  'Kalori':'Kalorien',
+  'günlük referans':'des Tagesbedarfs',
+  'Tarif gramajını sıfırla':'Mengen zurücksetzen',
+  'Değerler 100 g ürün başına USDA ortalamasıdır; günlük referans: 2500 kcal · 400 mg magnezyum · 11 mg çinko. Bilgi amaçlıdır, tıbbi tavsiye değildir.':'Werte sind USDA-Durchschnitte pro 100 g; Tagesreferenz: 2500 kcal · 400 mg Magnesium · 11 mg Zink. Nur zur Information, kein medizinischer Rat.',
+  'Bal':'Honig','Muz':'Banane','Ceviz':'Walnüsse','Badem':'Mandeln','Hurma (medjool)':'Datteln (Medjool)',
+  'Tüm kaydırıcılar sıfır — gramaj ekleyin, karışım canlı hesaplanır.':'Alle Regler stehen auf null — Gramm hinzufügen, dann wird die Mischung live berechnet.',
+  'Mikro Besin Uyarı Sistemi':'Mikronährstoff-Warnsystem',
+  'Sistem Analizi Uyarısı':'Systemanalyse-Warnung',
+  'Kritik eksiklik':'Kritischer Mangel','Eksiklik':'Mangel',
+  'KVKK VERİ GÜVENLİĞİ KALKANI AKTİF':'DATENSCHUTZ-SCHILD AKTIV',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir.':'Ihre Daten werden niemals an einen Server gesendet oder dort gespeichert; sie werden zu 100 % sicher und sofort in Ihrem Browser (lokales Gerät) verarbeitet.',
+  'KVKK kalkanı aktif — verileriniz %100 cihazınızda işleniyor.':'KVKK-Schild aktiv — Ihre Daten werden zu 100 % auf Ihrem Gerät verarbeitet.',
+  'PDF’teki ve fotoğraftaki değerleri tarayıcınızda OCR ile okuyup forma yazıyoruz. Dosya sunucuya gönderilmez; motor ilk kullanımda cihazınıza indirilir.':'Wir lesen die Werte aus PDF oder Foto mit In-Browser-OCR aus und tragen sie ins Formular ein. Die Datei wird nie an einen Server gesendet; die Engine wird bei der ersten Nutzung auf Ihr Gerät geladen.'
+ },
+ ja: {
+  'Damat Atomu Besin Değeri Hesaplayıcı':'ダマット・アトム栄養価計算機',
+  'Malzemelerin gramajını kaydırın — magnezyum, çinko ve kalori anında hesaplanır':'材料のグラムをスライドすると、マグネシウム・亜鉛・カロリーが即時に計算されます',
+  'Kalori':'カロリー',
+  'günlük referans':'（1日参考値）',
+  'Tarif gramajını sıfırla':'分量をリセット',
+  'Değerler 100 g ürün başına USDA ortalamasıdır; günlük referans: 2500 kcal · 400 mg magnezyum · 11 mg çinko. Bilgi amaçlıdır, tıbbi tavsiye değildir.':'数値は100 gあたりのUSDA平均値です。1日参考値：2500 kcal・マグネシウム400 mg・亜鉛11 mg。情報提供のみを目的とし、医療アドバイスではありません。',
+  'Bal':'はちみつ','Muz':'バナナ','Ceviz':'クルミ','Badem':'アーモンド','Hurma (medjool)':'デーツ（メジョール）',
+  'Tüm kaydırıcılar sıfır — gramaj ekleyin, karışım canlı hesaplanır.':'スライダーがすべてゼロです。分量を足すと配合がリアルタイムで計算されます。',
+  'Mikro Besin Uyarı Sistemi':'微量栄養素アラートシステム',
+  'Sistem Analizi Uyarısı':'システム分析アラート',
+  'Kritik eksiklik':'深刻な不足','Eksiklik':'不足',
+  'KVKK VERİ GÜVENLİĞİ KALKANI AKTİF':'データ保護シールド作動中',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir.':'入力データはサーバーに送信・保存されません。100%安全にブラウザ（端末内）で即時処理されます。',
+  'KVKK kalkanı aktif — verileriniz %100 cihazınızda işleniyor.':'KVKKシールドが有効 — データは100%端末内で処理されます。',
+  'PDF’teki ve fotoğraftaki değerleri tarayıcınızda OCR ile okuyup forma yazıyoruz. Dosya sunucuya gönderilmez; motor ilk kullanımda cihazınıza indirilir.':'PDFや写真の数値をブラウザ内OCRで読み取り、フォームに自動入力します。ファイルはサーバーに送信されず、エンジンは初回使用時に端末へダウンロードされます。'
+ }
+};
+Object.keys(featureUpgradeTranslations).forEach(lang=>Object.assign(i18n[lang],featureUpgradeTranslations[lang]));
 
 const completeRangeTranslations = {
  en: { accepted: 'Accepted input range:', lab: 'Normal laboratory range:' },
