@@ -80,10 +80,16 @@ function renderContent(){
     const items=getAllContent().filter(x=>(activeContentFilter==='all'||x.type===activeContentFilter)&&(!query||`${x.title} ${x.category} ${x.summary}`.toLocaleLowerCase('tr').includes(query)));
     list.innerHTML=items.length?items.map(x=>`<article class="card content-card" role="button" tabindex="0" aria-label="${escapeHTML(x.title)} içeriğini aç" onclick="showContent('${escapeHTML(x.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showContent('${escapeHTML(x.id)}')}"><div class="content-cover ${x.type}"${x.cover_url&&(/^https:\/\//i.test(x.cover_url)||/^\/api\/media\/[\w-]+$/i.test(x.cover_url))?` style="background-image:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,.05)),url('${escapeHTML(x.cover_url)}')"`:''}><span class="badge ${x.type==='recipe'?'badge-low':'badge-high'}">${escapeHTML(tLabel(x.type==='recipe'?'Yemek Tarifi':'Blog'))}</span><span class="content-emoji">${IC(x.type==='recipe'?'i-utensils':'i-news')}</span></div><div class="content-body"><div class="eyebrow">${escapeHTML(x.category)}</div><h3 style="font-size:16px;margin-top:5px">${escapeHTML(x.title)}</h3><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${IC('i-calendar')}${escapeHTML(x.date)}</span></div><p class="content-summary">${escapeHTML(x.summary)}</p></div></article>`).join(''):'<div class="empty-state"><svg class="ic empty-ic" aria-hidden="true"><use href="#i-search"></use></svg><p style="margin-top:10px">Aramanızla eşleşen içerik bulunamadı.</p></div>';
 }
+function jumpToDamatAtomu(){
+    closeContentModal();
+    const widget=document.getElementById('damatAtomuWidget');
+    if(widget&&typeof widget.scrollIntoView==='function') widget.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function showContent(id){
     const x=getAllContent().find(i=>i.id===id); if(!x)return;
     const ingredients=x.type==='recipe'&&x.ingredients?.length?`<h3 style="margin-top:20px">${escapeHTML(tLabel('Malzemeler'))}</h3><ul class="ingredient-list">${x.ingredients.map(i=>`<li>${IC('i-check')} ${escapeHTML(i)}</li>`).join('')}</ul><h3 style="margin:20px 0 10px">${escapeHTML(tLabel('Hazırlanışı'))}</h3>`:'';
-    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div><div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
+    const atomCta=(x.type==='recipe'||/atom|macun|karışım/i.test(`${x.title} ${x.category}`))?`<button type="button" class="btn-secondary" style="margin-top:16px" onclick="jumpToDamatAtomu()">${IC('i-bolt')} &nbsp;${escapeHTML(tLabel('Damat Atomu Besin Değeri Hesaplayıcı'))}</button>`:'';
+    document.getElementById('modalSheet').innerHTML=`<button class="modal-close" aria-label="İçeriği kapat" onclick="closeContentModal()"><svg class="ic" aria-hidden="true"><use href="#i-close"></use></svg></button><div class="modal-emoji" style="margin-bottom:12px">${IC(x.type==='recipe'?'i-utensils':'i-news')}</div><div class="eyebrow">${escapeHTML(x.category)} · ${escapeHTML(tLabel(x.type==='recipe'?'Tarif':'Blog'))}</div><h2 id="modalTitle" style="font-size:23px;line-height:1.25;margin:7px 45px 8px 0">${escapeHTML(x.title)}</h2><div class="content-meta"><span>${IC('i-clock')}${escapeHTML(x.time)}</span><span>${escapeHTML(x.date)}</span></div><p class="content-summary" style="font-size:12px;margin:14px 0">${escapeHTML(x.summary)}</p>${ingredients}<div class="article-content">${escapeHTML(x.body)}</div>${atomCta}<div style="font-size:10px;color:var(--text-secondary);border-top:1px solid var(--border);margin-top:22px;padding-top:14px">Sağlık içerikleri bilgilendirme amaçlıdır; tıbbi tavsiye yerine geçmez.</div>`;
     document.getElementById('contentModal').classList.add('show'); document.body.style.overflow='hidden';
 }
 function closeContentModal(event){ if(event&&event.target!==document.getElementById('contentModal'))return; document.getElementById('contentModal').classList.remove('show'); document.body.style.overflow=''; }
@@ -756,19 +762,64 @@ const remainingStaticTranslations = {
   'SHBG':'SHBG', 'LH':'LH', 'FSH':'FSH', 'Estradiol (E2)':'Estradiol (E2)', 'Ferritin':'Ferritin', 'B12':'B12', 'Magnezyum':'Magnesium',
   'Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'A personalized, evidence-informed supplement and nutrition guide for natural testosterone optimization.',
   'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan, bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'Reliable information about men’s health is increasingly difficult to access. TestoTavan offers personalized natural supplement and nutrition guidance based on scientific research.',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'None of the data you enter is stored or sent to a server. All calculations run instantly in your browser. Your data remains with you.'
+  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'None of the data you enter is stored or sent to a server. All calculations run instantly in your browser. Your data remains with you.',
+  'SİBER VERİ KALKANI AKTİF · LOCAL DEVICE':'CYBER DATA SHIELD ACTIVE · LOCAL DEVICE',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir':'Your data is never sent to a server or stored; it is processed 100% securely and instantly in your browser (Local Device)',
+  'İnteraktif Mikro Besin Simülatörü':'Interactive Micronutrient Simulator',
+  'Damat Atomu Besin Değeri Hesaplayıcı':'Damat Atomu Nutrition Calculator',
+  'Malzeme gramajını kaydırgaçla değiştirin; magnezyum, çinko ve kalori anlık hesaplansın':'Adjust ingredient weights with the sliders to calculate magnesium, zinc and calories in real time',
+  'Standart Damat Atomu':'Standard Damat Atomu',
+  'Maksimum Çinko & Mg':'Max Zinc & Mg',
+  'Hafif Antrenman Öncesi':'Light Pre-Workout',
+  'Sıfırla':'Reset',
+  'Muz':'Banana',
+  'Doğal Bal (Çiçek / Çam)':'Raw Honey (Flower / Pine)',
+  'Karışık Kuruyemiş (Ceviz · Badem · Fındık)':'Mixed Nuts (Walnut · Almond · Hazelnut)',
+  'Kabak Çekirdeği İçi':'Pumpkin Seeds',
+  'Tahin & Ham Kakao':'Tahini & Raw Cacao',
+  'Toplam Enerji':'Total Energy'
  },
  de: {
   'SHBG':'SHBG', 'LH':'LH', 'FSH':'FSH', 'Estradiol (E2)':'Estradiol (E2)', 'Ferritin':'Ferritin', 'B12':'B12', 'Magnezyum':'Magnesium',
   'Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'Ein personalisierter, wissenschaftlich fundierter Leitfaden zu Nahrungsergänzung und Ernährung für eine natürliche Testosteronoptimierung.',
   'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan, bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'Zuverlässliche Informationen zur Männergesundheit sind immer schwerer zugänglich. TestoTavan bietet personalisierte natürliche Ergänzungs- und Ernährungsempfehlungen auf Grundlage wissenschaftlicher Forschung.',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'Keine Ihrer Eingaben wird gespeichert oder an einen Server gesendet. Alle Berechnungen erfolgen direkt in Ihrem Browser. Ihre Daten bleiben bei Ihnen.'
+  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'Keine Ihrer Eingaben wird gespeichert oder an einen Server gesendet. Alle Berechnungen erfolgen direkt in Ihrem Browser. Ihre Daten bleiben bei Ihnen.',
+  'SİBER VERİ KALKANI AKTİF · LOCAL DEVICE':'CYBER-DATENSCHUTZSCHILD AKTIV · LOCAL DEVICE',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir':'Ihre Daten werden niemals an einen Server gesendet oder gespeichert; sie werden zu 100 % sicher und sofort in Ihrem Browser (Local Device) verarbeitet',
+  'İnteraktif Mikro Besin Simülatörü':'Interaktiver Mikronährstoff-Simulator',
+  'Damat Atomu Besin Değeri Hesaplayıcı':'Damat-Atomu-Nährwertrechner',
+  'Malzeme gramajını kaydırgaçla değiştirin; magnezyum, çinko ve kalori anlık hesaplansın':'Passen Sie die Mengen per Schieberegler an; Magnesium, Zink und Kalorien werden sofort berechnet',
+  'Standart Damat Atomu':'Standard Damat Atomu',
+  'Maksimum Çinko & Mg':'Max. Zink & Mg',
+  'Hafif Antrenman Öncesi':'Leichtes Pre-Workout',
+  'Sıfırla':'Zurücksetzen',
+  'Muz':'Banane',
+  'Doğal Bal (Çiçek / Çam)':'Naturhonig (Blüte / Kiefer)',
+  'Karışık Kuruyemiş (Ceviz · Badem · Fındık)':'Nussmischung (Walnuss · Mandel · Haselnuss)',
+  'Kabak Çekirdeği İçi':'Kürbiskerne',
+  'Tahin & Ham Kakao':'Tahin & Rohkakao',
+  'Toplam Enerji':'Gesamtenergie'
  },
  ja: {
   'SHBG':'SHBG', 'LH':'LH', 'FSH':'FSH', 'Estradiol (E2)':'エストラジオール（E2）', 'Ferritin':'フェリチン', 'B12':'ビタミンB12', 'Magnezyum':'マグネシウム',
   'Doğal testosteron optimizasyonu için bilimsel veriye dayalı, kişiselleştirilmiş takviye ve beslenme rehberi.':'自然なテストステロン最適化のための、科学的根拠に基づく個別のサプリメント・栄養ガイドです。',
   'Erkek sağlığı alanında doğru bilgiye ulaşmak her geçen gün zorlaşıyor. TestoTavan, bilimsel araştırmalara dayalı olarak kişiselleştirilmiş doğal takviye ve beslenme önerileri sunar.':'男性の健康に関する信頼できる情報はますます得にくくなっています。TestoTavanは、科学的研究に基づく個別の自然なサプリメント・栄養情報を提供します。',
-  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'入力したデータは保存もサーバー送信もされません。すべての計算はブラウザ内で即時に行われ、データはご本人の端末に残ります。'
+  'Girdiğiniz hiçbir veri kaydedilmez veya sunucuya gönderilmez. Tüm hesaplamalar tarayıcınızda anlık olarak yapılır. Verileriniz sadece sizde kalır.':'入力したデータは保存もサーバー送信もされません。すべての計算はブラウザ内で即時に行われ、データはご本人の端末に残ります。',
+  'SİBER VERİ KALKANI AKTİF · LOCAL DEVICE':'サイバーデータ保護シールド有効 · LOCAL DEVICE',
+  'Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir':'データはサーバーに送信・保存されず、ブラウザ内（Local Device）で100%安全に即時処理されます',
+  'İnteraktif Mikro Besin Simülatörü':'インタラクティブ微量栄養素シミュレーター',
+  'Damat Atomu Besin Değeri Hesaplayıcı':'ダマト・アトム栄養価計算機',
+  'Malzeme gramajını kaydırgaçla değiştirin; magnezyum, çinko ve kalori anlık hesaplansın':'スライダーで材料のグラム数を調整すると、マグネシウム・亜鉛・カロリーが即座に計算されます',
+  'Standart Damat Atomu':'標準レシピ',
+  'Maksimum Çinko & Mg':'最大 亜鉛・Mg',
+  'Hafif Antrenman Öncesi':'プレワークアウト軽め',
+  'Sıfırla':'リセット',
+  'Muz':'バナナ',
+  'Doğal Bal (Çiçek / Çam)':'天然はちみつ',
+  'Karışık Kuruyemiş (Ceviz · Badem · Fındık)':'ミックスナッツ（くるみ・アーモンド・ヘーゼルナッツ）',
+  'Kabak Çekirdeği İçi':'かぼちゃの種',
+  'Tahin & Ham Kakao':'タヒニ＆ローカカオ',
+  'Toplam Enerji':'総エネルギー'
  }
 };
 Object.keys(remainingStaticTranslations).forEach(lang=>Object.assign(staticUiTranslations[lang],remainingStaticTranslations[lang]));

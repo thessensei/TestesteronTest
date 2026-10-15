@@ -527,16 +527,145 @@ function togglePasteBox(force) {
 }
 
 function setConsent(checkbox) {
-    state.consent = !!checkbox.checked;
+    state.consent = !!(checkbox && checkbox.checked);
     const note = document.getElementById('consentError');
     if (note && state.consent) note.classList.remove('visible');
+
+    // KVKK / Veri Güvenliği Kalkanı Parlatması
+    const card = document.getElementById('kvkkCard');
+    const box = document.getElementById('consentBoxWrap');
+    const banner = document.getElementById('kvkkShieldBanner');
+    const icon = document.getElementById('kvkkCardIcon');
+
+    if (card) card.classList.toggle('shield-active', state.consent);
+    if (box) box.classList.toggle('shield-active', state.consent);
+    if (banner) {
+        banner.classList.toggle('shield-active', state.consent);
+        banner.setAttribute('aria-hidden', String(!state.consent));
+    }
+    if (icon) {
+        icon.className = state.consent ? 'card-icon icon-green shield-icon-glow' : 'card-icon icon-purple';
+        icon.innerHTML = state.consent ? IC('i-shield') : IC('i-lock');
+    }
 }
 
 // ========================================
-// TAHLİL YÜKLEME (PDF metni / yapıştırılan metin)
+// TAHLİL YÜKLEME & HAFİF OCR BORU HATTI (PDF + Fotoğraf Tesseract.js)
 // ========================================
+const TESSERACT_CDN_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let tesseractPromise = null;
+
+function loadTesseractEngine() {
+    if (typeof window !== 'undefined' && window.TestoOcrEngine) {
+        return Promise.resolve(window.TestoOcrEngine);
+    }
+    if (typeof window !== 'undefined' && window.Tesseract) {
+        return Promise.resolve(window.Tesseract);
+    }
+    if (tesseractPromise) return tesseractPromise;
+
+    tesseractPromise = new Promise((resolve, reject) => {
+        if (typeof document === 'undefined' || !document.head) {
+            reject(new Error('OCR motoru için tarayıcı ortamı bulunamadı.'));
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = TESSERACT_CDN_URL;
+        script.async = true;
+        script.onload = () => {
+            if (window.Tesseract) resolve(window.Tesseract);
+            else reject(new Error('Tesseract.js yüklendi ancak başlatılamadı.'));
+        };
+        script.onerror = () => {
+            tesseractPromise = null;
+            reject(new Error('OCR kütüphanesi yüklenemedi.'));
+        };
+        document.head.appendChild(script);
+    });
+
+    return tesseractPromise;
+}
+
+// Görüntüyü OCR öncesi gri tonlama + kontrast germe ile keskinleştirir (tarayıcı içinde)
+async function preprocessImageForOcr(file) {
+    if (typeof document === 'undefined' || typeof Image === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) {
+        return file;
+    }
+    return new Promise(resolve => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const maxDim = 2200;
+                let w = img.naturalWidth || img.width || 1000;
+                let h = img.naturalHeight || img.height || 1000;
+                if (w > maxDim || h > maxDim) {
+                    const scale = maxDim / Math.max(w, h);
+                    w = Math.round(w * scale);
+                    h = Math.round(h * scale);
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext && canvas.getContext('2d');
+                if (!ctx) {
+                    URL.revokeObjectURL(url);
+                    resolve(file);
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, w, h);
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const d = imgData.data;
+                for (let i = 0; i < d.length; i += 4) {
+                    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                    const stretched = lum < 165 ? Math.max(0, (lum - 35) * 0.75) : Math.min(255, 195 + (lum - 165) * 0.65);
+                    d[i] = d[i + 1] = d[i + 2] = stretched;
+                }
+                ctx.putImageData(imgData, 0, 0);
+                URL.revokeObjectURL(url);
+                resolve(canvas);
+            } catch (_) {
+                URL.revokeObjectURL(url);
+                resolve(file);
+            }
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(file);
+        };
+        img.src = url;
+    });
+}
+
+async function runOcrOnFile(file, onProgress) {
+    if (file && typeof file.__ocrText === 'string') {
+        if (onProgress) onProgress(100);
+        return file.__ocrText;
+    }
+    if (typeof window !== 'undefined' && window.TestoOcrEngine && typeof window.TestoOcrEngine.recognize === 'function') {
+        const res = await window.TestoOcrEngine.recognize(file, onProgress);
+        return typeof res === 'string' ? res : (res?.data?.text || res?.text || '');
+    }
+
+    const engine = await loadTesseractEngine();
+    const target = /^image\//i.test(file?.type || '') ? await preprocessImageForOcr(file) : file;
+    const logger = info => {
+        if (info && typeof info.progress === 'number' && onProgress) {
+            onProgress(Math.round(info.progress * 100));
+        }
+    };
+
+    try {
+        const result = await engine.recognize(target, 'tur+eng', { logger });
+        return result?.data?.text || result?.text || '';
+    } catch (_) {
+        const fallback = await engine.recognize(target, 'eng', { logger });
+        return fallback?.data?.text || fallback?.text || '';
+    }
+}
+
 async function handleReportFile(inputEl) {
-    const file = inputEl.files && inputEl.files[0];
+    const file = inputEl && inputEl.files && inputEl.files[0];
     if (!file) return;
 
     const status = document.getElementById('uploadStatus');
@@ -549,19 +678,45 @@ async function handleReportFile(inputEl) {
     setStatus(`${IC('i-clock')} ${file.name} okunuyor…`, 'busy');
 
     try {
-        if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') {
-            const text = await extractPdfText(file);
-            if (!text || text.replace(/\s/g, '').length < 20) {
+        const isPdf = /\.pdf$/i.test(file.name || '') || file.type === 'application/pdf';
+        const isImage = /^image\//i.test(file.type || '') || /\.(png|jpe?g|webp|bmp|gif|tiff?)$/i.test(file.name || '');
+
+        if (isPdf) {
+            let text = await extractPdfText(file);
+            const quickCheck = text ? V().parseLabText(text) : { matched: [] };
+
+            // Dijital metin katmanı yoksa veya taranmış görüntü PDF'iyse OCR motorunu devreye sok
+            if (!text || text.replace(/\s/g, '').length < 20 || !quickCheck.matched.length) {
+                try {
+                    setStatus(`${IC('i-clock')} ${file.name} üzerinde OCR taraması başlatılıyor…`, 'busy');
+                    const ocrText = await runOcrOnFile(file, pct => {
+                        setStatus(`${IC('i-clock')} OCR tahlil taraması: <b>%${pct}</b> (${file.name})`, 'busy');
+                    });
+                    if (ocrText && ocrText.replace(/\s/g, '').length >= 10) {
+                        text = (text ? text + '\n' : '') + ocrText;
+                    }
+                } catch (_) { /* OCR erişilemezse mevcut metinle devam et */ }
+            }
+
+            if (!text || text.replace(/\s/g, '').length < 10) {
                 setStatus(`${IC('i-warning')} PDF taranmış görüntü olabilir; metin çıkarılamadı. Tahlil metnini yapıştırabilir ya da elle girebilirsiniz.`, 'warn');
                 togglePasteBox(true);
                 toggleManualEntry(true);
                 return;
             }
             applyParsedReport(text, file.name);
-        } else if (/^image\//.test(file.type)) {
-            setStatus(`${IC('i-warning')} Fotoğrafı aldık. Görüntüden otomatik okuma şu an yalnızca PDF metinlerinde çalışıyor — tahlil metnini yapıştırın veya değerleri elle girin.`, 'warn');
-            togglePasteBox(true);
-            toggleManualEntry(true);
+        } else if (isImage) {
+            setStatus(`${IC('i-clock')} OCR motoru fotoğrafı tarıyor: <b>%0</b> (${file.name})`, 'busy');
+            const ocrText = await runOcrOnFile(file, pct => {
+                setStatus(`${IC('i-clock')} OCR motoru fotoğrafı tarıyor: <b>%${pct}</b> (${file.name})`, 'busy');
+            });
+            if (!ocrText || ocrText.replace(/\s/g, '').length < 8) {
+                setStatus(`${IC('i-warning')} Fotoğraftan metin okunamadı. Tahlil metnini yapıştırabilir veya değerleri elle girebilirsiniz.`, 'warn');
+                togglePasteBox(true);
+                toggleManualEntry(true);
+                return;
+            }
+            applyParsedReport(ocrText, file.name);
         } else {
             const text = await file.text();
             applyParsedReport(text, file.name);
@@ -776,6 +931,7 @@ function renderBloodReport(result) {
         </div>` : '';
 
     const supplements = buildSupplements(result.values);
+    const microAlerts = V().evaluateMicronutrientAlerts ? V().evaluateMicronutrientAlerts(result.values) : [];
 
     panel.innerHTML = `
         <section class="score-card">
@@ -803,6 +959,8 @@ function renderBloodReport(result) {
             ${estimateCompare}
         </section>
 
+        ${renderMicronutrientAlertCards(microAlerts)}
+
         <section class="card">
             <div class="card-header">
                 <div class="card-icon icon-blue">${IC('i-doc')}</div>
@@ -829,6 +987,10 @@ function renderBloodReport(result) {
         ${flagged.map(item => {
             const unit = currentUnit(item.marker.id);
             const decimals = V().getUnit(item.marker, unit).decimals;
+            const isLowVitDOrZinc = (item.marker.key === 'vitD' && item.value < 30) || (item.marker.key === 'zinc' && item.value < 70);
+            const dynamicExplain = isLowVitDOrZinc
+                ? `<b>${V().SYSTEM_MICRONUTRIENT_WARNING}.</b> ${T(item.marker.explain)}`
+                : T(item.marker.explain);
             return `
             <article class="lab-card" style="--status:${item.status.color}">
                 <header class="lab-card-head">
@@ -843,7 +1005,7 @@ function renderBloodReport(result) {
                     <span class="unit">${unit}</span>
                 </div>
                 <p class="lab-card-ref">Laboratuvar normal aralığı: <b>${V().describeRange(item.marker, unit, 'ref')}</b></p>
-                <p class="lab-card-explain">${T(item.marker.explain)}</p>
+                <p class="lab-card-explain">${dynamicExplain}</p>
             </article>`;
         }).join('')}` : ''}
 
@@ -911,6 +1073,31 @@ function toggleScoreTooltip(button) {
     button.setAttribute('aria-expanded', String(open));
 }
 
+function renderMicronutrientAlertCards(alerts) {
+    if (!Array.isArray(alerts) || !alerts.length) return '';
+    return `
+        <div class="section-title" id="micronutrientAlertSection">
+            <h3>Kişiselleştirilmiş Mikro Besin Uyarıları</h3>
+            <p>${alerts.length} kritik kofaktör analizi · dinamik beslenme protokolü</p>
+        </div>
+        ${alerts.map(alert => `
+        <article class="card micro-alert-card" data-alert-id="${alert.id}" style="--status:${alert.status.color}">
+            <div class="card-header">
+                <div class="card-icon ${alert.status.key === 'critical' ? 'icon-red' : 'icon-gold'}">${IC('i-warning')}</div>
+                <div style="flex:1">
+                    <div class="card-title">${alert.title}</div>
+                    <div class="card-subtitle">${alert.measuredText}</div>
+                </div>
+                <span class="badge ${alert.status.badgeClass}">${T(alert.status.label)}</span>
+            </div>
+            <p class="micro-alert-msg">${alert.message}</p>
+            <ul class="plain-list micro-alert-list">
+                ${(alert.recommendations || []).map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+        </article>`).join('')}
+    `;
+}
+
 // ========================================
 // TAKVİYE PLANI
 // ========================================
@@ -925,10 +1112,13 @@ const PRIORITY = {
 function buildSupplements(values) {
     const list = [];
     const v = values || {};
+    const sysWarn = V() && V().SYSTEM_MICRONUTRIENT_WARNING
+        ? V().SYSTEM_MICRONUTRIENT_WARNING
+        : 'Sistem Analizi Uyarısı: Çinko/D Vitamini eksikliğiniz LH sinyalinizi ve testosteron sentezinizi doğrudan zayıflatıyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin';
 
     if (v.vitD !== undefined) {
-        if (v.vitD < 20) list.push(sup('D3 Vitamini + K2', 'D vitamininiz ' + fmt(v.vitD, 1) + ' ng/mL — ciddi eksiklik (normal 30–100).', '5000 IU D3 + 200 mcg K2 / gün', 'critical'));
-        else if (v.vitD < 30) list.push(sup('D3 Vitamini + K2', 'D vitamininiz ' + fmt(v.vitD, 1) + ' ng/mL — yetersiz (normal 30–100).', '3000 IU D3 + 100 mcg K2 / gün', 'high'));
+        if (v.vitD < 20) list.push(sup('D3 Vitamini + K2', 'D vitamininiz ' + fmt(v.vitD, 1) + ' ng/mL — ciddi eksiklik (normal 30–100). ' + sysWarn + '.', '5000 IU D3 + 200 mcg K2 / gün', 'critical'));
+        else if (v.vitD < 30) list.push(sup('D3 Vitamini + K2', 'D vitamininiz ' + fmt(v.vitD, 1) + ' ng/mL — yetersiz (normal 30–100). ' + sysWarn + '.', '3000 IU D3 + 100 mcg K2 / gün', 'high'));
     } else {
         list.push(sup('D3 Vitamini + K2', 'Değer girilmedi; Türkiye’de erişkin erkeklerin büyük kısmında yetersizlik bildiriliyor.', '2000 IU D3 + 100 mcg K2 / gün', 'high'));
     }
@@ -940,7 +1130,7 @@ function buildSupplements(values) {
         list.push(sup('B12 (Metilkobalamin)', 'B12 ' + fmt(v.b12) + ' pg/mL — düşük.', v.b12 < 200 ? '2000 mcg / gün' : '1000 mcg / gün', v.b12 < 200 ? 'critical' : 'high'));
     }
     if (v.zinc !== undefined && v.zinc < 70) {
-        list.push(sup('Çinko Pikolinat', 'Çinko ' + fmt(v.zinc) + ' µg/dL — düşük.', v.zinc < 60 ? '30 mg / gün' : '15 mg / gün', v.zinc < 60 ? 'critical' : 'high'));
+        list.push(sup('Çinko Pikolinat', 'Çinko ' + fmt(v.zinc) + ' µg/dL — düşük. ' + sysWarn + '.', v.zinc < 60 ? '30 mg / gün' : '15 mg / gün', v.zinc < 60 ? 'critical' : 'high'));
     } else if (v.zinc === undefined) {
         list.push(sup('Çinko Pikolinat', 'Testosteron sentezinde doğrudan rol alır.', '15 mg / gün (akşam yemeğiyle)', 'support'));
     }
@@ -1064,6 +1254,70 @@ function renderSponsors() {
 document.addEventListener('DOMContentLoaded', renderSponsors);
 
 // ========================================
+// DAMAT ATOMU BESİN DEĞERİ HESAPLAYICI WIDGET
+// ========================================
+function updateDamatAtomuWidget() {
+    if (!V() || typeof V().computeDamatAtomuNutrition !== 'function') return null;
+
+    const grams = {};
+    V().DAMAT_ATOMU_INGREDIENTS.forEach(ing => {
+        const slider = document.getElementById(ing.id);
+        const val = slider ? Number(slider.value) : ing.defaultGrams;
+        grams[ing.key] = isFinite(val) ? val : ing.defaultGrams;
+
+        const badge = document.getElementById('atomVal-' + ing.key);
+        if (badge) badge.textContent = `${grams[ing.key]} g`;
+    });
+
+    const stats = V().computeDamatAtomuNutrition(grams);
+
+    const setElText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+
+    setElText('atomTotalKcal', `${fmt(stats.kcal, 0)} kcal`);
+    setElText('atomTotalMg', `${fmt(stats.mg, 1)} mg`);
+    setElText('atomTotalZinc', `${fmt(stats.zinc, 2)} mg`);
+    setElText('atomTotalProtein', `${fmt(stats.protein, 1)} g`);
+    setElText('atomTotalGrams', `${fmt(stats.totalGrams, 0)} g`);
+    setElText('atomMgPct', `%${stats.mgRdaPct} Günlük Hedef`);
+    setElText('atomZincPct', `%${stats.zincRdaPct} Günlük Hedef`);
+
+    const mgBar = document.getElementById('atomMgBar');
+    if (mgBar) mgBar.style.width = `${Math.min(100, stats.mgRdaPct)}%`;
+
+    const zincBar = document.getElementById('atomZincBar');
+    if (zincBar) zincBar.style.width = `${Math.min(100, stats.zincRdaPct)}%`;
+
+    const logBox = document.getElementById('atomLiveLog');
+    if (logBox) {
+        const activeRows = stats.breakdown
+            .filter(item => item.grams > 0)
+            .map(item => `<li><b>${item.label} (${item.grams}g):</b> ${item.kcal} kcal · Mg ${fmt(item.mg, 1)} mg · Zn ${fmt(item.zinc, 2)} mg</li>`)
+            .join('');
+        logBox.innerHTML = `
+            <div class="atom-log-head">${stats.logLine}</div>
+            ${activeRows ? `<ul class="plain-list atom-log-list">${activeRows}</ul>` : '<p class="muted">Karışım için kaydırgaçları sağa çekin.</p>'}
+        `;
+    }
+
+    return stats;
+}
+
+function applyDamatAtomuPreset(presetKey) {
+    if (!V() || !V().DAMAT_ATOMU_PRESETS) return null;
+    const preset = V().DAMAT_ATOMU_PRESETS[presetKey] || V().DAMAT_ATOMU_PRESETS.standard;
+    V().DAMAT_ATOMU_INGREDIENTS.forEach(ing => {
+        const slider = document.getElementById(ing.id);
+        if (slider && preset[ing.key] !== undefined) {
+            slider.value = String(preset[ing.key]);
+        }
+    });
+    return updateDamatAtomuWidget();
+}
+
+// ========================================
 // BAŞLANGIÇ
 // ========================================
 function initAnalysisScreens() {
@@ -1074,6 +1328,7 @@ function initAnalysisScreens() {
     renderSymptomGrid();
     onSymptomChange();
     setMeasurementType('baseline');
+    updateDamatAtomuWidget();
 
     V().PHYSICAL_FIELDS.forEach(field => {
         const input = document.getElementById(field.id);

@@ -376,3 +376,83 @@ test('analiz fonksiyonları doğrulama başarısızsa erken çıkar', () => {
     assert.match(app, /function analyzeBlood\(\)[\s\S]{0,1400}if \(!result\.ok\) \{/);
     assert.match(app, /if \(!state\.consent\)/);
 });
+
+// ------------------------------------ 4 kurumsal siber fonksiyon testleri
+
+test('1) OCR boru hattı: D Vitamini (25-OH), Estradiol (E2), Serbest T, SHBG, LH ve çok satırlı OCR metnini doğru ayrıştırır', () => {
+    const ocrSample = [
+        'T.C. SAGLIK BAKANLIGI LABORATUVAR SONUC RAPORU',
+        'Total Testosteron : 512 ng/dL (270 - 1080)',
+        'Serbest Testosteron',
+        '112,5 pg/mL',
+        'SHBG : 34,2 nmol/L',
+        'Luteinizan Hormon (LH) 5,4 IU/L',
+        'Estradiol (E2) 29,5 pg/mL',
+        'D Vitamini (25-OH) 19,2 ng/mL',
+        'Çinko (Zn) 58 ug/dL',
+        'Gecersiz Testosteron 99999 ng/dL'
+    ].join('\n');
+
+    const parsed = V.parseLabText(ocrSample);
+    assert.equal(parsed.values.inputTesto, 512);
+    assert.equal(parsed.values.inputFreeTesto, 112.5);
+    assert.equal(parsed.values.inputSHBG, 34.2);
+    assert.equal(parsed.values.inputLH, 5.4);
+    assert.equal(parsed.values.inputE2, 29.5);
+    assert.equal(parsed.values.inputVitD, 19.2);
+    assert.equal(parsed.values.inputZinc, 58);
+    assert.match(app, /function runOcrOnFile\(/);
+    assert.match(app, /function loadTesseractEngine\(/);
+});
+
+test('2) Kişiselleştirilmiş mikro besin dinamik kart algoritması: D Vitamini < 30 veya Çinko < 70 olduğunda özel uyarı üretir', () => {
+    const alertsBoth = V.evaluateMicronutrientAlerts({ totalT: 420, vitD: 18, zinc: 55 });
+    assert.ok(alertsBoth.length >= 1, 'D vitamini ve çinko düşükken uyarı kartı üretilmeli');
+    assert.match(
+        alertsBoth[0].message,
+        /Sistem Analizi Uyarısı: Çinko\/D Vitamini eksikliğiniz LH sinyalinizi ve testosteron sentezinizi doğrudan zayıflatıyor, acilen şu mikro besinleri holding standartlarında beslenmenize ekleyin/
+    );
+
+    const alertsVitDOnly = V.evaluateMicronutrientAlerts({ totalT: 480, vitD: 24, zinc: 95 });
+    assert.equal(alertsVitDOnly.length, 1);
+    assert.equal(alertsVitDOnly[0].id, 'alert-vitd');
+    assert.match(alertsVitDOnly[0].message, /Sistem Analizi Uyarısı: Çinko\/D Vitamini eksikliğiniz/);
+
+    const alertsZincOnly = V.evaluateMicronutrientAlerts({ totalT: 480, vitD: 45, zinc: 62 });
+    assert.equal(alertsZincOnly.length, 1);
+    assert.equal(alertsZincOnly[0].id, 'alert-zinc');
+    assert.match(alertsZincOnly[0].message, /Sistem Analizi Uyarısı: Çinko\/D Vitamini eksikliğiniz/);
+
+    const alertsNormal = V.evaluateMicronutrientAlerts({ totalT: 620, vitD: 48, zinc: 92, mg: 2.1, ferritin: 110, b12: 450 });
+    assert.equal(alertsNormal.length, 0, 'normal aralıkta uyarı çıkmamalı');
+});
+
+test('3) Damat Atomu besin değeri hesaplayıcı widget: gramaj değiştikçe magnezyum, çinko ve kaloriyi anlık hesaplar', () => {
+    assert.match(html, /id="damatAtomuWidget"/);
+    assert.match(html, /id="atomBanana"/);
+    assert.match(html, /id="atomHoney"/);
+    assert.match(html, /id="atomNuts"/);
+    assert.match(html, /oninput="updateDamatAtomuWidget\(\)"/);
+
+    const std = V.computeDamatAtomuNutrition({ banana: 120, honey: 30, nuts: 45, pumpkin: 30, tahin: 25 });
+    assert.equal(std.totalGrams, 250);
+    assert.ok(std.kcal > 700 && std.kcal < 850);
+    assert.ok(std.mg > 300);
+    assert.ok(std.zinc > 4.5);
+    assert.match(std.logLine, /\[CANLI BESİN LOGU\]/);
+
+    const boosted = V.computeDamatAtomuNutrition({ banana: 150, honey: 40, nuts: 80, pumpkin: 60, tahin: 40 });
+    assert.ok(boosted.mg > std.mg, 'gramaj arttıkça magnezyum artmalı');
+    assert.ok(boosted.zinc > std.zinc, 'gramaj arttıkça çinko artmalı');
+    assert.ok(boosted.kcal > std.kcal, 'gramaj arttıkça kalori artmalı');
+});
+
+test('4) KVKK / Veri Güvenliği Kalkanı parlatması: açık rıza işaretlenince yeşil kalkan ve yerel işleme metni aktifleşir', () => {
+    assert.match(html, /id="kvkkShieldBanner"/);
+    assert.match(
+        html,
+        /Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda \(Local Device\) anlık olarak işlenir/
+    );
+    assert.match(app, /kvkkShieldBanner/);
+    assert.match(app, /shield-active/);
+});

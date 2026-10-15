@@ -208,9 +208,9 @@
     </div>
 
     <!-- KVKK açık rıza -->
-    <div class="card">
+    <div class="card kvkk-card" id="kvkkCard">
         <div class="card-header">
-            <div class="card-icon icon-purple">
+            <div class="card-icon icon-purple" id="kvkkCardIcon">
                 <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
             </div>
             <div>
@@ -218,13 +218,23 @@
                 <div class="card-subtitle">KVKK m.6 — özel nitelikli kişisel veri</div>
             </div>
         </div>
-        <div class="consent-box">
+        <div class="consent-box" id="consentBoxWrap">
             <input type="checkbox" id="consentCheck" onchange="setConsent(this)">
             <label for="consentCheck">
                 Girdiğim kan değerlerinin (özel nitelikli sağlık verisi) yalnızca bu analizi oluşturmak amacıyla
                 <b>cihazımda</b> işlenmesine açık rıza veriyorum. Veriler sunucuya gönderilmez, saklanmaz ve üçüncü kişilerle paylaşılmaz.
                 Rızamı sayfayı kapatarak her an geri çekebilirim.
             </label>
+        </div>
+        <div class="kvkk-shield-banner" id="kvkkShieldBanner" role="status" aria-live="polite" aria-hidden="true">
+            <div class="kvkk-shield-badge">
+                <svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg>
+                <span class="kvkk-shield-pulse" aria-hidden="true"></span>
+            </div>
+            <div class="kvkk-shield-content">
+                <div class="kvkk-shield-head">SİBER VERİ KALKANI AKTİF · LOCAL DEVICE</div>
+                <p class="kvkk-shield-msg">Verileriniz kesinlikle sunucuya gönderilmez, saklanmaz; %100 güvenli şekilde tarayıcınızda (Local Device) anlık olarak işlenir</p>
+            </div>
         </div>
         <p class="consent-error" id="consentError">Devam etmek için açık rıza kutusunu işaretlemeniz gerekiyor.</p>
     </div>
