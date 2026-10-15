@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const productionOrigin = 'https://testotavan.vercel.app';
+const productionOrigin = 'https://testosteron-test.vercel.app';
 
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
@@ -42,6 +42,20 @@ test('ana sayfada index izni, canonical, sosyal önizleme ve geçerli JSON-LD bu
   assert.equal(schema['@context'], 'https://schema.org');
   assert.ok(schema['@graph'].some(entry => entry['@type'] === 'WebSite'));
   assert.ok(schema['@graph'].some(entry => entry['@type'] === 'WebApplication'));
+});
+
+test('Google Search Console doğrulaması yayında kalır (HTML etiketi + HTML dosyası)', () => {
+  // Google sahipliği periyodik olarak yeniden denetler; bunlar silinirse mülk doğrulaması düşer.
+  const tokens = ['ac-bJdohFXsUbq5bD8cVEip7Ryd_nEkaRhNenMmCi8M', '4SlBNFo5IoQK9Q3QIw99aX6nuEvpNMV2CRIrzGPMMqc'];
+  for (const file of ['src/index.html', 'index.html']) {
+    const html = read(file);
+    const head = html.slice(0, html.indexOf('</head>'));
+    for (const token of tokens) {
+      assert.ok(head.includes(`<meta name="google-site-verification" content="${token}">`), `${file} <head> içinde ${token} doğrulama etiketi olmalı`);
+    }
+  }
+  assert.equal(read('google5ef2fba9d6d13dcc.html').trim(), 'google-site-verification: google5ef2fba9d6d13dcc.html');
+  assert.doesNotMatch(read('.vercelignore'), /google[0-9a-f]+\.html/, 'doğrulama dosyası yayından hariç tutulmamalı');
 });
 
 test('forum sayfası ayrı canonical URL ve arama açıklamasına sahip', () => {
