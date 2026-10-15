@@ -18,7 +18,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-87%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-168%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
@@ -26,6 +26,8 @@ We offer natural, safe, and alternative solutions to address the decline in test
   - **Semptom Analizi** — yaş, boy, kilo, uyku, stres ve semptom seçimlerinden **nokta tahmin + %68 güven aralığı**
     (ör. “Tahmini 340 ng/dL”), seçilen semptomun adını taşıyan kartlar, her kartta laboratuvar referans aralığı,
     Kritik/Düşük/Sınırda/Normal rozetiyle önceliklendirme ve tek cümlelik açıklama
+  - **Kilitli önizleme yok:** Bulanık/kilitli plan kartı kaldırıldı; kişisel plan (uyku, stres, hareket,
+    kilo adımları + takviye dozları) sonuçla birlikte **doğrudan ve tam** gösterilir
   - **Kan Testi ile Doğrulama** — 12 parametre (total/serbest testosteron, SHBG, LH, FSH, estradiol, kortizol,
     ferritin, D vitamini, B12, çinko, magnezyum); yalnızca Total T zorunlu, diğerleri opsiyonel
 - **Tahlil yükleme** — PDF’teki değerler tarayıcı içinde okunup forma yazılır (dosya sunucuya gönderilmez);
@@ -46,6 +48,10 @@ We offer natural, safe, and alternative solutions to address the decline in test
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
+- **Sağ/sol sponsor alanları** — Masaüstü ve TV ekranlarında içeriğin **soluna ve sağına** yerleşen,
+  kaydırmada sabit kalan sponsor sütunları; telefon ve tablette ise içerikten önce/sonra görünen
+  kaydırılabilir sponsor şeridi. Başlık, metin ve bağlantı `src/js/app.js` içindeki tek `SPONSORS`
+  listesinden yönetilir (`window.TESTOTAVAN_SPONSORS` ile API'den de beslenebilir); boş liste o sütunu gizler
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, canonical URL, Open Graph + WebApplication yapılandırılmış verisi, `robots.txt` ve geçerli sitemap
 - **Güvenlik başlıkları** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (bkz. `vercel.json`)
@@ -173,6 +179,11 @@ npx vercel dev
 npm test
 ```
 
+`tests/sponsors.test.mjs`; sağ/sol sponsor raylarının sayfa gövdesinde olduğunu (dar ekranda şerit,
+geniş ekranda yan sütun), sponsor kartlarının tek listeden üretildiğini, harici sponsor bağlantılarının
+`rel="noopener nofollow sponsored"` taşıdığını ve kilitli/bulanık plan önizlemesinin kaldırılıp kişisel
+planın doğrudan gösterildiğini denetler.
+
 
 ## ⚡ PageSpeed yaklaşımı
 
@@ -183,6 +194,8 @@ npm test
 - İlk ekranda üçüncü taraf font veya ikon paketi çağrılmaz; sistem fontları ve satır içi SVG ikonlar kullanılır.
 - CSS satır içi kalır (ek istek yok) ve derlemede küçültülür; JS paketleri yorum/boşluk temizlenerek küçültülür.
 - Blog, içerik API çağrıları ve çeviri verisi yalnızca Blog sekmesi veya dil seçici kullanıldığında yüklenir.
+- Sponsor alanları ek istek yapmaz: içerik sayfayla birlikte gelir, kartlar `app` paketi içinde üretilir;
+  geniş ekranda yan sütunlar CSS `sticky` ile sabitlenir, mobilde yatay kaydırılır (JS çalıştırılmaz).
 - `js/` altındaki hash'li paketler Vercel'de bir yıl `immutable`, `assets/` bir gün + `stale-while-revalidate`
   önbelleklenir. Hash'li adlar `npm run build:assets` tarafından otomatik üretilir; elle güncellemek gerekmez.
 - `npm test`, doğrulama mantığını, laboratuvar aralıklarını, tahmin motorunu, kritik istemci giriş noktalarını

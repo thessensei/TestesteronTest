@@ -273,11 +273,12 @@ function analyzePhysical() {
     setStep(2);
     setProgress(70, 'Analizin %70 tamamlandı — kalan adım: kan testiyle doğrulama');
     renderEstimate(estimate);
-    showToast(IC('i-check') + ' Tahmin hazır. Son adım: doğrulama.', 'gold');
+    showToast(IC('i-check') + ' Sonuç ve kişisel planınız hazır.', 'gold');
 }
 
 function renderEstimate(est) {
     const panel = document.getElementById('physicalResult');
+    const plan = buildPlanFromEstimate(est);
     const SCALE_MIN = 0;
     const SCALE_MAX = 1200;
 
@@ -352,48 +353,68 @@ function renderEstimate(est) {
         </div>
         ${driverCards}
 
-        ${renderPlanPreview()}
+        ${renderSupplementCard(plan, 'Kişisel planınız', `${plan.length} adım · uygulama sırasına göre`)}
+        <p class="muted plan-note">${IC('i-info')} Plan tahmini değerinize ve girdilerinize dayanır; kişisel dozlar kan testiyle kesinleşir. Tüm adımlar kilit olmadan yukarıda listelenmiştir.</p>
 
         <div class="cta-block">
             <button class="btn-primary" onclick="goToVerification()">
                 ${IC('i-drop')} &nbsp;KAN TESTİ İLE DOĞRULA
             </button>
-            <button class="btn-ghost" onclick="showPlanTeaser()">Önce doğal plan önerilerini gör</button>
-            <p class="trust-line">${IC('i-clock')} Sonuç 5 dakikada · ${IC('i-lock')} kayıt gerekmez · tek tıkla iptal</p>
+            <button class="btn-ghost" onclick="backToSymptoms()">${IC('i-user')} &nbsp;Tahmin girdilerini değiştir</button>
+            <p class="trust-line">${IC('i-clock')} Sonuç 5 dakikada · ${IC('i-check')} kayıt gerekmez · tek tıkla iptal</p>
         </div>
-
-        <div id="planTeaser"></div>
     `;
 
     panel.classList.add('show');
     setTimeout(() => safeScroll(panel), 180);
 }
 
-// Doğrulama sonrası planın bulanık önizlemesi — merak yaratır
-function renderPlanPreview() {
-    return `
-    <section class="preview-card">
-        <div class="preview-blur" aria-hidden="true">
-            <div class="preview-row"><span class="pr-ic"></span><span class="pr-bar w70"></span><span class="pr-chip"></span></div>
-            <div class="preview-row"><span class="pr-ic"></span><span class="pr-bar w90"></span><span class="pr-chip"></span></div>
-            <div class="preview-row"><span class="pr-ic"></span><span class="pr-bar w55"></span><span class="pr-chip"></span></div>
-            <div class="preview-row"><span class="pr-ic"></span><span class="pr-bar w80"></span><span class="pr-chip"></span></div>
-        </div>
-        <div class="preview-overlay">
-            <span class="preview-lock">${IC('i-lock')}</span>
-            <p class="preview-title">12 haftalık kişisel planınız hazır</p>
-            <p class="preview-sub">Doğrulama tamamlanınca dozlar, sıralama ve kontrol takvimi açılır.</p>
-        </div>
-    </section>`;
+// Kişisel plan doğrudan gösterilir: önce yaşam tarzı adımları, sonra takviyeler.
+// Bulanık/kilitli önizleme yok — kullanıcı sonucu bekletilmeden görür.
+function buildPlanFromEstimate(est) {
+    const readNumber = (id, fallback) => {
+        const input = document.getElementById(id);
+        const value = input ? V().parseNumber(input.value) : null;
+        return value === null ? fallback : value;
+    };
+
+    const sleep = readNumber('inputSleep', 7);
+    const stress = readNumber('inputStress', 2);
+    const activity = readNumber('inputActivity', 3);
+    const items = [];
+
+    if (sleep < 7) {
+        items.push(sup('Uykuyu 7–9 saate çıkarın',
+            `Şu an gecede ${fmt(sleep, sleep % 1 === 0 ? 0 : 1)} saat uyuyorsunuz. Kısa uyku, testosteron üretimini en hızlı düşüren etkenlerden biridir.`,
+            'Her gece aynı saatte yatın; yatmadan 1 saat önce ekranı bırakın',
+            sleep < 6 ? 'critical' : 'high'));
+    }
+    if (stress >= 3) {
+        items.push(sup('Stres yükünü düşürün',
+            'Yüksek stres, kortizol üzerinden testosteron üretimini baskılar.',
+            'Günde 10 dakika nefes egzersizi + haftada 2 uzun yürüyüş',
+            'high'));
+    }
+    if (activity <= 1) {
+        items.push(sup('Hareketi artırın',
+            'Hareketsizlik yağ oranını yükseltir; yağ dokusu testosteronu estradiole çevirir.',
+            'Haftada 3 gün 30 dakika tempolu yürüyüş + 2 gün ağırlık çalışması',
+            'high'));
+    }
+    if (est.bmi >= 27) {
+        items.push(sup('Kilo yönetimi',
+            `Vücut kitle indeksiniz tahminen ${fmt(est.bmi, 1)}. Yağ oranı düştükçe serbest testosteron toparlanır.`,
+            'Günlük kalori açığı + protein ağırlıklı beslenme (hekim/diyetisyen desteğiyle)',
+            'high'));
+    }
+
+    const supplements = buildSupplements({ totalT: est.point });
+    return items.concat(supplements).sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank);
 }
 
-function showPlanTeaser() {
-    const box = document.getElementById('planTeaser');
-    if (!box) return;
-    const est = state.estimate;
-    const supplements = buildSupplements(est ? { totalT: est.point } : {}, true);
-    box.innerHTML = renderSupplementCard(supplements, 'Tahmine dayalı ön plan', 'Doğrulamadan sonra dozlar kişiselleşir');
-    safeScroll(box);
+function backToSymptoms() {
+    changePage('physicalPage');
+    setTimeout(() => safeScroll(document.getElementById('symptomGrid'), { behavior: 'smooth', block: 'start' }), 350);
 }
 
 function goToVerification() {
@@ -754,7 +775,7 @@ function renderBloodReport(result) {
             ölçülen değer <b>${result.values.totalT !== undefined ? fmt(result.values.totalT) + ' ng/dL' : '—'}</b>.
         </div>` : '';
 
-    const supplements = buildSupplements(result.values, false);
+    const supplements = buildSupplements(result.values);
 
     panel.innerHTML = `
         <section class="score-card">
@@ -900,7 +921,8 @@ const PRIORITY = {
     base: { label: 'Temel', badgeClass: 'badge-normal', rank: 3 }
 };
 
-function buildSupplements(values, isPreview) {
+// Değerlere göre takviye önerileri. Plan doğrudan gösterilir; gizlenen adım yoktur.
+function buildSupplements(values) {
     const list = [];
     const v = values || {};
 
@@ -936,10 +958,6 @@ function buildSupplements(values, isPreview) {
 
     list.push(sup('Omega-3 (EPA/DHA)', 'Temel destek: inflamasyon ve hormonal denge.', '2000–3000 mg / gün', 'base'));
 
-    if (isPreview) {
-        list.forEach(item => { item.dose = 'Doğrulamadan sonra kişiselleşir'; });
-    }
-
     return list.sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank);
 }
 
@@ -970,6 +988,80 @@ function renderSupplementCard(supplements, title, subtitle) {
         }).join('')}
     </section>`;
 }
+
+// ========================================
+// SPONSOR ALANLARI (sol / sağ)
+// ========================================
+// Tüm sponsor içeriği tek yerden yönetilir. Her kayıt:
+//   { badge, title, text, cta, href }
+// - Sol liste  : masaüstü/TV'de içeriğin sol sütunu, mobilde içerikten önceki şerit
+// - Sağ liste  : masaüstü/TV'de içeriğin sağ sütunu, mobilde içerikten sonraki şerit
+// Farklı bir kaynaktan (ör. API) beslemek için window.TESTOTAVAN_SPONSORS
+// değişkenine aynı biçimde bir nesne atamak yeterlidir.
+const SPONSORS = {
+    left: [
+        {
+            badge: 'Sponsor',
+            title: 'Sponsor alanı',
+            text: 'Marka başlığı, kısa metin ve bağlantı burada yayınlanır.',
+            cta: 'Sponsor ol',
+            href: '#'
+        },
+        {
+            badge: 'Sponsor',
+            title: 'Laboratuvar iş birliği',
+            text: 'Hormon paneli kampanyaları için ayrılmış alan.',
+            cta: 'İletişime geç',
+            href: '#'
+        }
+    ],
+    right: [
+        {
+            badge: 'Sponsor',
+            title: 'Sponsor alanı',
+            text: 'Takviye ve erkek sağlığı markaları için ayrılmış alan.',
+            cta: 'Sponsor ol',
+            href: '#'
+        },
+        {
+            badge: 'Sponsor',
+            title: 'Sponsorlu içerik',
+            text: 'Blog yazınız dört dilde bu alanda listelenir.',
+            cta: 'Detaylar',
+            href: '#'
+        }
+    ]
+};
+
+function sponsorCard(item) {
+    const href = typeof item.href === 'string' && item.href ? item.href : '#';
+    const external = /^https?:\/\//i.test(href);
+    const rel = external ? ' rel="noopener nofollow sponsored"' : '';
+    const target = external ? ' target="_blank"' : '';
+    return `
+        <article class="sponsor-card">
+            <span class="sponsor-badge">${T(item.badge || 'Sponsor')}</span>
+            <h3 class="sponsor-title">${T(item.title || '')}</h3>
+            <p class="sponsor-text">${T(item.text || '')}</p>
+            <a class="sponsor-cta" href="${href}"${target}${rel}>${T(item.cta || 'İncele')} ${IC('i-arrow-right')}</a>
+        </article>`;
+}
+
+function renderSponsors() {
+    const data = (window.TESTOTAVAN_SPONSORS && typeof window.TESTOTAVAN_SPONSORS === 'object')
+        ? window.TESTOTAVAN_SPONSORS
+        : SPONSORS;
+
+    document.querySelectorAll('[data-sponsor-rail]').forEach(rail => {
+        const list = rail.querySelector('[data-sponsor-list]');
+        if (!list) return;
+        const items = Array.isArray(data[rail.dataset.sponsorRail]) ? data[rail.dataset.sponsorRail] : [];
+        list.innerHTML = items.map(sponsorCard).join('');
+        rail.toggleAttribute('hidden', items.length === 0);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', renderSponsors);
 
 // ========================================
 // BAŞLANGIÇ
@@ -1040,6 +1132,7 @@ window.addEventListener('testo-language-change', () => {
     setMeasurementType(state.measurement);
     V().MARKERS.forEach(marker => refreshFieldMeta(marker.id));
     setProgress(state.progress, state.progressNote);
+    renderSponsors();
 });
 
 // ========================================
