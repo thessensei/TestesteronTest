@@ -106,7 +106,8 @@ test('sponsor içeriği tek listeden üretilir ve boş listede alan gizlenir', (
     for (const rail of [left, right]) {
         assert.equal([...rail.list.innerHTML.matchAll(/class="sponsor-card"/g)].length, 2, `${rail.dataset.sponsorRail}: iki sponsor kartı basılmalı`);
         assert.match(rail.list.innerHTML, /class="sponsor-badge"/);
-        assert.match(rail.list.innerHTML, /class="sponsor-cta" href="mailto:testosterontavan@gmail\.com"/);
+        // Test bağlamında navigator yok → masaüstü: Gmail'in yeni ileti penceresi yeni sekmede açılır
+        assert.match(rail.list.innerHTML, /class="sponsor-cta" href="https:\/\/mail\.google\.com\/mail\/\?view=cm&amp;fs=1&amp;to=testotavan@gmail\.com&amp;su=[^"]+" target="_blank" rel="noopener" title="testotavan@gmail\.com"/);
         assert.equal(rail.hidden.value, false, 'dolu ray görünür kalmalı');
     }
 
@@ -121,25 +122,110 @@ test('sponsor içeriği tek listeden üretilir ve boş listede alan gizlenir', (
     assert.equal(right.hidden.value, true, 'boş ray gizlenmeli');
 });
 
-test('sponsorluk ve iletişim CTA\'ları testosterontavan@gmail.com adresine gider', () => {
-    // Tek doğruluk kaynağı: CONTACT_EMAIL / CONTACT_HREF
-    assert.match(appSource, /const CONTACT_EMAIL = 'testosterontavan@gmail\.com';/, 'iletişim adresi bulunamadı');
-    assert.match(appSource, /const CONTACT_HREF = `mailto:\$\{CONTACT_EMAIL\}`;/, 'mailto bağlantısı bulunamadı');
+test('sponsorluk ve iletişim CTA\'ları testotavan@gmail.com adresine gider', () => {
+    // Tek doğruluk kaynağı: CONTACT_EMAIL / CONTACT_HREF / CONTACT_GMAIL_HREF
+    assert.match(appSource, /const CONTACT_EMAIL = 'testotavan@gmail\.com';/, 'iletişim adresi bulunamadı');
+    assert.match(appSource, /const CONTACT_HREF = `mailto:\$\{CONTACT_EMAIL\}\?subject=\$\{encodeURIComponent\(CONTACT_SUBJECT\)\}`;/, 'mailto bağlantısı bulunamadı');
+    assert.match(appSource, /const CONTACT_GMAIL_HREF = `https:\/\/mail\.google\.com\/mail\/\?view=cm&fs=1&to=\$\{CONTACT_EMAIL\}&su=\$\{encodeURIComponent\(CONTACT_SUBJECT\)\}`;/, 'Gmail yazma bağlantısı bulunamadı');
 
     // Varsayılan SPONSORS listesinde ölü '#' bağlantısı kalmamalı
     const sponsorsBlock = appSource.match(/const SPONSORS = \{[\s\S]*?\n\};/)[0];
     assert.ok(!/href:\s*'#'/.test(sponsorsBlock), 'sponsor bağlantıları ölü # olmamalı');
     assert.equal([...sponsorsBlock.matchAll(/href:\s*CONTACT_HREF/g)].length, 4, 'dört sponsor CTA\'sının da CONTACT_HREF kullanması gerekir');
 
-    // Hakkımızda alt bilgisinde görünür iletişim maili olmalı
-    assert.match(srcHtml, /href="mailto:testosterontavan@gmail\.com"/, 'Hakkımızda alt bilgisinde mailto linki yok');
+    // Hakkımızda alt bilgisinde görünür iletişim maili olmalı; JS onu cihaza göre günceller
+    const footerLink = /<a href="mailto:testotavan@gmail\.com\?subject=[^"]+" data-contact-link[^>]*>testotavan@gmail\.com<\/a>/;
+    assert.match(srcHtml, footerLink, 'Hakkımızda alt bilgisinde mailto linki yok');
 
     // Derlenmiş çıktı da aynı maili içermeli (index.html + app paketi)
-    assert.match(builtHtml, /href="mailto:testosterontavan@gmail\.com"/, 'derlenmiş index.html içinde mailto linki yok');
+    assert.match(builtHtml, footerLink, 'derlenmiş index.html içinde mailto linki yok');
     const builtApp = fs.readdirSync(path.join(root, 'js')).find(f => /^app\./.test(f));
-    if (builtApp) {
-        assert.match(read(path.join('js', builtApp)), /testosterontavan@gmail\.com/, 'derlenmiş app paketinde iletişim maili yok');
+    assert.ok(builtApp, 'derlenmiş app paketi bulunamadı');
+    const builtAppSource = read(path.join('js', builtApp));
+    assert.match(builtAppSource, /testotavan@gmail\.com/, 'derlenmiş app paketinde iletişim maili yok');
+    assert.match(builtAppSource, /mail\.google\.com\/mail\/\?view=cm/, 'derlenmiş app paketinde Gmail yazma bağlantısı yok');
+
+    // Eski adres hiçbir yerde kalmamalı
+    for (const [name, source] of [['src/index.html', srcHtml], ['index.html', builtHtml], ['src/js/app.js', appSource], [`js/${builtApp}`, builtAppSource], ['README.md', read('README.md')]]) {
+        assert.ok(!source.includes('testosterontavan@gmail.com'), `${name}: eski iletişim adresi duruyor`);
     }
+});
+
+test('iletişim bağlantısı yazma ekranını doğrudan açar (mobilde mail uygulaması, masaüstünde Gmail)', () => {
+    const context = loadAppModule();
+    const constant = name => vm.runInContext(name, context);
+    const email = constant('CONTACT_EMAIL');
+    const subject = constant('CONTACT_SUBJECT');
+
+    // mailto: alıcı + konu dolu (telefon/tablet yazma ekranı)
+    const mailto = new URL(constant('CONTACT_HREF'));
+    assert.equal(mailto.protocol, 'mailto:');
+    assert.equal(mailto.pathname, 'testotavan@gmail.com');
+    assert.equal(mailto.searchParams.get('subject'), subject);
+
+    // Gmail: "Yeni ileti" penceresi (view=cm) alıcı + konu dolu
+    const gmail = new URL(constant('CONTACT_GMAIL_HREF'));
+    assert.equal(gmail.origin + gmail.pathname, 'https://mail.google.com/mail/');
+    assert.equal(gmail.searchParams.get('view'), 'cm');
+    assert.equal(gmail.searchParams.get('to'), email);
+    assert.equal(gmail.searchParams.get('su'), subject);
+
+    // Statik alt bilgi bağlantısı JS'deki mailto ile birebir aynı (JS yokken de çalışır)
+    const footerHref = srcHtml.match(/<a href="([^"]+)" data-contact-link/)[1];
+    assert.equal(footerHref, constant('CONTACT_HREF'), 'alt bilgideki mailto, CONTACT_HREF ile aynı olmalı');
+
+    // Cihaz tespiti
+    const gmailLink = { href: constant('CONTACT_GMAIL_HREF'), target: '_blank', rel: 'noopener' };
+    const mailtoLink = { href: constant('CONTACT_HREF'), target: '', rel: '' };
+    const devices = [
+        ['navigator yok', undefined, gmailLink],
+        ['Windows Chrome', { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', maxTouchPoints: 0 }, gmailLink],
+        ['macOS Safari', { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', maxTouchPoints: 0 }, gmailLink],
+        ['iPhone', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', maxTouchPoints: 5 }, mailtoLink],
+        ['Android telefon', { userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Mobile Safari/537.36', maxTouchPoints: 5 }, mailtoLink],
+        ['Android tablet', { userAgent: 'Mozilla/5.0 (Linux; Android 15; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36', maxTouchPoints: 10 }, mailtoLink],
+        ['iPadOS (masaüstü kimliği)', { userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', maxTouchPoints: 5 }, mailtoLink],
+        ['userAgentData.mobile', { userAgent: 'Mozilla/5.0 (X11; Linux x86_64)', userAgentData: { mobile: true } }, mailtoLink]
+    ];
+    for (const [name, nav, expected] of devices) {
+        context.navigator = nav;
+        assert.deepEqual({ ...context.contactLink() }, expected, `${name}: yanlış bağlantı`);
+    }
+
+    // Sponsor kartı: mobilde mailto (yeni sekme yok), masaüstünde Gmail yeni sekmede
+    const card = { title: 'Sponsor alanı', text: 'Metin', cta: 'Sponsor ol', href: constant('CONTACT_HREF') };
+    context.navigator = devices[3][1];
+    const mobileCard = context.sponsorCard(card);
+    assert.match(mobileCard, /class="sponsor-cta" href="mailto:testotavan@gmail\.com\?subject=[^"]+" title="testotavan@gmail\.com">/);
+    assert.ok(!/target=/.test(mobileCard), 'mobilde mail uygulaması aynı sekmeden açılmalı');
+    context.navigator = devices[1][1];
+    const desktopCard = context.sponsorCard({ ...card, href: 'mailto:testotavan@gmail.com' });
+    const desktopHref = desktopCard.match(/class="sponsor-cta" href="([^"]+)"/)[1].replace(/&amp;/g, '&');
+    assert.equal(desktopHref, constant('CONTACT_GMAIL_HREF'), 'masaüstünde Gmail yazma penceresi açılmalı');
+    assert.match(desktopCard, /target="_blank" rel="noopener" title="testotavan@gmail\.com"/);
+    assert.ok(!/sponsored/.test(desktopCard), 'iletişim bağlantısı reklam bağlantısı olarak işaretlenmemeli');
+
+    // Başka bir mailto adresi olduğu gibi kalır
+    assert.match(context.sponsorCard({ ...card, href: 'mailto:baska@ornek.com' }), /href="mailto:baska@ornek\.com">/);
+
+    // Statik [data-contact-link] bağlantıları cihaza göre güncellenir
+    const anchorStub = () => ({
+        attrs: { href: constant('CONTACT_HREF'), target: '_blank', rel: 'noopener' },
+        setAttribute(name, value) { this.attrs[name] = value; },
+        removeAttribute(name) { delete this.attrs[name]; }
+    });
+    const anchor = anchorStub();
+    let selector = '';
+    context.document.querySelectorAll = query => { selector = query; return [anchor]; };
+
+    context.navigator = devices[1][1];
+    context.enhanceContactLinks();
+    assert.equal(selector, 'a[data-contact-link]');
+    assert.deepEqual({ ...anchor.attrs }, gmailLink, 'masaüstünde alt bilgi bağlantısı Gmail\'i yeni sekmede açmalı');
+
+    context.navigator = devices[4][1];
+    context.enhanceContactLinks();
+    assert.deepEqual({ ...anchor.attrs }, { href: constant('CONTACT_HREF') }, 'mobilde alt bilgi bağlantısı mailto olmalı (yeni sekme yok)');
 });
 
 test('sponsor metinleri dört dilde çevrilebilir', () => {

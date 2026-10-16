@@ -1219,10 +1219,54 @@ function renderSupplementCard(supplements, title, subtitle) {
 // Farklı bir kaynaktan (ör. API) beslemek için window.TESTOTAVAN_SPONSORS
 // değişkenine aynı biçimde bir nesne atamak yeterlidir.
 //
-// Sponsorluk ve iş birliği talepleri tek adrese gider; varsayılan tüm
-// sponsor CTA'ları ("Sponsor ol", "İletişime geç", "Detaylar") bu maili açar.
-const CONTACT_EMAIL = 'testosterontavan@gmail.com';
-const CONTACT_HREF = `mailto:${CONTACT_EMAIL}`;
+// Sponsorluk ve iş birliği talepleri tek adrese gider. Varsayılan tüm sponsor
+// CTA'ları ("Sponsor ol", "İletişime geç", "Detaylar") ve Hakkımızda alt
+// bilgisindeki adres, alıcısı ve konusu dolu YENİ E-POSTA ekranını doğrudan açar:
+//  - Telefon / tablet → mailto: — Gmail ya da Mail uygulamasının yazma ekranı
+//  - Masaüstü / TV    → Gmail'in "Yeni ileti" penceresi (yeni sekmede)
+// Neden cihaza göre? Masaüstünde mailto: tanımlı bir posta uygulaması yoksa hiçbir
+// şey açmaz; Gmail'in web yazma bağlantısı ise mobil tarayıcıda yazma ekranı
+// yerine gelen kutusuna düşer.
+const CONTACT_EMAIL = 'testotavan@gmail.com';
+const CONTACT_SUBJECT = 'TestoTavan İletişim & Sponsorluk';
+const CONTACT_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(CONTACT_SUBJECT)}`;
+const CONTACT_GMAIL_HREF = `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_EMAIL}&su=${encodeURIComponent(CONTACT_SUBJECT)}`;
+
+function isPhoneOrTablet() {
+    const nav = typeof navigator === 'object' && navigator ? navigator : {};
+    if (nav.userAgentData && nav.userAgentData.mobile === true) return true;
+    const ua = String(nav.userAgent || '');
+    if (/Android|iPhone|iPad|iPod|Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(ua)) return true;
+    // iPadOS 13+ Safari kendini masaüstü Mac olarak tanıtır; dokunmatik ekranından ayırt edilir.
+    return /Macintosh/i.test(ua) && Number(nav.maxTouchPoints) > 1;
+}
+
+/** Bu cihazda yazma ekranını doğrudan açan iletişim bağlantısı: { href, target, rel } */
+function contactLink() {
+    return isPhoneOrTablet()
+        ? { href: CONTACT_HREF, target: '', rel: '' }
+        : { href: CONTACT_GMAIL_HREF, target: '_blank', rel: 'noopener' };
+}
+
+function isContactHref(href) {
+    return typeof href === 'string' && href.split('?')[0].toLowerCase() === `mailto:${CONTACT_EMAIL}`;
+}
+
+/** Statik HTML'deki iletişim bağlantılarını (a[data-contact-link]) cihaza göre ayarlar. */
+function enhanceContactLinks() {
+    const link = contactLink();
+    document.querySelectorAll('a[data-contact-link]').forEach(anchor => {
+        anchor.setAttribute('href', link.href);
+        if (link.target) {
+            anchor.setAttribute('target', link.target);
+            anchor.setAttribute('rel', link.rel);
+        } else {
+            anchor.removeAttribute('target');
+            anchor.removeAttribute('rel');
+        }
+    });
+}
+
 const SPONSORS = {
     left: [
         {
@@ -1258,17 +1302,25 @@ const SPONSORS = {
     ]
 };
 
+const escapeAttr = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
 function sponsorCard(item) {
-    const href = typeof item.href === 'string' && item.href ? item.href : '#';
-    const external = /^https?:\/\//i.test(href);
-    const rel = external ? ' rel="noopener nofollow sponsored"' : '';
-    const target = external ? ' target="_blank"' : '';
+    let href = typeof item.href === 'string' && item.href ? item.href : '#';
+    let attrs = '';
+    if (isContactHref(href)) {
+        // İletişim CTA'sı bu cihazda yazma ekranını doğrudan açar; adres üzerine gelince görünür.
+        const link = contactLink();
+        href = link.href;
+        attrs = `${link.target ? ` target="${link.target}" rel="${link.rel}"` : ''} title="${CONTACT_EMAIL}"`;
+    } else if (/^https?:\/\//i.test(href)) {
+        attrs = ' target="_blank" rel="noopener nofollow sponsored"';
+    }
     return `
         <article class="sponsor-card">
             <span class="sponsor-badge">${T(item.badge || 'Sponsor')}</span>
             <h3 class="sponsor-title">${T(item.title || '')}</h3>
             <p class="sponsor-text">${T(item.text || '')}</p>
-            <a class="sponsor-cta" href="${href}"${target}${rel}>${T(item.cta || 'İncele')} ${IC('i-arrow-right')}</a>
+            <a class="sponsor-cta" href="${escapeAttr(href)}"${attrs}>${T(item.cta || 'İncele')} ${IC('i-arrow-right')}</a>
         </article>`;
 }
 
@@ -1287,6 +1339,7 @@ function renderSponsors() {
 }
 
 document.addEventListener('DOMContentLoaded', renderSponsors);
+document.addEventListener('DOMContentLoaded', enhanceContactLinks);
 
 // ========================================
 // DAMAT ATOMU BESİN DEĞERİ HESAPLAYICI WIDGET
