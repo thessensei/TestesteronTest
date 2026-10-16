@@ -22,7 +22,14 @@ import {
   generateRecipeFromArticle,
   createBlogDraftFromUrl
 } from '../api/_ai-blog.js';
-import { isTranslationComplete, fieldLooksTranslated, machineTranslateText, ensureCompleteTranslations } from '../api/_translate.js';
+import {
+  isTranslationComplete,
+  fieldLooksTranslated,
+  machineTranslateText,
+  ensureCompleteTranslations,
+  assessTranslationQuality,
+  targetLanguageLooksCorrect
+} from '../api/_translate.js';
 import { createAiBlogHandler } from '../api/ai-blog.js';
 import {
   createSessionCookie,
@@ -474,7 +481,7 @@ test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', as
       category: 'ホルモン健康',
       title: '生姜茶は朝の習慣に合う',
       summary: '生姜茶は朝の習慣に取り入れると巡りを支えるとされています。',
-      body: '朝の生姜茶は巡りを支え、1日をより安定して始めやすくします。専門家は食事と一緒に摂ることを勧めています。\n\nこれは一般的な情報であり、医療アドバイスではありません。'
+      body: '朝の生姜茶は巡りを支え、一日をより安定して始めやすくします。専門家は食事と一緒に摂ることを勧めています。\n\nこれは一般的な情報であり、医療アドバイスではありません。'
     }
   };
   let translationCalls = 0;
@@ -492,7 +499,7 @@ test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', as
   });
   assert.equal(result.ok, true);
   assert.equal(result.mode, 'ai');
-  assert.equal(translationCalls, 1, 'üç dil tek çeviri turunda tamamlanmalı');
+  assert.equal(translationCalls, 3, 'her hedef dil doğruluk için bağımsız AI turunda çevrilmeli');
   assert.equal(result.translation.en, 'ai');
   assert.equal(result.translation.de, 'ai');
   assert.equal(result.translation.ja, 'ai');
@@ -525,12 +532,84 @@ test('zorunlu yeniden çeviri İngilizce/Almanca metni ve tarif malzemelerini AI
       return { ok: true, data: translated };
     }
   });
-  assert.equal(calls, 1, 'tüm hedef diller tek turda istenmeli');
+  assert.equal(calls, 3, 'üç hedef dil birbirinden bağımsız istenmeli');
   assert.match(userPrompt, /150 g tavuk göğsü/);
   assert.equal(result.report.en, 'ai');
   assert.equal(result.report.de, 'ai');
   assert.equal(result.item.translations.en.ingredients[0], '150 g chicken breast');
   assert.equal(result.item.translations.de.title, translated.de.title);
+});
+
+test('çeviri kalite kapısı hedef dili, sayıları ve paragraf yapısını birlikte denetler', () => {
+  const source = {
+    category: 'Hormon Sağlığı',
+    title: '15 dakikalık gün ışığı ve uyku',
+    summary: 'Araştırma 120 katılımcıda 8 saat uykuyu değerlendirdi.',
+    body: 'İlk paragrafta 120 katılımcının sonuçları açıklanır.\n\nİkinci paragrafta 8 saat uyku ve 15 dakika gün ışığı anlatılır.',
+    time: '5 dk',
+    ingredients: []
+  };
+  const good = {
+    category: 'Hormone Health',
+    title: '15 minutes of daylight and sleep',
+    summary: 'The study evaluated 8 hours of sleep in 120 participants.',
+    body: 'The first paragraph explains the results from 120 participants.\n\nThe second paragraph covers 8 hours of sleep and 15 minutes of daylight.',
+    time: '5 min',
+    ingredients: []
+  };
+  const complete = assessTranslationQuality(good, source, 'en');
+  assert.equal(complete.complete, true);
+  assert.equal(complete.score, 100);
+
+  const omitted = {
+    ...good,
+    summary: 'The study evaluated sleep in participants.',
+    body: 'The results are described in one shortened paragraph.'
+  };
+  const rejected = assessTranslationQuality(omitted, source, 'en');
+  assert.equal(rejected.complete, false);
+  assert.ok(rejected.issues.some(issue => /sayı|birim|bağlantı/.test(issue)));
+  assert.ok(rejected.issues.some(issue => /paragraf|liste/.test(issue)));
+
+  const invented = assessTranslationQuality({ ...good, summary: `${good.summary} Take 500 mg.` }, source, 'en');
+  assert.equal(invented.complete, false, 'kaynakta olmayan sayısal dozlar reddedilmeli');
+  assert.ok(invented.issues.some(issue => /sayı|birim|bağlantı/.test(issue)));
+
+  assert.equal(targetLanguageLooksCorrect('The study and the results are written with clear English language for the reader.', 'de'), false);
+  assert.equal(targetLanguageLooksCorrect('Die Studie und die Ergebnisse sind für die Leser klar auf Deutsch geschrieben.', 'de'), true);
+});
+
+test('kalite kontrolünden geçmeyen AI çevirisi sorun listesiyle yeniden denenir', async () => {
+  const item = {
+    type: 'blog', category: 'Hormon Sağlığı', title: 'Uyku araştırması',
+    summary: 'Araştırma 8 saat uykuyu inceliyor.',
+    body: 'İlk bölümde 120 katılımcı anlatılır.\n\nİkinci bölümde 8 saat uyku değerlendirilir.',
+    time: '5 dk', ingredients: [], translations: {}
+  };
+  const valid = {
+    en: { category: 'Hormone Health', title: 'Sleep study', summary: 'The study examines 8 hours of sleep.', body: 'The first section describes 120 participants.\n\nThe second section evaluates 8 hours of sleep.', time: '5 min', ingredients: [] },
+    de: { category: 'Hormongesundheit', title: 'Schlafstudie', summary: 'Die Studie untersucht 8 Stunden Schlaf.', body: 'Der erste Abschnitt beschreibt 120 Teilnehmende.\n\nDer zweite Abschnitt bewertet 8 Stunden Schlaf.', time: '5 Min.', ingredients: [] },
+    ja: { category: 'ホルモン健康', title: '睡眠研究', summary: 'この研究では8時間の睡眠を調べます。', body: '最初の節では120人の参加者について説明します。\n\n次の節では8時間の睡眠を評価します。', time: '5分', ingredients: [] }
+  };
+  const attempts = { en: 0, de: 0, ja: 0 };
+  const seenSystems = [];
+  const result = await ensureCompleteTranslations(item, {
+    networkTranslate: false,
+    requestAi: async (system, prompt) => {
+      seenSystems.push(system);
+      const lang = prompt.match(/TARGET_LANGUAGE_CODES: (en|de|ja)/)?.[1];
+      attempts[lang] += 1;
+      if (lang === 'en' && attempts.en === 1) {
+        return { ok: true, data: { ...valid.en, body: 'The result is summarized without the original numbers.' } };
+      }
+      return { ok: true, data: valid[lang] };
+    }
+  });
+  assert.deepEqual(attempts, { en: 2, de: 1, ja: 1 });
+  assert.equal(result.report.en, 'ai');
+  assert.equal(result.quality.en.complete, true);
+  assert.equal(result.quality.en.attempts, 2);
+  assert.ok(seenSystems.some(system => /PREVIOUS OUTPUT FAILED QUALITY CHECKS/.test(system)));
 });
 
 test('makine çevirisi paragrafları birleştirir ve kopyayı kabul etmez', async () => {
@@ -591,6 +670,8 @@ test('/api/ai-blog admin yetkisi, JSON başlığı ve URL güvenliğini denetler
   assert.equal(okRes.data.item.title, 'Derin Uyku ve Sabah Güneşi Testosteronu Nasıl Etkiliyor?');
   assert.notEqual(okRes.data.item.translations.en.title, okRes.data.item.title);
   assert.match(okRes.data.item.translations.ja.body, /[\u3040-\u30ff\u4e00-\u9fff]/);
+  assert.equal(okRes.data.translation_quality.en.complete, true);
+  assert.equal(okRes.data.translation_quality.de.score, 100);
 
   const missing = await call('POST', { mode: 'translate', item: { title: 'Yalnız başlık' } }, true);
   assert.equal(missing.code, 400);
@@ -641,6 +722,10 @@ test('admin panelinde haber linkinden otomatik blog oluşturma ve doğrulama kod
   for (const provider of ['claude', 'kimi', 'deepseek']) assert.match(adminHtml, new RegExp(`value="${provider}"`), `${provider} sağlayıcısı panelde seçilebilmeli`);
   assert.match(adminHtml, /id="ai_model"/, 'model kimliği geçersizse ayarlanabilmeli');
   assert.match(adminHtml, /id="ai_retranslate_btn"/, 'EN/DE/JA yeniden çeviri düğmesi olmalı');
+  assert.match(adminHtml, /id="ai_quality_summary"/, 'dil kalite özeti görünmeli');
+  assert.match(adminHtml, /data-lang-quality="en"/, 'İngilizce kalite kartı olmalı');
+  assert.match(adminHtml, /4 dilde taslak üret/, 'ana üretim eylemi anlaşılır olmalı');
+  assert.match(adminHtml, /function renderTranslationDashboard\(/, 'çeviri kalite durumu anlık gösterilmeli');
   assert.match(adminHtml, /function generateFromNewsUrl\(\)/, 'haber çekme işlevi olmalı');
   assert.match(adminHtml, /function applyGeneratedBlog\(/, 'form doldurma işlevi olmalı');
   assert.match(adminHtml, /fetch\('\/api\/ai-blog'/, 'admin paneli /api/ai-blog ucunu çağırmalı');

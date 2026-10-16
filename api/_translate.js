@@ -296,6 +296,30 @@ function turkishFunctionRatio(value) {
   return hits / words.length;
 }
 
+const LANGUAGE_MARKERS = {
+  en: new Set(['the', 'and', 'with', 'for', 'from', 'that', 'this', 'these', 'those', 'into', 'are', 'is', 'was', 'were', 'of', 'in', 'on', 'not', 'your', 'can', 'should']),
+  de: new Set(['der', 'die', 'das', 'den', 'dem', 'des', 'und', 'mit', 'für', 'von', 'aus', 'dass', 'dies', 'diese', 'sind', 'ist', 'war', 'werden', 'nicht', 'ein', 'eine', 'einer', 'im', 'auf', 'kann', 'sollte'])
+};
+
+function languageMarkerScore(value, lang) {
+  const markers = LANGUAGE_MARKERS[lang];
+  if (!markers) return 0;
+  return normalizeForCompare(value).split(' ').filter(word => markers.has(word)).length;
+}
+
+/** İngilizce ile Almancanın birbirine karıştığı bariz çıktıları reddeder. */
+export function targetLanguageLooksCorrect(value, lang) {
+  const text = stripUncheckedLines(String(value || '')).trim();
+  if (!text) return false;
+  if (lang === 'ja') return japaneseEnough(text);
+  if (/[\u3040-\u30ff\u4e00-\u9fff]/.test(text)) return false;
+  if (!LANGUAGE_MARKERS[lang] || text.length < 45) return true;
+  const targetScore = languageMarkerScore(text, lang);
+  const otherLang = lang === 'en' ? 'de' : 'en';
+  const otherScore = languageMarkerScore(text, otherLang);
+  return !(otherScore >= 3 && otherScore > targetScore * 1.5);
+}
+
 /**
  * Hedef dil alanı gerçekten çevrilmiş mi?
  * Kaynakla aynı, ağırlıklı olarak Türkçe veya (Japonca için) Latin kopya ise false.
@@ -313,6 +337,7 @@ export function fieldLooksTranslated(translated, sourceField, lang) {
   if (hard.length && checked.length < 500) return false;
   if (hard.length > checked.length * 0.008) return false;
   if (turkishFunctionRatio(checked) > 0.12) return false;
+  if (!targetLanguageLooksCorrect(checked, lang)) return false;
   return true;
 }
 
@@ -322,19 +347,126 @@ function recipeIngredientLooksTranslated(translated, source, lang) {
   return !words.some(word => UNTRANSLATED_RECIPE_TERMS.has(word));
 }
 
-export function isTranslationComplete(translation, source, lang) {
-  if (!translation || !TARGET_LANGS.includes(lang)) return false;
-  const coreComplete = fieldLooksTranslated(translation.title, source.title, lang)
-    && fieldLooksTranslated(translation.summary, source.summary, lang)
-    && fieldLooksTranslated(translation.body, source.body, lang);
-  if (!coreComplete) return false;
+export function extractProtectedFacts(value) {
+  const text = String(value || '');
+  const urlPattern = /https?:\/\/[^\s)\]"']+/gi;
+  const urls = (text.match(urlPattern) || [])
+    .map(url => url.replace(/[.,;:!?。，、；：！？]+$/u, ''));
+  const withoutUrls = text.replace(urlPattern, ' ');
+  // Ölçü biriminin adı hedef dilde değişebilir; sayısal değerin kendisi korunur.
+  const numbers = withoutUrls.match(/\d+(?:[.,]\d+)?/g) || [];
+  return [...urls, ...numbers].map(token => token.toLowerCase().replace(/,/g, '.').replace(/\s+/g, ''));
+}
+
+function factsPreserved(sourceValue, translatedValue) {
+  const sourceFacts = extractProtectedFacts(sourceValue);
+  const translatedFacts = extractProtectedFacts(translatedValue);
+  if (sourceFacts.length !== translatedFacts.length) return false;
+  const remaining = [...translatedFacts];
+  for (const fact of sourceFacts) {
+    const index = remaining.indexOf(fact);
+    if (index < 0) return false;
+    remaining.splice(index, 1);
+  }
+  return remaining.length === 0;
+}
+
+function structureStats(value) {
+  const text = String(value || '').trim();
+  return {
+    paragraphs: text ? text.split(/\n{2,}/).filter(part => part.trim()).length : 0,
+    listItems: (text.match(/^\s*(?:\d+[.)]|[-•*])\s+/gm) || []).length,
+    sectionLabels: (text.match(/^.{2,80}[:：]\s*$/gm) || []).length
+  };
+}
+
+function structurePreserved(sourceValue, translatedValue) {
+  const sourceStats = structureStats(sourceValue);
+  const targetStats = structureStats(translatedValue);
+  if (sourceStats.paragraphs > 1 && targetStats.paragraphs !== sourceStats.paragraphs) return false;
+  if (sourceStats.listItems && targetStats.listItems !== sourceStats.listItems) return false;
+  if (sourceStats.sectionLabels && targetStats.sectionLabels < sourceStats.sectionLabels) return false;
+  return true;
+}
+
+/**
+ * Bir çevirinin yalnızca dolu olmasını değil; dil, yapı, sayı/birim ve tarif
+ * bütünlüğünü de denetler. Yönetim paneli bu sonucu kalite kartlarında gösterir.
+ */
+export function assessTranslationQuality(translation, source, lang) {
+  const current = translation || {};
+  const issues = [];
+  let score = 0;
+  const fieldChecks = {};
+
+  for (const [field, points] of [['title', 16], ['summary', 16], ['body', 30]]) {
+    const ok = fieldLooksTranslated(current[field], source?.[field], lang);
+    fieldChecks[field] = ok;
+    if (ok) score += points;
+    else issues.push(`${field} eksik, kopya veya hedef dilde değil`);
+  }
+
+  const languageOk = ['title', 'summary', 'body'].every(field =>
+    targetLanguageLooksCorrect(current[field], lang)
+  );
+  if (languageOk) score += 8;
+  else issues.push('hedef dil tutarlılığı başarısız');
+
+  const combinedSource = `${source?.title || ''}\n${source?.summary || ''}\n${source?.body || ''}`;
+  const combinedTarget = `${current.title || ''}\n${current.summary || ''}\n${current.body || ''}`;
+  const factsOk = factsPreserved(combinedSource, combinedTarget);
+  if (factsOk) score += 8;
+  else issues.push('sayı, birim veya bağlantılardan biri korunmamış');
+
+  const structureOk = structurePreserved(source?.body, current.body);
+  if (structureOk) score += 7;
+  else issues.push('paragraf, başlık veya liste yapısı korunmamış');
+
+  const categoryOk = !String(source?.category || '').trim() || Boolean(String(current.category || '').trim());
+  const timeOk = !String(source?.time || '').trim() || (
+    Boolean(String(current.time || '').trim())
+    && !/\bdk\b|dakika/i.test(String(current.time || ''))
+  );
+  const metadataOk = categoryOk && timeOk;
+  if (metadataOk) score += 5;
+  else issues.push('kategori veya süre yerelleştirilmemiş');
 
   const sourceIngredients = Array.isArray(source?.ingredients) ? source.ingredients : [];
-  if (!sourceIngredients.length) return true;
-  if (!Array.isArray(translation.ingredients) || translation.ingredients.length !== sourceIngredients.length) return false;
-  return sourceIngredients.every((ingredient, index) =>
-    recipeIngredientLooksTranslated(translation.ingredients[index], ingredient, lang)
-  );
+  let ingredientsOk = true;
+  if (sourceIngredients.length) {
+    ingredientsOk = Array.isArray(current.ingredients)
+      && current.ingredients.length === sourceIngredients.length
+      && sourceIngredients.every((ingredient, index) =>
+        recipeIngredientLooksTranslated(current.ingredients[index], ingredient, lang)
+        && factsPreserved(ingredient, current.ingredients[index])
+      );
+    if (ingredientsOk) score += 10;
+    else issues.push('malzeme adı, miktarı veya sırası eksik');
+  } else {
+    score += 10;
+  }
+
+  const complete = fieldChecks.title && fieldChecks.summary && fieldChecks.body
+    && languageOk && factsOk && structureOk && metadataOk && ingredientsOk;
+
+  return {
+    complete: Boolean(complete),
+    score: Math.max(0, Math.min(100, score)),
+    issues,
+    checks: {
+      fields: fieldChecks,
+      language: languageOk,
+      facts: factsOk,
+      structure: structureOk,
+      metadata: metadataOk,
+      ingredients: ingredientsOk
+    }
+  };
+}
+
+export function isTranslationComplete(translation, source, lang) {
+  if (!translation || !TARGET_LANGS.includes(lang)) return false;
+  return assessTranslationQuality(translation, source, lang).complete;
 }
 
 function categoryFor(sourceCategory, lang) {
@@ -682,47 +814,60 @@ export function coerceTranslatedFields(block) {
   };
 }
 
-export function translationSystemPrompt(langs) {
+export function translationSystemPrompt(langs, context = {}) {
   const names = { en: 'English', de: 'German', ja: 'Japanese' };
+  const targetNames = langs.map(lang => names[lang]).join(', ');
+  const retryIssues = Array.isArray(context.issues) && context.issues.length
+    ? `\nPREVIOUS OUTPUT FAILED QUALITY CHECKS: ${context.issues.join('; ')}. Correct every listed problem.`
+    : '';
   return [
     'TASK: full-translation',
-    'You are a professional translator for TestoTavan, a men\'s health publication.',
-    `Translate the Turkish blog into ${langs.map(lang => names[lang]).join(', ')}.`,
-    'Return only JSON. No markdown.',
-    'HARD RULES:',
-    '- Translate EVERY sentence of title, summary and body. Do not summarize, omit paragraphs, or add claims.',
-    '- Do not leave Turkish sentences or Turkish function words in the output. Write idiomatic, publication-ready English or German, not word-for-word Turkish syntax.',
-    '- Keep paragraph breaks, numbered lists and section labels.',
-    '- Translate every ingredient name and cooking step. Preserve ingredient order, quantities, decimals, and measurement units; do not add or remove ingredients.',
-    '- Proper nouns, URLs, numbers and units (ng/dL, g/kg, REM, SHBG) may stay unchanged.',
-    '- English must be natural English. German must be natural German. Japanese must be natural Japanese script, not romaji.',
-    '- category must be exactly: en "Hormone Health" | "High Protein" | "Sleep"; de "Hormongesundheit" | "Proteinreich" | "Schlaf"; ja "ホルモン健康" | "高たんぱく" | "睡眠". Pick the same topic in each language.',
+    'You are a senior medical-content translator and localization QA editor for TestoTavan.',
+    `Translate the complete Turkish source into ${targetNames}.`,
+    'Return only valid JSON. No markdown, comments or extra keys.',
+    'NON-NEGOTIABLE RULES:',
+    '- Translate EVERY sentence. Never summarize, shorten, omit, merge or add medical claims.',
+    '- Preserve the exact paragraph count, paragraph order, section headings, numbered lists and bullet count.',
+    '- Preserve every number, decimal, percentage, URL, proper noun and scientific unit such as ng/dL, g/kg, REM and SHBG.',
+    '- Translate title, summary, body, category, duration and EVERY ingredient. Ingredient count and order must exactly match the source; quantities must not change.',
+    '- Do not leave Turkish words or sentences, except an untranslatable registered proper name. Never mix target languages.',
+    '- English must read as native editorial English; German as native editorial German; Japanese as natural Japanese script, never romaji.',
+    '- Keep title within 100 characters and summary within 240 characters without losing facts; body must stay within 20,000 characters.',
+    '- Keep the meaning and medical caution level exact. Do not strengthen evidence, invent benefits, diagnoses, dosages or treatment advice.',
+    '- category must be exactly: en "Hormone Health" | "High Protein" | "Sleep"; de "Hormongesundheit" | "Proteinreich" | "Schlaf"; ja "ホルモン健康" | "高たんぱく" | "睡眠".',
+    '- Before answering, silently verify sentence coverage, numbers, paragraph/list structure and ingredient count.',
     langs.length === 1
-      ? `JSON shape: {"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]}`
-      : 'JSON shape: {"en":{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]},"de":{...},"ja":{...}}'
-  ].join('\n');
+      ? '{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]}'
+      : '{"en":{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]},"de":{...},"ja":{...}}',
+    retryIssues
+  ].filter(Boolean).join('\n');
 }
 
-export function translationUserPrompt(source, langs) {
+export function translationUserPrompt(source, langs, context = {}) {
+  const payload = {
+    category: source.category || '',
+    title: source.title || '',
+    summary: source.summary || '',
+    body: source.body || '',
+    time: source.time || '',
+    ingredients: Array.isArray(source.ingredients) ? source.ingredients : []
+  };
+  const previous = context.previous
+    ? `\n\nREJECTED_PREVIOUS_TRANSLATION_JSON (repair it; do not copy its errors):\n${JSON.stringify(context.previous)}`
+    : '';
   return [
-    `Target languages: ${langs.join(', ')}`,
-    `Category: ${source.category || ''}`,
-    `Title: ${source.title || ''}`,
-    `Summary: ${source.summary || ''}`,
-    `Time: ${source.time || ''}`,
-    `Ingredients (translate each entry; keep quantities and order):\n${(Array.isArray(source.ingredients) ? source.ingredients : []).map((value, index) => `${index + 1}. ${value}`).join('\n')}`,
-    `Body:\n${source.body || ''}`
-  ].join('\n\n');
-}
-
-function acceptFields(candidate, source, lang) {
-  if (!candidate) return null;
-  const repaired = repairTranslation(candidate, source, lang);
-  return isTranslationComplete(repaired, source, lang) ? repaired : null;
+    `TARGET_LANGUAGE_CODES: ${langs.join(', ')}`,
+    'SOURCE_LANGUAGE: tr',
+    `SOURCE_JSON:
+${JSON.stringify(payload)}`,
+    'Translate only the SOURCE_JSON values. Preserve its structure and return the requested JSON shape.',
+    previous
+  ].filter(Boolean).join('\n\n');
 }
 
 /**
- * Eksik veya kopya çevirileri tamamlar.
+ * Eksik veya kopya çevirileri tamamlar. Her hedef dil bağımsız AI çağrısında
+ * üretilir; başarısız kalite kontrolü sorun listesiyle ikinci kez düzeltilir.
  * options.requestAi(systemPrompt, userPrompt) → { ok, data } bekler.
  */
 export async function ensureCompleteTranslations(item, options = {}) {
@@ -736,66 +881,75 @@ export async function ensureCompleteTranslations(item, options = {}) {
   };
   const translations = {};
   const report = {};
+  const quality = {};
+  const attempts = { en: 0, de: 0, ja: 0 };
   const forceTranslation = options.forceTranslation === true;
 
   for (const lang of TARGET_LANGS) {
     const repaired = repairTranslation(item?.translations?.[lang], source, lang);
-    if (!forceTranslation && isTranslationComplete(repaired, source, lang)) {
-      translations[lang] = repaired;
-      report[lang] = 'ready';
-    } else {
-      translations[lang] = repaired;
-      report[lang] = 'pending';
-    }
+    const assessment = assessTranslationQuality(repaired, source, lang);
+    translations[lang] = repaired;
+    quality[lang] = assessment;
+    report[lang] = !forceTranslation && assessment.complete ? 'ready' : 'pending';
   }
 
   const pending = () => TARGET_LANGS.filter(lang => report[lang] === 'pending');
   const requestAi = options.requestAi;
+  const maxAiAttempts = options.allowPerLanguageRetry === false
+    ? 1
+    : Math.max(1, Math.min(3, Number(options.aiTranslationAttempts) || 2));
 
   if (requestAi && pending().length) {
-    const langs = pending();
-    try {
-      const combined = await requestAi(translationSystemPrompt(langs), translationUserPrompt(source, langs));
-      if (combined?.ok && combined.data) {
-        for (const lang of langs) {
-          const block = coerceTranslatedFields(pickLanguageBlock(combined.data, lang) || (langs.length === 1 ? combined.data : null));
-          const accepted = acceptFields(block, source, lang);
-          if (accepted) {
-            translations[lang] = accepted;
-            report[lang] = 'ai';
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('[translate] combined AI pass failed:', error?.message || error);
-    }
-
-    const still = pending();
-    if (still.length && options.allowPerLanguageRetry !== false) {
-      await Promise.all(still.map(async lang => {
+    await Promise.all(pending().map(async lang => {
+      let previous = translations[lang];
+      let best = quality[lang];
+      for (let attempt = 1; attempt <= maxAiAttempts; attempt += 1) {
+        attempts[lang] = attempt;
+        const context = attempt > 1 ? { issues: best.issues, previous } : {};
         try {
-          const single = await requestAi(translationSystemPrompt([lang]), translationUserPrompt(source, [lang]));
-          const block = single?.ok ? coerceTranslatedFields(pickLanguageBlock(single.data, lang) || single.data) : null;
-          const accepted = acceptFields(block, source, lang);
-          if (accepted) {
-            translations[lang] = accepted;
+          const response = await requestAi(
+            translationSystemPrompt([lang], context),
+            translationUserPrompt(source, [lang], context)
+          );
+          const rawBlock = response?.ok
+            ? pickLanguageBlock(response.data, lang) || response.data
+            : null;
+          const block = coerceTranslatedFields(rawBlock);
+          if (!block) continue;
+          const candidate = repairTranslation(block, source, lang);
+          const assessment = assessTranslationQuality(candidate, source, lang);
+          if (assessment.score >= best.score) {
+            translations[lang] = candidate;
+            quality[lang] = assessment;
+            previous = candidate;
+            best = assessment;
+          }
+          if (assessment.complete) {
+            translations[lang] = candidate;
+            quality[lang] = assessment;
             report[lang] = 'ai';
+            break;
           }
         } catch (error) {
-          console.warn(`[translate] ${lang} AI pass failed:`, error?.message || error);
+          console.warn(`[translate] ${lang} AI pass ${attempt} failed:`, error?.message || error);
         }
-      }));
-    }
+      }
+    }));
   }
 
   if (pending().length && networkTranslationAllowed(options, options.env || process.env)) {
     await Promise.all(pending().map(async lang => {
       try {
         const mt = await machineTranslateFields(source, lang, options);
-        const accepted = acceptFields(mt, source, lang);
-        if (accepted) {
-          translations[lang] = accepted;
+        const candidate = mt ? repairTranslation(mt, source, lang) : null;
+        const assessment = candidate ? assessTranslationQuality(candidate, source, lang) : null;
+        if (assessment?.complete) {
+          translations[lang] = candidate;
+          quality[lang] = assessment;
           report[lang] = 'mt';
+        } else if (assessment && assessment.score > quality[lang].score) {
+          translations[lang] = candidate;
+          quality[lang] = assessment;
         }
       } catch (error) {
         console.warn(`[translate] ${lang} machine pass failed:`, error?.message || error);
@@ -804,35 +958,58 @@ export async function ensureCompleteTranslations(item, options = {}) {
   }
 
   for (const lang of pending()) {
+    // Zorunlu yenileme çağrısı başarısız olduysa mevcut ve kalite kontrolünü
+    // geçen çeviriyi silmeyiz; kullanıcıya bozuk/boş alan döndürmekten kaçınırız.
+    if (quality[lang].complete) {
+      report[lang] = 'ready';
+      continue;
+    }
     const local = localTranslateFields(source, lang);
-    const accepted = acceptFields(local, source, lang);
-    if (accepted) {
-      translations[lang] = accepted;
+    const assessment = assessTranslationQuality(local, source, lang);
+    if (assessment.complete) {
+      translations[lang] = local;
+      quality[lang] = assessment;
       report[lang] = 'local';
       continue;
     }
+    if (assessment.score > quality[lang].score) {
+      translations[lang] = local;
+      quality[lang] = assessment;
+    }
+    const candidate = translations[lang];
     const sourceIngredients = Array.isArray(source.ingredients) ? source.ingredients : [];
-    const safeLocal = {
-      ...local,
-      title: fieldLooksTranslated(local.title, source.title, lang) ? local.title : '',
-      summary: fieldLooksTranslated(local.summary, source.summary, lang) ? local.summary : '',
-      body: fieldLooksTranslated(local.body, source.body, lang) ? local.body : '',
+    const safeCandidate = {
+      ...candidate,
+      title: fieldLooksTranslated(candidate.title, source.title, lang) ? candidate.title : '',
+      summary: fieldLooksTranslated(candidate.summary, source.summary, lang) ? candidate.summary : '',
+      body: fieldLooksTranslated(candidate.body, source.body, lang) ? candidate.body : '',
       ingredients: sourceIngredients.length && sourceIngredients.every((ingredient, index) =>
-        recipeIngredientLooksTranslated(local.ingredients?.[index], ingredient, lang)
-      ) ? local.ingredients : []
+        recipeIngredientLooksTranslated(candidate.ingredients?.[index], ingredient, lang)
+        && factsPreserved(ingredient, candidate.ingredients?.[index])
+      ) ? candidate.ingredients : []
     };
-    translations[lang] = repairTranslation(safeLocal, source, lang);
+    translations[lang] = repairTranslation(safeCandidate, source, lang);
+    quality[lang] = assessTranslationQuality(translations[lang], source, lang);
     report[lang] = 'incomplete';
+  }
+
+  for (const lang of TARGET_LANGS) {
+    quality[lang] = {
+      ...quality[lang],
+      method: report[lang],
+      attempts: attempts[lang]
+    };
   }
 
   const incomplete = TARGET_LANGS.filter(lang => report[lang] === 'incomplete');
   const warning = incomplete.length
-    ? `Şu diller tam çevrilemedi: ${incomplete.map(lang => lang.toUpperCase()).join(', ')}. Başlık, özet ve gövdeyi kontrol edin veya bir AI anahtarıyla yeniden üretin.`
+    ? `Şu diller kalite kontrolünü geçemedi: ${incomplete.map(lang => `${lang.toUpperCase()} (${quality[lang].issues.slice(0, 2).join(', ')})`).join('; ')}. Seçili AI ile yeniden çevirin.`
     : '';
 
   return {
     item: { ...item, translations },
     report,
+    quality,
     warning
   };
 }

@@ -280,7 +280,13 @@ function renderEstimate(est) {
     const panel = document.getElementById('physicalResult');
     const plan = buildPlanFromEstimate(est);
     const SCALE_MIN = 0;
-    const SCALE_MAX = 1200;
+    const desiredMax = est.pediatric ? Math.max(est.ref[1], est.high) : 1200;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(1, desiredMax / 4))));
+    const normalizedStep = desiredMax / 4 / magnitude;
+    const niceFactor = [1, 2, 3, 5, 10].find(factor => normalizedStep <= factor) || 10;
+    const scaleStep = niceFactor * magnitude;
+    const SCALE_MAX = Math.ceil(desiredMax / scaleStep) * scaleStep;
+    const scaleTicks = Array.from({ length: Math.round(SCALE_MAX / scaleStep) + 1 }, (_, index) => index * scaleStep);
 
     const refLeft = scalePos(est.ref[0], SCALE_MIN, SCALE_MAX);
     const refWidth = scalePos(est.ref[1], SCALE_MIN, SCALE_MAX) - refLeft;
@@ -316,7 +322,7 @@ function renderEstimate(est) {
                 <div class="ci-band" style="left:${cBandLeft}%;width:${cBandWidth}%"></div>
                 <div class="ci-point" style="left:${cPoint}%"></div>
             </div>
-            <p class="lab-card-ref">Laboratuvar normal aralığı: <b>${card.refText}</b></p>
+            <p class="lab-card-ref">${card.markerKey === 'totalT' && est.pediatric ? 'Yaşa göre geniş karşılaştırma aralığı' : 'Laboratuvar normal aralığı'}: <b>${card.refText}</b></p>
             <p class="lab-card-explain">${T(card.explain)}</p>
         </article>`;
     }).join('');
@@ -325,26 +331,26 @@ function renderEstimate(est) {
         <section class="estimate-card" style="--status:${est.status.color}">
             <header class="estimate-head">
                 <div>
-                    <p class="eyebrow">Tahmini değer</p>
+                    <p class="eyebrow">${est.pediatric ? 'Yaşa göre kaba ön değerlendirme' : 'Belirti tabanlı tahmin'}</p>
                     <h3 class="estimate-title">Total Testosteron</h3>
                 </div>
                 <span class="badge ${est.status.badgeClass}">${T(est.status.label)}</span>
             </header>
 
             <div class="estimate-value">${fmt(est.point)}<span class="unit">ng/dL</span></div>
-            <p class="estimate-ci">%68 güven aralığı <b>${fmt(est.low)}–${fmt(est.high)} ng/dL</b> · tahmin güveni %${est.confidence}</p>
+            <p class="estimate-ci">Tahmini belirsizlik aralığı <b>${fmt(est.low)}–${fmt(est.high)} ng/dL</b> · model güven puanı %${est.confidence}</p>
 
             <div class="ci-track">
                 <div class="ci-ref" style="left:${refLeft}%;width:${refWidth}%"></div>
                 <div class="ci-band" style="left:${ciLeft}%;width:${ciWidth}%"></div>
                 <div class="ci-point" style="left:${pointPos}%"></div>
             </div>
-            <div class="ci-scale"><span>0</span><span>300</span><span>600</span><span>900</span><span>1200</span></div>
+            <div class="ci-scale">${scaleTicks.map(tick => `<span>${fmt(tick)}</span>`).join('')}</div>
             <div class="ci-legend">
-                <span><i class="dot ref"></i> Laboratuvar normal aralığı ${est.refText}</span>
+                <span><i class="dot ref"></i> ${est.referenceLabel}: ${est.refText}</span>
                 <span><i class="dot band"></i> Sizin tahmin aralığınız</span>
             </div>
-            <p class="estimate-note">${IC('i-info')} Bu bir tahmindir, teşhis değildir. Kesin değer yalnızca kan testiyle belirlenir.</p>
+            <p class="estimate-note">${IC('i-info')} ${est.modelNote}</p>
         </section>
 
         <div class="section-title">
@@ -353,8 +359,12 @@ function renderEstimate(est) {
         </div>
         ${driverCards}
 
-        ${renderSupplementCard(plan, 'Kişisel planınız', `${plan.length} adım · uygulama sırasına göre`)}
-        <p class="muted plan-note">${IC('i-info')} Plan tahmini değerinize ve girdilerinize dayanır; kişisel dozlar kan testiyle kesinleşir. Tüm adımlar kilit olmadan yukarıda listelenmiştir.</p>
+        ${est.pediatric
+            ? renderSupplementCard(plan, 'Güvenli sonraki adımlar', `${plan.length} adım · uygulama sırasına göre`)
+            : renderSupplementCard(plan, 'Kişisel planınız', `${plan.length} adım · uygulama sırasına göre`)}
+        <p class="muted plan-note">${IC('i-info')} ${est.pediatric
+            ? '18 yaş altında bu ön değerlendirmeden takviye veya hormon dozu üretmeyiz; plan yalnızca güvenli yaşam alışkanlıkları ve uzman değerlendirmesini içerir.'
+            : 'Plan tahmini değerinize ve girdilerinize dayanır; kişisel dozlar kan testiyle kesinleşir. Tüm adımlar kilit olmadan yukarıda listelenmiştir.'}</p>
 
         <div class="cta-block">
             <button class="btn-primary" onclick="goToVerification()">
@@ -381,26 +391,46 @@ function buildPlanFromEstimate(est) {
     const sleep = readNumber('inputSleep', 7);
     const stress = readNumber('inputStress', 2);
     const activity = readNumber('inputActivity', 3);
+    const age = Number(est.age) || readNumber('inputAge', 35);
+    const pediatric = Boolean(est.pediatric || age < 18);
+    const sleepTarget = pediatric ? (age < 13 ? 9 : 8) : 7;
     const items = [];
 
-    if (sleep < 7) {
-        items.push(sup('Uykuyu 7–9 saate çıkarın',
-            `Şu an gecede ${fmt(sleep, sleep % 1 === 0 ? 0 : 1)} saat uyuyorsunuz. Kısa uyku, testosteron üretimini en hızlı düşüren etkenlerden biridir.`,
+    if (sleep < sleepTarget) {
+        items.push(sup(pediatric ? `Uykuyu ${sleepTarget} saate veya üzerine çıkarın` : 'Uykuyu 7–9 saate çıkarın',
+            `Şu an gecede ${fmt(sleep, sleep % 1 === 0 ? 0 : 1)} saat uyuyorsunuz. Yaşa göre yetersiz uyku hormon ritmini ve toparlanmayı etkileyebilir.`,
             'Her gece aynı saatte yatın; yatmadan 1 saat önce ekranı bırakın',
-            sleep < 6 ? 'critical' : 'high'));
+            sleep <= sleepTarget - 2 ? 'critical' : 'high'));
     }
     if (stress >= 3) {
         items.push(sup('Stres yükünü düşürün',
-            'Yüksek stres, kortizol üzerinden testosteron üretimini baskılar.',
+            'Yüksek stres, kortizol üzerinden hormon ritmini ve uyku kalitesini etkileyebilir.',
             'Günde 10 dakika nefes egzersizi + haftada 2 uzun yürüyüş',
             'high'));
     }
     if (activity <= 1) {
         items.push(sup('Hareketi artırın',
-            'Hareketsizlik yağ oranını yükseltir; yağ dokusu testosteronu estradiole çevirir.',
-            'Haftada 3 gün 30 dakika tempolu yürüyüş + 2 gün ağırlık çalışması',
+            pediatric
+                ? 'Düzenli ve yaşa uygun hareket; uyku, kemik ve kas gelişimini destekler.'
+                : 'Hareketsizlik yağ oranını yükseltir; yağ dokusu testosteronu estradiole çevirir.',
+            pediatric
+                ? 'Bir ebeveyn ve hekim önerisiyle her gün yaşa uygun hareket'
+                : 'Haftada 3 gün 30 dakika tempolu yürüyüş + 2 gün ağırlık çalışması',
             'high'));
     }
+
+    if (pediatric) {
+        items.push(sup(
+            est.growthLag > 0.15 ? 'Büyüme ve ergenlik değerlendirmesi' : 'Çocuk/ergen hekimi değerlendirmesi',
+            est.growthLag > 0.15
+                ? 'Boy ve kilo yaşa göre beklenen gelişimden belirgin ayrılabiliyor. Tek bir tahmin hormon eksikliğini göstermez; büyüme eğrisi ve ergenlik evresi birlikte incelenmelidir.'
+                : '18 yaş altında testosteron değeri ergenlik evresine göre büyük ölçüde değişir. Sonuç, çocuk veya ergen sağlığı konusunda uzman bir hekimle değerlendirilmelidir.',
+            'Ebeveyninizle çocuk endokrinolojisine başvurun; kendi kendinize hormon veya takviye kullanmayın',
+            'high'
+        ));
+        return items.sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank);
+    }
+
     if (est.bmi >= 27) {
         items.push(sup('Kilo yönetimi',
             `Vücut kitle indeksiniz tahminen ${fmt(est.bmi, 1)}. Yağ oranı düştükçe serbest testosteron toparlanır.`,
