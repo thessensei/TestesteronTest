@@ -53,7 +53,9 @@ We offer natural, safe, and alternative solutions to address the decline in test
 - **Sağ/sol sponsor alanları** — Masaüstü ve TV ekranlarında içeriğin **soluna ve sağına** yerleşen,
   kaydırmada sabit kalan sponsor sütunları; telefon ve tablette ise içerikten önce/sonra görünen
   kaydırılabilir sponsor şeridi. Başlık, metin ve bağlantı `src/js/app.js` içindeki tek `SPONSORS`
-  listesinden yönetilir (`window.TESTOTAVAN_SPONSORS` ile API'den de beslenebilir); boş liste o sütunu gizler
+  listesinden yönetilir (`window.TESTOTAVAN_SPONSORS` ile API'den de beslenebilir); boş liste o sütunu gizler.
+  Sponsorluk/iletişim CTA'ları (`Sponsor ol`, `İletişime geç`, `Detaylar`) `CONTACT_EMAIL`
+  sabitinden yönetilir ve **testosterontavan@gmail.com** adresine mail atar
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, canonical URL, Open Graph + WebApplication yapılandırılmış verisi, `robots.txt` ve geçerli sitemap
 - **Güvenlik başlıkları** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (bkz. `vercel.json`)

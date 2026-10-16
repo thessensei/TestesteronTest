@@ -106,7 +106,7 @@ test('sponsor içeriği tek listeden üretilir ve boş listede alan gizlenir', (
     for (const rail of [left, right]) {
         assert.equal([...rail.list.innerHTML.matchAll(/class="sponsor-card"/g)].length, 2, `${rail.dataset.sponsorRail}: iki sponsor kartı basılmalı`);
         assert.match(rail.list.innerHTML, /class="sponsor-badge"/);
-        assert.match(rail.list.innerHTML, /class="sponsor-cta" href="#"/);
+        assert.match(rail.list.innerHTML, /class="sponsor-cta" href="mailto:testosterontavan@gmail\.com"/);
         assert.equal(rail.hidden.value, false, 'dolu ray görünür kalmalı');
     }
 
@@ -119,6 +119,27 @@ test('sponsor içeriği tek listeden üretilir ve boş listede alan gizlenir', (
     assert.match(left.list.innerHTML, /target="_blank" rel="noopener nofollow sponsored"/);
     assert.equal(right.list.innerHTML, '', 'boş listede içerik basılmamalı');
     assert.equal(right.hidden.value, true, 'boş ray gizlenmeli');
+});
+
+test('sponsorluk ve iletişim CTA\'ları testosterontavan@gmail.com adresine gider', () => {
+    // Tek doğruluk kaynağı: CONTACT_EMAIL / CONTACT_HREF
+    assert.match(appSource, /const CONTACT_EMAIL = 'testosterontavan@gmail\.com';/, 'iletişim adresi bulunamadı');
+    assert.match(appSource, /const CONTACT_HREF = `mailto:\$\{CONTACT_EMAIL\}`;/, 'mailto bağlantısı bulunamadı');
+
+    // Varsayılan SPONSORS listesinde ölü '#' bağlantısı kalmamalı
+    const sponsorsBlock = appSource.match(/const SPONSORS = \{[\s\S]*?\n\};/)[0];
+    assert.ok(!/href:\s*'#'/.test(sponsorsBlock), 'sponsor bağlantıları ölü # olmamalı');
+    assert.equal([...sponsorsBlock.matchAll(/href:\s*CONTACT_HREF/g)].length, 4, 'dört sponsor CTA\'sının da CONTACT_HREF kullanması gerekir');
+
+    // Hakkımızda alt bilgisinde görünür iletişim maili olmalı
+    assert.match(srcHtml, /href="mailto:testosterontavan@gmail\.com"/, 'Hakkımızda alt bilgisinde mailto linki yok');
+
+    // Derlenmiş çıktı da aynı maili içermeli (index.html + app paketi)
+    assert.match(builtHtml, /href="mailto:testosterontavan@gmail\.com"/, 'derlenmiş index.html içinde mailto linki yok');
+    const builtApp = fs.readdirSync(path.join(root, 'js')).find(f => /^app\./.test(f));
+    if (builtApp) {
+        assert.match(read(path.join('js', builtApp)), /testosterontavan@gmail\.com/, 'derlenmiş app paketinde iletişim maili yok');
+    }
 });
 
 test('sponsor metinleri dört dilde çevrilebilir', () => {

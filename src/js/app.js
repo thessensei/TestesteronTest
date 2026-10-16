@@ -1218,6 +1218,11 @@ function renderSupplementCard(supplements, title, subtitle) {
 // - Sağ liste  : masaüstü/TV'de içeriğin sağ sütunu, mobilde içerikten sonraki şerit
 // Farklı bir kaynaktan (ör. API) beslemek için window.TESTOTAVAN_SPONSORS
 // değişkenine aynı biçimde bir nesne atamak yeterlidir.
+//
+// Sponsorluk ve iş birliği talepleri tek adrese gider; varsayılan tüm
+// sponsor CTA'ları ("Sponsor ol", "İletişime geç", "Detaylar") bu maili açar.
+const CONTACT_EMAIL = 'testosterontavan@gmail.com';
+const CONTACT_HREF = `mailto:${CONTACT_EMAIL}`;
 const SPONSORS = {
     left: [
         {
@@ -1225,14 +1230,14 @@ const SPONSORS = {
             title: 'Sponsor alanı',
             text: 'Marka başlığı, kısa metin ve bağlantı burada yayınlanır.',
             cta: 'Sponsor ol',
-            href: '#'
+            href: CONTACT_HREF
         },
         {
             badge: 'Sponsor',
             title: 'Laboratuvar iş birliği',
             text: 'Hormon paneli kampanyaları için ayrılmış alan.',
             cta: 'İletişime geç',
-            href: '#'
+            href: CONTACT_HREF
         }
     ],
     right: [
@@ -1241,14 +1246,14 @@ const SPONSORS = {
             title: 'Sponsor alanı',
             text: 'Takviye ve erkek sağlığı markaları için ayrılmış alan.',
             cta: 'Sponsor ol',
-            href: '#'
+            href: CONTACT_HREF
         },
         {
             badge: 'Sponsor',
             title: 'Sponsorlu içerik',
             text: 'Blog yazınız dört dilde bu alanda listelenir.',
             cta: 'Detaylar',
-            href: '#'
+            href: CONTACT_HREF
         }
     ]
 };
