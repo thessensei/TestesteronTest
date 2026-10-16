@@ -1328,7 +1328,6 @@ function initAnalysisScreens() {
     renderSymptomGrid();
     onSymptomChange();
     setMeasurementType('baseline');
-    updateDamatAtomuWidget();
 
     V().PHYSICAL_FIELDS.forEach(field => {
         const input = document.getElementById(field.id);

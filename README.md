@@ -152,8 +152,16 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
 | `GEMINI_MODEL` | Gemini model kimliği (opsiyonel; varsayılan `gemini-3.8-flash`; kapatılmış 1.x/2.0 modelleri otomatik güncel modele taşınır) |
 | `OPENAI_API_KEY` | OpenAI API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
+| `OPENAI_MODEL` | OpenAI model kimliği (opsiyonel; varsayılan `gpt-4o-mini`) |
 | `GROQ_API_KEY` | Groq API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
 | `GROQ_MODEL` | Groq model kimliği (opsiyonel; varsayılan `openai/gpt-oss-120b`; kapatılmış eski model ayarları otomatik güncel modele taşınır) |
+| `ANTHROPIC_API_KEY` (`CLAUDE_API_KEY`) | Claude API anahtarı (opsiyonel) |
+| `CLAUDE_MODEL` (`ANTHROPIC_MODEL`) | Claude model kimliği (opsiyonel; varsayılan `claude-sonnet-4-5`) |
+| `MOONSHOT_API_KEY` (`KIMI_API_KEY`) | Kimi / Moonshot API anahtarı (opsiyonel) |
+| `KIMI_MODEL` (`MOONSHOT_MODEL`) | Kimi model kimliği (opsiyonel; varsayılan `moonshot-v1-8k`) |
+| `DEEPSEEK_API_KEY` | DeepSeek API anahtarı (opsiyonel) |
+| `DEEPSEEK_MODEL` | DeepSeek model kimliği (opsiyonel; varsayılan `deepseek-chat`) |
+| `AI_API_KEY` / `AI_MODEL` | Sağlayıcıya özel anahtar yoksa genel yedek anahtar/model (opsiyonel) |
 
 > Not: `ADMIN_PASSWORD` / `SESSION_SECRET` tanımlı değilse giriş API'si `503` döner; `DATABASE_URL` yoksa istatistik ve içerik servisleri devre dışı kalır (site çalışmaya devam eder).
 > Pinterest değişkenleri tanımlı değilse site ve yayın akışı normal çalışır; yalnızca pin adımı atlanır.

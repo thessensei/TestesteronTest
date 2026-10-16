@@ -28,6 +28,16 @@ const TR_FUNCTION = new Set([
   'olan', 'eden', 'olan', 'her', 'çok', 'daha', 'en', 'bu', 'o', 'ne', 'hangi'
 ]);
 
+// These Turkish food words have no distinctive Turkish characters. A partial
+// word-map can otherwise make an ingredient look translated when it is not.
+const UNTRANSLATED_RECIPE_TERMS = new Set([
+  'yumurta', 'yumurtası', 'yumurtaları', 'badem', 'bademi', 'ceviz', 'cevizi', 'fındık', 'fıstık',
+  'mercimek', 'nohut', 'yulaf', 'patates', 'domates', 'bal', 'muz', 'dana', 'hindi', 'kuzu',
+  'tavuk', 'tavuklu', 'somon', 'peynir', 'ekmek', 'un', 'tuz', 'şeker', 'kabak', 'limon',
+  'avokado', 'kakao', 'kahve', 'sirke', 'salça', 'biber', 'karabiber', 'bezelye', 'mantar',
+  'havuç', 'pırasa', 'maydanoz', 'dereotu', 'fesleğen', 'kimyon', 'pul', 'adet'
+]);
+
 /** [kaynak, en, de, ja] — uzun ifadeler önce uygulanır. */
 const PHRASES = [
   [
@@ -87,7 +97,21 @@ const PHRASES = [
   ['uyku kalitesi', 'sleep quality', 'Schlafqualität', '睡眠の質'],
   ['gün ışığı', 'daylight', 'Tageslicht', '日光'],
   ['sirkadiyen ritmi', 'circadian rhythm', 'zirkadianer Rhythmus', '概日リズム'],
-  ['sirkadiyen ritim', 'circadian rhythm', 'zirkadianer Rhythmus', '概日リズム']
+  ['sirkadiyen ritim', 'circadian rhythm', 'zirkadianer Rhythmus', '概日リズム'],
+  ['tavuk göğsü', 'chicken breast', 'Hähnchenbrust', '鶏むね肉'],
+  ['kabak çekirdeği içi', 'shelled pumpkin seeds', 'geschälte Kürbiskerne', 'かぼちゃの種'],
+  ['zeytinyağı', 'olive oil', 'Olivenöl', 'オリーブオイル'],
+  ['süzme yoğurt', 'strained yogurt', 'griechischer Joghurt', '水切りヨーグルト'],
+  ['yemek kaşığı', 'tablespoon', 'Esslöffel', '大さじ'],
+  ['tatlı kaşığı', 'dessert spoon', 'Dessertlöffel', 'デザートスプーン'],
+  ['çay kaşığı', 'teaspoon', 'Teelöffel', '小さじ'],
+  ['su bardağı', 'cup', 'Tasse', 'カップ'],
+  ['yumurta', 'egg', 'Ei', '卵'],
+  ['yoğurt', 'yogurt', 'Joghurt', 'ヨーグルト'],
+  ['yulaf ezmesi', 'rolled oats', 'Haferflocken', 'オートミール'],
+  ['karabiber', 'black pepper', 'schwarzer Pfeffer', '黒こしょう'],
+  ['kırmızı biber', 'red pepper', 'rote Paprika', '赤ピーマン'],
+  ['tuz', 'salt', 'Salz', '塩']
 ];
 
 const WORDS = [
@@ -181,6 +205,33 @@ const WORDS = [
   ['yerine', 'instead of', 'anstelle', '代わり'],
   ['geçmez', 'does not replace', 'ersetzt nicht', '代わりにはなりません'],
   ['kaynak', 'source', 'Quelle', '出典'],
+  ['malzemeler', 'ingredients', 'Zutaten', '材料'],
+  ['malzeme', 'ingredient', 'Zutat', '材料'],
+  ['hazırlanışı', 'preparation', 'Zubereitung', '作り方'],
+  ['karıştırın', 'mix', 'mischen', '混ぜます'],
+  ['ekleyin', 'add', 'hinzufügen', '加えます'],
+  ['pişirin', 'cook', 'kochen', '調理します'],
+  ['fırında', 'in the oven', 'im Ofen', 'オーブンで'],
+  ['dakika', 'minutes', 'Minuten', '分'],
+  ['gram', 'grams', 'Gramm', 'グラム'],
+  ['adet', 'pieces', 'Stück', '個'],
+  ['tavuk', 'chicken', 'Hähnchen', '鶏肉'],
+  ['balık', 'fish', 'Fisch', '魚'],
+  ['somon', 'salmon', 'Lachs', 'サーモン'],
+  ['yulaf', 'oats', 'Hafer', 'オーツ麦'],
+  ['pirinç', 'rice', 'Reis', '米'],
+  ['bulgur', 'bulgur', 'Bulgur', 'ブルグル'],
+  ['mercimek', 'lentils', 'Linsen', 'レンズ豆'],
+  ['nohut', 'chickpeas', 'Kichererbsen', 'ひよこ豆'],
+  ['ıspanak', 'spinach', 'Spinat', 'ほうれん草'],
+  ['domates', 'tomato', 'Tomate', 'トマト'],
+  ['soğan', 'onion', 'Zwiebel', '玉ねぎ'],
+  ['sarımsak', 'garlic', 'Knoblauch', 'にんにく'],
+  ['süt', 'milk', 'Milch', '牛乳'],
+  ['peynir', 'cheese', 'Käse', 'チーズ'],
+  ['zencefil', 'ginger', 'Ingwer', '生姜'],
+  ['bal', 'honey', 'Honig', 'はちみつ'],
+  ['muz', 'banana', 'Banane', 'バナナ'],
   ['not', 'note', 'Hinweis', '注']
 ];
 
@@ -265,11 +316,25 @@ export function fieldLooksTranslated(translated, sourceField, lang) {
   return true;
 }
 
+function recipeIngredientLooksTranslated(translated, source, lang) {
+  if (!fieldLooksTranslated(translated, source, lang)) return false;
+  const words = normalizeForCompare(translated).split(' ').filter(Boolean);
+  return !words.some(word => UNTRANSLATED_RECIPE_TERMS.has(word));
+}
+
 export function isTranslationComplete(translation, source, lang) {
   if (!translation || !TARGET_LANGS.includes(lang)) return false;
-  return fieldLooksTranslated(translation.title, source.title, lang)
+  const coreComplete = fieldLooksTranslated(translation.title, source.title, lang)
     && fieldLooksTranslated(translation.summary, source.summary, lang)
     && fieldLooksTranslated(translation.body, source.body, lang);
+  if (!coreComplete) return false;
+
+  const sourceIngredients = Array.isArray(source?.ingredients) ? source.ingredients : [];
+  if (!sourceIngredients.length) return true;
+  if (!Array.isArray(translation.ingredients) || translation.ingredients.length !== sourceIngredients.length) return false;
+  return sourceIngredients.every((ingredient, index) =>
+    recipeIngredientLooksTranslated(translation.ingredients[index], ingredient, lang)
+  );
 }
 
 function categoryFor(sourceCategory, lang) {
@@ -285,13 +350,17 @@ function repairTime(time, sourceTime, lang) {
 
 export function repairTranslation(translation, source, lang) {
   const current = translation || {};
+  const sourceIngredients = Array.isArray(source?.ingredients) ? source.ingredients : [];
+  const ingredients = sourceIngredients.length && Array.isArray(current.ingredients)
+    ? current.ingredients.map(value => clean(value, 200)).filter(Boolean).slice(0, 100)
+    : [];
   return {
     category: categoryFor(source.category, lang) || clean(current.category, 60) || localTranslateText(source.category || '', lang),
     title: clean(current.title, 100),
     summary: clean(current.summary, 240),
     body: clean(current.body, 20000),
     time: repairTime(current.time, source.time, lang),
-    ingredients: []
+    ingredients
   };
 }
 
@@ -383,7 +452,8 @@ export function localTranslateFields(source, lang) {
     title: localTranslateText(source.title, lang),
     summary: localTranslateText(source.summary, lang),
     body: localTranslateText(source.body, lang),
-    time: source.time
+    time: source.time,
+    ingredients: (Array.isArray(source.ingredients) ? source.ingredients : []).map(value => localTranslateText(value, lang))
   }, source, lang);
 }
 
@@ -569,13 +639,19 @@ export async function machineTranslateFields(source, lang, options = {}) {
   const title = await machineTranslateText(source.title, lang, options);
   const summary = await machineTranslateText(source.summary, lang, options);
   const body = await machineTranslateText(source.body, lang, options);
-  if (!title || !summary || !body) return null;
+  const sourceIngredients = Array.isArray(source.ingredients) ? source.ingredients : [];
+  const ingredientBlock = sourceIngredients.length
+    ? await machineTranslateText(sourceIngredients.join('\n'), lang, options)
+    : '';
+  const ingredients = sourceIngredients.length ? String(ingredientBlock || '').split('\n').map(value => value.trim()) : [];
+  if (!title || !summary || !body || (sourceIngredients.length && (ingredients.length !== sourceIngredients.length || ingredients.some(value => !value)))) return null;
   return repairTranslation({
     category: categoryFor(source.category, lang),
     title,
     summary,
     body,
-    time: source.time
+    time: source.time,
+    ingredients
   }, source, lang);
 }
 
@@ -601,7 +677,8 @@ export function coerceTranslatedFields(block) {
     summary: block.summary || block.description || block.ozet || '',
     body: block.body || block.content || block.text || block.icerik || block.article || '',
     category: block.category || block.kategori || '',
-    time: block.time || block.reading_time || block.readingTime || ''
+    time: block.time || block.reading_time || block.readingTime || '',
+    ingredients: Array.isArray(block.ingredients) ? block.ingredients : (Array.isArray(block.malzemeler) ? block.malzemeler : [])
   };
 }
 
@@ -614,14 +691,15 @@ export function translationSystemPrompt(langs) {
     'Return only JSON. No markdown.',
     'HARD RULES:',
     '- Translate EVERY sentence of title, summary and body. Do not summarize, omit paragraphs, or add claims.',
-    '- Do not leave Turkish sentences or Turkish function words in the output.',
+    '- Do not leave Turkish sentences or Turkish function words in the output. Write idiomatic, publication-ready English or German, not word-for-word Turkish syntax.',
     '- Keep paragraph breaks, numbered lists and section labels.',
+    '- Translate every ingredient name and cooking step. Preserve ingredient order, quantities, decimals, and measurement units; do not add or remove ingredients.',
     '- Proper nouns, URLs, numbers and units (ng/dL, g/kg, REM, SHBG) may stay unchanged.',
     '- English must be natural English. German must be natural German. Japanese must be natural Japanese script, not romaji.',
     '- category must be exactly: en "Hormone Health" | "High Protein" | "Sleep"; de "Hormongesundheit" | "Proteinreich" | "Schlaf"; ja "ホルモン健康" | "高たんぱく" | "睡眠". Pick the same topic in each language.',
     langs.length === 1
-      ? `JSON shape: {"title":"...","summary":"...","body":"...","category":"..."}`
-      : 'JSON shape: {"en":{"title":"...","summary":"...","body":"...","category":"..."},"de":{...},"ja":{...}}'
+      ? `JSON shape: {"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]}`
+      : 'JSON shape: {"en":{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]},"de":{...},"ja":{...}}'
   ].join('\n');
 }
 
@@ -631,6 +709,8 @@ export function translationUserPrompt(source, langs) {
     `Category: ${source.category || ''}`,
     `Title: ${source.title || ''}`,
     `Summary: ${source.summary || ''}`,
+    `Time: ${source.time || ''}`,
+    `Ingredients (translate each entry; keep quantities and order):\n${(Array.isArray(source.ingredients) ? source.ingredients : []).map((value, index) => `${index + 1}. ${value}`).join('\n')}`,
     `Body:\n${source.body || ''}`
   ].join('\n\n');
 }
@@ -651,14 +731,16 @@ export async function ensureCompleteTranslations(item, options = {}) {
     title: item?.title || '',
     summary: item?.summary || '',
     body: item?.body || '',
-    time: item?.time || ''
+    time: item?.time || '',
+    ingredients: Array.isArray(item?.ingredients) ? item.ingredients : []
   };
   const translations = {};
   const report = {};
+  const forceTranslation = options.forceTranslation === true;
 
   for (const lang of TARGET_LANGS) {
     const repaired = repairTranslation(item?.translations?.[lang], source, lang);
-    if (isTranslationComplete(repaired, source, lang)) {
+    if (!forceTranslation && isTranslationComplete(repaired, source, lang)) {
       translations[lang] = repaired;
       report[lang] = 'ready';
     } else {
@@ -724,8 +806,23 @@ export async function ensureCompleteTranslations(item, options = {}) {
   for (const lang of pending()) {
     const local = localTranslateFields(source, lang);
     const accepted = acceptFields(local, source, lang);
-    translations[lang] = accepted || local;
-    report[lang] = accepted ? 'local' : 'incomplete';
+    if (accepted) {
+      translations[lang] = accepted;
+      report[lang] = 'local';
+      continue;
+    }
+    const sourceIngredients = Array.isArray(source.ingredients) ? source.ingredients : [];
+    const safeLocal = {
+      ...local,
+      title: fieldLooksTranslated(local.title, source.title, lang) ? local.title : '',
+      summary: fieldLooksTranslated(local.summary, source.summary, lang) ? local.summary : '',
+      body: fieldLooksTranslated(local.body, source.body, lang) ? local.body : '',
+      ingredients: sourceIngredients.length && sourceIngredients.every((ingredient, index) =>
+        recipeIngredientLooksTranslated(local.ingredients?.[index], ingredient, lang)
+      ) ? local.ingredients : []
+    };
+    translations[lang] = repairTranslation(safeLocal, source, lang);
+    report[lang] = 'incomplete';
   }
 
   const incomplete = TARGET_LANGS.filter(lang => report[lang] === 'incomplete');

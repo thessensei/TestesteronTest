@@ -427,24 +427,29 @@ test('2) Kişiselleştirilmiş mikro besin dinamik kart algoritması: D Vitamini
     assert.equal(alertsNormal.length, 0, 'normal aralıkta uyarı çıkmamalı');
 });
 
-test('3) Damat Atomu besin değeri hesaplayıcı widget: gramaj değiştikçe magnezyum, çinko ve kaloriyi anlık hesaplar', () => {
-    assert.match(html, /id="damatAtomuWidget"/);
-    assert.match(html, /id="atomBanana"/);
-    assert.match(html, /id="atomHoney"/);
-    assert.match(html, /id="atomNuts"/);
-    assert.match(html, /oninput="updateDamatAtomuWidget\(\)"/);
+test('3) Besin hesaplayıcı yalnızca tarif modalında görünür ve seçili tarif malzemelerini hesaplar', () => {
+    const content = fs.readFileSync(path.join(srcJsDir, 'content.js'), 'utf8');
+    assert.doesNotMatch(html, /id="damatAtomuWidget"|id="atomBanana"|oninput="updateDamatAtomuWidget\(\)"/,
+        'eski bağımsız sayfa-altı hesaplayıcı kaldırılmış olmalı');
+    assert.match(content, /function recipeNutritionMarkup\(item\)/);
+    assert.match(content, /id="recipeNutritionCalculator"/);
+    const showContent = content.match(/function showContent\(id\)\{[\s\S]*?\n\}/)?.[0] || '';
+    assert.match(showContent, /window\.activeRecipeNutritionItems=\[\]/, 'önceki tarif malzemeleri modal açılırken sıfırlanmalı');
+    assert.match(showContent, /x\.type==='recipe'&&x\.ingredients\?\.length\?recipeNutritionMarkup\(x\):''/,
+        'hesaplayıcı yalnızca malzemeli tarifte üretilmeli');
+    assert.match(content, /function closeContentModal\(event\)[\s\S]*?activeRecipeNutritionItems=\[\]/,
+        'modal kapanınca tarif durumu temizlenmeli');
 
-    const std = V.computeDamatAtomuNutrition({ banana: 120, honey: 30, nuts: 45, pumpkin: 30, tahin: 25 });
-    assert.equal(std.totalGrams, 250);
-    assert.ok(std.kcal > 700 && std.kcal < 850);
-    assert.ok(std.mg > 300);
-    assert.ok(std.zinc > 4.5);
-    assert.match(std.logLine, /\[CANLI BESİN LOGU\]/);
-
-    const boosted = V.computeDamatAtomuNutrition({ banana: 150, honey: 40, nuts: 80, pumpkin: 60, tahin: 40 });
-    assert.ok(boosted.mg > std.mg, 'gramaj arttıkça magnezyum artmalı');
-    assert.ok(boosted.zinc > std.zinc, 'gramaj arttıkça çinko artmalı');
-    assert.ok(boosted.kcal > std.kcal, 'gramaj arttıkça kalori artmalı');
+    const recipe = V.parseRecipeIngredients(['150 g tavuk göğsü', '1 su bardağı bulgur', '2 adet yumurta', '1 avokado']);
+    assert.deepEqual(recipe.map(item => item.key), ['chicken', 'bulgur', 'egg', 'avocado']);
+    assert.deepEqual(recipe.map(item => item.grams), [150, 140, 100, 150]);
+    const nutrition = V.computeRecipeNutrition(recipe);
+    assert.equal(nutrition.totalGrams, 540);
+    assert.ok(nutrition.kcal > 500);
+    assert.ok(nutrition.protein > 50);
+    const changed = V.computeRecipeNutrition(recipe.map((item, index) => index === 0 ? { ...item, grams: 300 } : item));
+    assert.ok(changed.kcal > nutrition.kcal, 'seçili tarifte gramaj değişince hesap değişmeli');
+    assert.equal(V.computeRecipeNutrition([]).totalGrams, 0, 'boş tarif veya blog için hesaplanan malzeme olmamalı');
 });
 
 test('4) KVKK / Veri Güvenliği Kalkanı parlatması: açık rıza işaretlenince yeşil kalkan ve yerel işleme metni aktifleşir', () => {
