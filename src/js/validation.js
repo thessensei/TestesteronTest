@@ -292,11 +292,13 @@
     // ALAN DOĞRULAMA
     // ========================================================================
 
-    // Fiziksel analiz alanları: zorunlu, 0 ve negatif kabul edilmez
+    // Fiziksel analiz alanları: zorunlu, 0 ve negatif kabul edilmez.
+    // Alt boy/kilo sınırları 7 yaşındaki bir çocuğun normal ölçülerini de kapsar;
+    // yaşa özgü yorum tahmin motorunda ayrıca yapılır.
     var PHYSICAL_FIELDS = [
-        { id: 'inputAge', label: 'Yaş', required: true, min: 16, max: 100 },
-        { id: 'inputHeight', label: 'Boy (cm)', required: true, min: 120, max: 240 },
-        { id: 'inputWeight', label: 'Kilo (kg)', required: true, min: 35, max: 300 }
+        { id: 'inputAge', label: 'Yaş', required: true, min: 7, max: 100 },
+        { id: 'inputHeight', label: 'Boy (cm)', required: true, min: 90, max: 240 },
+        { id: 'inputWeight', label: 'Kilo (kg)', required: true, min: 15, max: 300 }
     ];
 
     // Geriye dönük uyumluluk: eski BLOOD_FIELDS imzası
@@ -573,30 +575,108 @@
     SYMPTOMS.forEach(function (s) { SYMPTOM_BY_ID[s.id] = s; });
 
     // ========================================================================
-    // TAHMİN MOTORU — nokta değer + güven aralığı
+    // TAHMİN MOTORU — yaşa göre kalibre edilmiş nokta + belirsizlik aralığı
     // ========================================================================
     function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
 
+    // 18 yaş altında testosteron ergenlik evresine göre çok geniş bir aralıkta
+    // değişir. Bu tablo bir laboratuvar referansı değil; yaşa göre kaba model
+    // merkezi, karşılaştırma aralığı ve erkek çocuklar için yaklaşık büyüme
+    // medyanlarını içerir. Ara yaşlar doğrusal olarak enterpole edilir.
+    var PEDIATRIC_TESTOSTERONE_PROFILES = [
+        { age: 7,  base: 8,   ref: [2, 25],    height: 122, weight: 23 },
+        { age: 8,  base: 10,  ref: [2, 30],    height: 128, weight: 26 },
+        { age: 9,  base: 14,  ref: [2, 35],    height: 133, weight: 29 },
+        { age: 10, base: 25,  ref: [2, 100],   height: 138, weight: 32 },
+        { age: 11, base: 65,  ref: [2, 300],   height: 144, weight: 36 },
+        { age: 12, base: 150, ref: [5, 550],   height: 150, weight: 41 },
+        { age: 13, base: 270, ref: [10, 750],  height: 157, weight: 47 },
+        { age: 14, base: 380, ref: [20, 900],  height: 164, weight: 54 },
+        { age: 15, base: 460, ref: [70, 1000], height: 170, weight: 60 },
+        { age: 16, base: 500, ref: [120, 1050], height: 173, weight: 64 },
+        { age: 17, base: 540, ref: [180, 1080], height: 175, weight: 68 },
+        // Yalnızca 17.x yaşların erişkin modele yumuşak geçişini sağlar.
+        { age: 18, base: 580, ref: [270, 1080], height: 176, weight: 70 }
+    ];
+
+    function mix(a, b, ratio) {
+        return a + (b - a) * ratio;
+    }
+
+    function testosteroneProfileForAge(rawAge) {
+        var age = clamp(Number(rawAge) || 35, 7, 100);
+        if (age >= 18) {
+            // Erken erişkinlikte kademeli tepe, 25 yaştan sonra yavaş düşüş.
+            // 18 yaşın doğrudan 25 yaş erişkin merkeziyle değerlendirilmesini önler.
+            var adultBase = age < 25
+                ? mix(580, 690, (age - 18) / 7)
+                : 690 - (age - 25) * 4.4;
+            return {
+                age: age,
+                pediatric: false,
+                base: clamp(adultBase, 300, 690),
+                ref: MARKER_BY_KEY.totalT.ref.slice(),
+                height: null,
+                weight: null
+            };
+        }
+
+        var lower = PEDIATRIC_TESTOSTERONE_PROFILES[0];
+        var upper = PEDIATRIC_TESTOSTERONE_PROFILES[PEDIATRIC_TESTOSTERONE_PROFILES.length - 1];
+        for (var i = 0; i < PEDIATRIC_TESTOSTERONE_PROFILES.length - 1; i++) {
+            var current = PEDIATRIC_TESTOSTERONE_PROFILES[i];
+            var next = PEDIATRIC_TESTOSTERONE_PROFILES[i + 1];
+            if (age >= current.age && age <= next.age) {
+                lower = current;
+                upper = next;
+                break;
+            }
+        }
+        var ratio = upper.age === lower.age ? 0 : (age - lower.age) / (upper.age - lower.age);
+        return {
+            age: age,
+            pediatric: true,
+            base: mix(lower.base, upper.base, ratio),
+            ref: [mix(lower.ref[0], upper.ref[0], ratio), mix(lower.ref[1], upper.ref[1], ratio)],
+            height: mix(lower.height, upper.height, ratio),
+            weight: mix(lower.weight, upper.weight, ratio)
+        };
+    }
+
+    function classifyEstimate(value, ref, pediatric) {
+        var lo = ref[0];
+        var hi = ref[1];
+        if (value < lo) {
+            if (!pediatric && value < 200) return STATUS.critical;
+            return STATUS.low;
+        }
+        if (value > hi) return STATUS.high;
+        var span = hi - lo;
+        if (span > 0 && (value < lo + span * 0.08 || value > hi - span * 0.08)) return STATUS.borderline;
+        return STATUS.normal;
+    }
+
     /**
      * @param {Object} input {age, height, weight, activity, sleepHours, stress, symptoms:[id]}
-     * @returns {Object} tahmin + güven aralığı + semptom kartları
+     * @returns {Object} yaşa göre tahmin + geniş belirsizlik aralığı + semptom kartları
      */
     function estimateFromSymptoms(input) {
         input = input || {};
-        var age = Number(input.age) || 35;
-        var height = Number(input.height) || 175;
-        var weight = Number(input.weight) || 78;
-        var activity = Number(input.activity) || 3;
-        var sleep = Number(input.sleepHours) || 7;
-        var stress = Number(input.stress) || 2;
+        var profile = testosteroneProfileForAge(input.age);
+        var age = profile.age;
+        var height = clamp(Number(input.height) || 175, 90, 240);
+        var weight = clamp(Number(input.weight) || 78, 15, 300);
+        var activity = clamp(Number(input.activity) || 3, 1, 4);
+        var sleep = clamp(Number(input.sleepHours) || 7, 4, 12);
+        var stress = clamp(Number(input.stress) || 2, 1, 3);
         var symptoms = (input.symptoms || []).filter(function (id) { return !!SYMPTOM_BY_ID[id]; });
 
         var bmi = weight / Math.pow(height / 100, 2);
-
-        // Yaşa göre temel beklenti (popülasyon ortalaması, ng/dL)
-        var base = 690 - Math.max(0, age - 25) * 4.4;
+        var base = profile.base;
+        var developmentalScale = profile.pediatric ? clamp(profile.base / 580, 0.04, 0.93) : 1;
+        var growthLag = 0;
 
         var adjustments = [];
         function adjust(label, delta) {
@@ -605,34 +685,60 @@
             adjustments.push({ label: label, delta: Math.round(delta) });
         }
 
-        if (bmi >= 35) adjust('Vücut kitle indeksi 35+', -120);
-        else if (bmi >= 30) adjust('Vücut kitle indeksi 30–35', -85);
-        else if (bmi >= 27) adjust('Vücut kitle indeksi 27–30', -45);
-        else if (bmi < 18.5) adjust('Düşük vücut kitle indeksi', -35);
+        if (profile.pediatric) {
+            // Çocuklarda erişkin BMI eşikleri kullanılmaz. Boy ve kilo birlikte yaş
+            // medyanının belirgin altında olduğunda yalnızca ılımlı bir gelişim
+            // düzeltmesi uygulanır; genetik kısa boy tek başına hormon tanısı değildir.
+            var heightRatio = height / profile.height;
+            var weightRatio = weight / profile.weight;
+            var heightLag = clamp((0.92 - heightRatio) / 0.18, 0, 1);
+            var weightLag = clamp((0.78 - weightRatio) / 0.32, 0, 1);
+            growthLag = heightLag * 0.6 + weightLag * 0.4;
+            if (growthLag > 0) {
+                adjust('Yaşa göre boy/kilo gelişimi', -profile.base * 0.35 * growthLag);
+            }
+        } else {
+            if (bmi >= 35) adjust('Vücut kitle indeksi 35+', -120);
+            else if (bmi >= 30) adjust('Vücut kitle indeksi 30–35', -85);
+            else if (bmi >= 27) adjust('Vücut kitle indeksi 27–30', -45);
+            else if (bmi < 18.5) adjust('Düşük vücut kitle indeksi', -35);
+        }
 
-        if (activity >= 4) adjust('Haftada 6–7 gün antrenman', 35);
-        else if (activity === 3) adjust('Haftada 3–5 gün antrenman', 25);
-        else if (activity === 1) adjust('Hareketsiz yaşam', -45);
+        if (activity >= 4) adjust('Haftada 6–7 gün antrenman', 35 * developmentalScale);
+        else if (activity === 3) adjust('Haftada 3–5 gün antrenman', 25 * developmentalScale);
+        else if (activity === 1) adjust('Hareketsiz yaşam', -45 * developmentalScale);
 
-        if (sleep < 6) adjust('Gecede 6 saatin altında uyku', -70);
-        else if (sleep < 7) adjust('Gecede 6–7 saat uyku', -30);
-        else if (sleep >= 8) adjust('Gecede 8+ saat uyku', 20);
+        if (profile.pediatric) {
+            var sleepTarget = age < 13 ? 9 : 8;
+            if (sleep <= sleepTarget - 3) adjust('Yaşa göre çok kısa uyku', -70 * developmentalScale);
+            else if (sleep <= sleepTarget - 2) adjust('Yaşa göre kısa uyku', -45 * developmentalScale);
+            else if (sleep < sleepTarget) adjust('Yaşa göre yetersiz uyku', -25 * developmentalScale);
+        } else {
+            if (sleep < 6) adjust('Gecede 6 saatin altında uyku', -70);
+            else if (sleep < 7) adjust('Gecede 6–7 saat uyku', -30);
+            else if (sleep >= 8) adjust('Gecede 8+ saat uyku', 20);
+        }
 
-        if (stress >= 3) adjust('Yüksek stres yükü', -55);
-        else if (stress === 1) adjust('Düşük stres yükü', 15);
+        if (stress >= 3) adjust('Yüksek stres yükü', -55 * developmentalScale);
+        else if (stress === 1) adjust('Düşük stres yükü', 15 * developmentalScale);
 
         var symptomLoad = 0;
         symptoms.forEach(function (id) {
-            var s = SYMPTOM_BY_ID[id];
-            symptomLoad += s.weight;
+            symptomLoad += SYMPTOM_BY_ID[id].weight;
         });
         if (symptomLoad > 0) {
-            adjust(symptoms.length + ' semptom işaretlendi', -Math.min(260, symptomLoad * 0.85));
+            var maximumSymptomDrop = profile.pediatric ? profile.base * 0.5 : 260;
+            var symptomDrop = Math.min(maximumSymptomDrop, symptomLoad * 0.85 * developmentalScale);
+            adjust(symptoms.length + ' semptom işaretlendi', -symptomDrop);
         }
 
-        var point = Math.round(clamp(base, 120, 1100) / 5) * 5;
+        var modelMin = profile.pediatric ? Math.max(1, profile.ref[0] * 0.25) : 120;
+        var modelMax = profile.pediatric ? profile.ref[1] * 1.1 : 1100;
+        var roundStep = profile.pediatric ? (age < 12 ? 1 : (age < 14 ? 5 : 10)) : 5;
+        var point = Math.round(clamp(base, modelMin, modelMax) / roundStep) * roundStep;
 
-        // Güven aralığı: veri azsa genişler
+        // Ergenlik evresi sorulmadığı için 18 yaş altındaki aralık özellikle geniş
+        // tutulur ve güven puanı erişkin modelinden yüksek gösterilmez.
         var missing = 0;
         if (!input.age) missing++;
         if (!input.height || !input.weight) missing++;
@@ -640,10 +746,25 @@
         if (!input.stress) missing++;
         if (!symptoms.length) missing += 2;
 
-        var margin = Math.round(70 + missing * 22 + Math.max(0, 4 - symptoms.length) * 8);
-        var low = Math.max(80, point - margin);
-        var high = Math.min(1250, point + margin);
-        var confidence = clamp(Math.round(92 - missing * 9 - Math.max(0, 3 - symptoms.length) * 4), 45, 90);
+        var margin;
+        var confidence;
+        var low;
+        var high;
+        if (profile.pediatric) {
+            var ageSpan = profile.ref[1] - profile.ref[0];
+            margin = Math.round(Math.max(4, ageSpan * (0.18 + missing * 0.025) + Math.max(0, 3 - symptoms.length) * 12));
+            low = Math.max(1, point - margin);
+            high = Math.min(profile.ref[1] * 1.15, point + margin);
+            confidence = clamp(Math.round(46 - missing * 5 - Math.max(0, 2 - symptoms.length) * 3), 25, 46);
+        } else {
+            margin = Math.round(70 + missing * 22 + Math.max(0, 4 - symptoms.length) * 8);
+            low = Math.max(80, point - margin);
+            high = Math.min(1250, point + margin);
+            confidence = clamp(Math.round(82 - missing * 9 - Math.max(0, 3 - symptoms.length) * 4), 45, 82);
+        }
+
+        var estimateStatus = classifyEstimate(point, profile.ref, profile.pediatric);
+        var ageRefText = formatNumber(profile.ref[0], 0) + '–' + formatNumber(profile.ref[1], 0) + ' ng/dL';
 
         // Semptom bazlı kartlar: her kart kullanıcının seçtiği semptomun başlığını taşır
         var grouped = {};
@@ -657,21 +778,25 @@
         var cards = Object.keys(grouped).map(function (markerKey) {
             var group = grouped[markerKey];
             var marker = MARKER_BY_KEY[markerKey];
-            var estimate = estimateMarker(markerKey, {
+            var markerEstimate = estimateMarker(markerKey, {
                 totalT: point, bmi: bmi, sleep: sleep, stress: stress, load: group.weight, age: age
             });
-            var status = classify(marker, estimate.value);
+            var isAgeAdjustedTotal = markerKey === 'totalT' && profile.pediatric;
+            var cardRef = isAgeAdjustedTotal ? profile.ref : marker.ref;
+            var status = isAgeAdjustedTotal
+                ? classifyEstimate(markerEstimate.value, cardRef, true)
+                : classify(marker, markerEstimate.value);
             return {
                 markerKey: markerKey,
                 marker: marker,
-                title: group.symptoms.map(function (s) { return s.label; }).join(' + '),
+                title: group.symptoms.map(function (symptom) { return symptom.label; }).join(' + '),
                 symptoms: group.symptoms,
-                value: round(estimate.value, marker.units[0].decimals),
-                low: round(estimate.low, marker.units[0].decimals),
-                high: round(estimate.high, marker.units[0].decimals),
+                value: round(markerEstimate.value, marker.units[0].decimals),
+                low: round(markerEstimate.low, marker.units[0].decimals),
+                high: round(markerEstimate.high, marker.units[0].decimals),
                 unit: marker.unit,
-                ref: marker.ref,
-                refText: describeRange(marker, marker.unit, 'ref'),
+                ref: cardRef,
+                refText: isAgeAdjustedTotal ? ageRefText : describeRange(marker, marker.unit, 'ref'),
                 status: status,
                 explain: group.symptoms[0].note + ' ' + marker.explain
             };
@@ -680,6 +805,8 @@
         });
 
         return {
+            age: age,
+            pediatric: profile.pediatric,
             point: point,
             low: low,
             high: high,
@@ -687,13 +814,18 @@
             confidence: confidence,
             margin: margin,
             bmi: round(bmi, 1),
-            status: classify('totalT', point),
-            ref: MARKER_BY_KEY.totalT.ref,
-            refText: describeRange(MARKER_BY_KEY.totalT, 'ng/dL', 'ref'),
+            growthLag: round(growthLag, 2),
+            status: estimateStatus,
+            ref: profile.ref,
+            refText: ageRefText,
+            referenceLabel: profile.pediatric ? 'Yaşa göre geniş karşılaştırma aralığı' : 'Erişkin laboratuvar normal aralığı',
+            modelNote: profile.pediatric
+                ? '18 yaş altında ergenlik evresi sonucu yaş, boy ve kilodan daha fazla değiştirebilir. Bu nedenle aralık geniş tutulmuştur; büyüme veya ergenlik kaygısında çocuk endokrinolojisine başvurun.'
+                : 'Bu sonuç belirtilere dayalı kaba bir ön değerlendirmedir; kesin değer yalnızca uygun saatte yapılan kan testiyle belirlenir.',
             adjustments: adjustments,
             cards: cards,
             symptomCount: symptoms.length,
-            completeness: 70
+            completeness: profile.pediatric ? 55 : 70
         };
     }
 
@@ -727,12 +859,19 @@
         }
 
         var marker = MARKER_BY_KEY[markerKey];
-        value = clamp(value, marker.accept[0], marker.accept[1]);
-        var spread = value * 0.22;
+        // Total T'nin laboratuvar giriş alt sınırı erişkin paneli içindir. Çocuk
+        // tahmin kartında bu sınırı uygulamak 7–11 yaş değerlerini yapay biçimde
+        // 20 ng/dL'ye yükseltirdi.
+        var estimateMin = markerKey === 'totalT' && ctx.age < 18 ? 1 : marker.accept[0];
+        var estimateMax = markerKey === 'totalT' && ctx.age < 18
+            ? testosteroneProfileForAge(ctx.age).ref[1] * 1.15
+            : marker.accept[1];
+        value = clamp(value, estimateMin, estimateMax);
+        var spread = Math.max(markerKey === 'totalT' && ctx.age < 18 ? 2 : 0, value * 0.22);
         return {
             value: value,
-            low: Math.max(marker.accept[0], value - spread),
-            high: Math.min(marker.accept[1], value + spread)
+            low: Math.max(estimateMin, value - spread),
+            high: Math.min(estimateMax, value + spread)
         };
     }
 

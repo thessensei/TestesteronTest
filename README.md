@@ -18,16 +18,18 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-168%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-185%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
 - **Üç adımlı tek akış: Semptom → Tahmin → Doğrulama** (adım göstergesi + ilerleme yüzdesi)
-  - **Semptom Analizi** — yaş, boy, kilo, uyku, stres ve semptom seçimlerinden **nokta tahmin + %68 güven aralığı**
-    (ör. “Tahmini 340 ng/dL”), seçilen semptomun adını taşıyan kartlar, her kartta laboratuvar referans aralığı,
-    Kritik/Düşük/Sınırda/Normal rozetiyle önceliklendirme ve tek cümlelik açıklama
-  - **Kilitli önizleme yok:** Bulanık/kilitli plan kartı kaldırıldı; kişisel plan (uyku, stres, hareket,
-    kilo adımları + takviye dozları) sonuçla birlikte **doğrudan ve tam** gösterilir
+  - **Semptom Analizi** — 7 yaş ve üzeri için yaş, boy, kilo, uyku, stres ve semptom seçimlerinden
+    **nokta tahmin + belirsizlik aralığı** üretir. 7–17 yaşta erişkin tabanı/BMI eşikleri yerine yaşa özgü
+    gelişim modeli ve geniş karşılaştırma aralığı kullanılır; düşük güven açıkça belirtilir. Seçilen semptomun
+    adını taşıyan kartlar Kritik/Düşük/Sınırda/Normal rozetiyle önceliklendirilir
+  - **Kilitli önizleme yok:** Bulanık/kilitli plan kartı kaldırıldı; erişkin kişisel planı (uyku, stres, hareket,
+    kilo adımları + takviye dozları) sonuçla birlikte **doğrudan ve tam** gösterilir. 18 yaş altında otomatik
+    takviye/hormon dozu verilmez; güvenli alışkanlıklar ve çocuk endokrinolojisi yönlendirmesi gösterilir
   - **Kan Testi ile Doğrulama** — 12 parametre (total/serbest testosteron, SHBG, LH, FSH, estradiol, kortizol,
     ferritin, D vitamini, B12, çinko, magnezyum); yalnızca Total T zorunlu, diğerleri opsiyonel
 - **Tahlil yükleme** — PDF’teki değerler tarayıcı içinde okunup forma yazılır (dosya sunucuya gönderilmez);
@@ -44,7 +46,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
-- **AI Haberden Otomatik Blog Üretici** — admin paneline girilen haber/makale bağlantısından başlık, özet, gövde, kategori, okuma süresi ve kapak görselini çekip 4 dilde (TR/EN/DE/JA) blog taslağına dönüştürür (Gemini, OpenAI, Groq + anahtarsız yerleşik akıllı mod). EN/DE/JA alanları kaynak metnin kopyası olarak bırakılmaz; başlık, özet ve gövde ayrı bir tam çeviri turundan geçer. Eksik dil kalırsa yedek makine çevirisi denenir (`ENABLE_MACHINE_TRANSLATION=0` ile kapatılır). Paneldeki **4 dile tam çevir** düğmesi, forma yazılmış Türkçe metni de aynı denetimle çevirir
+- **4 Dilli AI İçerik Stüdyosu** — admin paneline girilen haber/makale/tarif bağlantısından önce güvenilir Türkçe ana taslağı çıkarır; EN, DE ve JA çevirilerini tek karma yanıt yerine **üç bağımsız AI turunda** üretir. Her dil; hedef dil, eksiksiz başlık/özet/gövde, sayı ve URL koruması, paragraf/liste yapısı, süre, malzeme sayısı-sırası ve miktarlar açısından kalite kapısından geçer. Başarısız çeviri sorun listesiyle otomatik yeniden denenir; sonuçlar panelde dil başına kalite puanı ve durum kartıyla gösterilir. Gemini, OpenAI, Groq, Claude, Kimi ve DeepSeek desteklenir; AI yoksa yedek makine/yerel çeviri zinciri kullanılır (`ENABLE_MACHINE_TRANSLATION=0` ile ağ çevirisi kapatılabilir)
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))

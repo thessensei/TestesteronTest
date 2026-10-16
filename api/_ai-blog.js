@@ -929,7 +929,7 @@ export function parseAiJson(text) {
 function buildAiPrompts(article) {
   const systemPrompt = [
     'Sen TestoTavan platformunun baş sağlık ve bilim editörüsün.',
-    'Görevin: Verilen haber/makale içeriğinden yararlanarak bilimsel temelli, özgün, akıcı ve okuyucuya pratik değer katan bir blog yazısı üretmek ve bunu 4 dilde (Türkçe, İngilizce, Almanca, Japonca) JSON olarak döndürmektir.',
+    'Görevin: Verilen haber/makale içeriğinden yararlanarak bilimsel temelli, özgün, akıcı ve okuyucuya pratik değer katan ana Türkçe blog taslağını üretmektir. Çeviriler ayrı ve bağımsız kalite kontrollü turlarda hazırlanacaktır.',
     'Kurallar:',
     '1. Yalnızca geçerli bir JSON nesnesi döndür; başka açıklama ekleme.',
     '2. "category" alanı Türkçe için şu üçünden en uygunu olmalı: "Hormon Sağlığı", "Yüksek Protein" veya "Uyku".',
@@ -937,11 +937,10 @@ function buildAiPrompts(article) {
     '4. "summary" en fazla 220 karakter, 1-2 cümlelik net özet olmalı.',
     '5. "body" en az 3-5 paragraf olmalı; haberin temel bulgularını, erkek sağlığı / hormon dengesi / yaşam tarzı açısından önemini, maddeli pratik önerileri ve sonunda tıbbi sorumluluk notunu içermeli.',
     '6. "time" okuma süresini "5 dk" biçiminde belirtmeli.',
-    '7. "translations.en", "translations.de" ve "translations.ja" başlık, özet ve gövdenin EKSİKSİZ ve doğal çevirisi olmalı. Aynı paragraf sayısı ve liste yapısı korunmalı.',
-    '8. Diğer dillere Türkçe cümle kopyalama. Özel isim, URL, sayı ve birim (ng/dL, REM, SHBG) dışında kaynak dil bırakma.',
-    '9. Japonca alanlar Japonca yazı sistemiyle, Almanca doğal Almanca, İngilizce doğal İngilizce olmalı. Kısaltma veya özet çeviri yasaktır.',
+    '7. Kaynaktaki sayı, oran, kişi, kurum ve bilimsel bulguları koru; kaynakta bulunmayan sonuç, doz veya sağlık vaadi ekleme.',
+    '8. Çeviri üretme ve translations alanı ekleme. Yalnızca yüksek kaliteli Türkçe ana metni hazırla.',
     'JSON Şeması:',
-    '{"category":"Hormon Sağlığı","emoji":"🧬","title":"...","summary":"...","body":"...","time":"5 dk","translations":{"en":{"category":"Hormone Health","title":"...","summary":"...","body":"...","time":"5 min"},"de":{"category":"Hormongesundheit","title":"...","summary":"...","body":"...","time":"5 Min."},"ja":{"category":"ホルモン健康","title":"...","summary":"...","body":"...","time":"5分"}}}'
+    '{"category":"Hormon Sağlığı","emoji":"🧬","title":"...","summary":"...","body":"...","time":"5 dk"}'
   ].join('\n');
 
   const userPrompt = [
@@ -962,16 +961,16 @@ function buildRecipeAiPrompts(article) {
   const nutrition = recipe.nutrition && typeof recipe.nutrition === 'object' ? recipe.nutrition : {};
   const systemPrompt = [
     'Sen TestoTavan için deneyimli bir tarif editörü ve beslenme içeriği denetçisisin.',
-    'Kaynak sayfadan çıkarılan tarifi düzenle, tam ve anlaşılır bir tarif taslağı hazırla, yalnızca kaynak verilerinin desteklediği ölçüde beslenme analizi ekle ve TR/EN/DE/JA dillerinde JSON döndür.',
+    'Kaynak sayfadan çıkarılan tarifi düzenle, tam ve anlaşılır Türkçe ana tarif taslağı hazırla ve yalnızca kaynak verilerinin desteklediği ölçüde beslenme analizi ekle. Çeviriler ayrı kalite kontrollü turlarda hazırlanacaktır.',
     'Yalnızca geçerli JSON döndür; markdown veya açıklama ekleme.',
     'Kaynakta çıkarılan Türkçe malzeme listesini bire bir koru: hiçbir malzemeyi atlama, ekleme, miktarını değiştirme veya ikame etme. Üst düzey ingredients alanı kaynak dizisiyle aynı sırada ve aynı metinle olmalı.',
     'Kaynak adımlarını eksiksiz koru. Kaynakta hazırlama adımı yoksa yeni adım uydurma; body içinde adımların kaynakta bulunmadığını açıkça söyle.',
     'Body içinde "Hazırlanışı", "Tarif Analizi" ve "Besin Değeri Notu" başlıkları olsun. Tarif Analizi porsiyon, süre ve listelenen içerikleri özetlesin.',
     'Kaynakta porsiyon başına besin değerleri varsa yalnızca verilen değerleri ve birimleri aktar. Yoksa kesin kalori/protein/yağ iddiası üretme; eksik veriyi açıkça belirt ve gramaj bazlı hesaplamanın yaklaşık olduğunu söyle.',
     'Hastalık, hormon, tedavi veya kesin sağlık yararı iddiası ekleme. Kaynağa dayanmayan besin miktarı, porsiyon veya sağlık etkisi uydurma.',
-    'Türkçe, İngilizce ve Almanca doğal, akıcı ve eksiksiz olmalı. Her çeviride başlık, özet, gövde, kategori, süre ve her bir malzeme bulunmalı. Malzeme miktarını ve sırasını koru.',
-    'Japonca çeviriler doğal Japonca yazı sistemiyle yazılmalı. JSON gövde şeması:',
-    '{"type":"recipe","category":"Yüksek Protein","emoji":"🍽️","title":"...","summary":"...","body":"...","time":"... dk","ingredients":["..."],"translations":{"en":{"category":"High Protein","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]},"de":{"category":"Proteinreich","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]},"ja":{"category":"高たんぱく","title":"...","summary":"...","body":"...","time":"...","ingredients":["..."]}}}'
+    'Çeviri üretme ve translations alanı ekleme. Yalnızca Türkçe ana tarif ile kaynak malzeme listesini döndür.',
+    'JSON gövde şeması:',
+    '{"type":"recipe","category":"Yüksek Protein","emoji":"🍽️","title":"...","summary":"...","body":"...","time":"... dk","ingredients":["..."]}'
   ].join('\n');
   const userPrompt = [
     `Kaynak bağlantısı: ${article?.url || ''}`,
@@ -1189,7 +1188,8 @@ export async function generateRecipeFromArticle(article, options = {}) {
   }
 
   const item = normalizeGeneratedRecipe(raw, recipeArticle);
-  const repaired = await finishWithTranslations(item, options, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
+  const translationOptions = mode === 'ai' ? { ...options, forceTranslation: true } : options;
+  const repaired = await finishWithTranslations(item, translationOptions, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
   if (repaired.warning) warning = [warning, repaired.warning].filter(Boolean).join(' ');
   return {
     ok: true,
@@ -1198,6 +1198,7 @@ export async function generateRecipeFromArticle(article, options = {}) {
     model,
     warning,
     translation: repaired.report,
+    translation_quality: repaired.quality,
     item: repaired.item
   };
 }
@@ -1224,7 +1225,8 @@ export async function generateBlogFromArticle(article, options = {}) {
   }
 
   const item = normalizeGeneratedBlog(raw, article);
-  const repaired = await finishWithTranslations(item, options, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
+  const translationOptions = mode === 'ai' ? { ...options, forceTranslation: true } : options;
+  const repaired = await finishWithTranslations(item, translationOptions, aiConfig, mode === 'ai' || (aiConfig && !isHardAiFailure(warning)));
   if (repaired.warning) warning = [warning, repaired.warning].filter(Boolean).join(' ');
 
   return {
@@ -1234,6 +1236,7 @@ export async function generateBlogFromArticle(article, options = {}) {
     model,
     warning,
     translation: repaired.report,
+    translation_quality: repaired.quality,
     item: repaired.item
   };
 }
@@ -1268,6 +1271,7 @@ export async function completeBlogTranslations(rawItem, options = {}) {
     model: aiConfig?.model,
     warning: repaired.warning,
     translation: repaired.report,
+    translation_quality: repaired.quality,
     item: repaired.item
   };
 }

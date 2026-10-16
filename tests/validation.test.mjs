@@ -81,6 +81,16 @@ test('fiziksel analizde makul olmayan büyük değer engellenir', () => {
     assert.match(r.errors.inputAge, /en fazla/);
 });
 
+test('fiziksel analiz 7 yaştan itibaren çocuk ölçülerini kabul eder', () => {
+    const valid = V.validatePhysical({ inputAge: '7', inputHeight: '122', inputWeight: '23' });
+    assert.equal(valid.ok, true);
+    assert.deepEqual(valid.values, { inputAge: 7, inputHeight: 122, inputWeight: 23 });
+
+    const tooYoung = V.validatePhysical({ inputAge: '6', inputHeight: '115', inputWeight: '20' });
+    assert.equal(tooYoung.ok, false);
+    assert.match(tooYoung.errors.inputAge, /en az 7/);
+});
+
 // ------------------------------------------------- laboratuvar aralıkları
 
 test('her parametrede lab referansı, geçerli giriş aralığı ve açıklama var', () => {
@@ -232,6 +242,41 @@ test('daha fazla semptom tahmini düşürür', () => {
     assert.ok(many.point < few.point);
 });
 
+test('ergen tahmini erişkin tabanını kullanmaz ve 16/147/40 örneğini şişirmez', () => {
+    const est = V.estimateFromSymptoms({
+        age: 16, height: 147, weight: 40, activity: 3, sleepHours: 7, stress: 2,
+        symptoms: ['libido']
+    });
+
+    assert.equal(est.pediatric, true);
+    assert.ok(est.point <= 500, `16 yaş örneği 650 yerine gelişime duyarlı olmalı, ${est.point} geldi`);
+    assert.ok(est.low < est.point && est.point < est.high);
+    assert.ok(est.confidence <= 46, 'ergenlik evresi bilinmeden yüksek güven gösterilmemeli');
+    assert.notDeepEqual(est.ref, V.MARKER_BY_KEY.totalT.ref, 'ergen için erişkin referansı kullanılmamalı');
+    assert.match(est.referenceLabel, /Yaşa göre/);
+});
+
+test('çocuk ve ergenlerde yaşa özgü taban ile büyüme düzeltmesi uygulanır', () => {
+    const child = V.estimateFromSymptoms({
+        age: 7, height: 122, weight: 23, activity: 3, sleepHours: 9, stress: 2,
+        symptoms: ['fatigue']
+    });
+    assert.equal(child.pediatric, true);
+    assert.ok(child.point < 30, `7 yaş sonucu erişkin düzeyine çıkmamalı, ${child.point} geldi`);
+    assert.ok(child.cards.every(card => card.value < 100 || card.markerKey !== 'totalT'));
+
+    const expectedGrowth = V.estimateFromSymptoms({
+        age: 16, height: 173, weight: 64, activity: 3, sleepHours: 8, stress: 2,
+        symptoms: ['libido']
+    });
+    const delayedGrowth = V.estimateFromSymptoms({
+        age: 16, height: 147, weight: 40, activity: 3, sleepHours: 8, stress: 2,
+        symptoms: ['libido']
+    });
+    assert.ok(delayedGrowth.point < expectedGrowth.point, 'yaşa göre belirgin boy/kilo farkı tahmine yansımalı');
+    assert.ok(delayedGrowth.growthLag > expectedGrowth.growthLag);
+});
+
 // ------------------------------------------------------------- skor + tooltip
 
 test('genel değerlendirme skoru şeffaf şekilde hesaplanır', () => {
@@ -298,6 +343,8 @@ test('fiziksel alanlar min/max ve inputmode özniteliklerine sahip', () => {
         assert.match(match[0], /min="/, `${field.id} min özniteliğine sahip olmalı`);
         assert.match(match[0], /inputmode="decimal"/, `${field.id} inputmode özniteliğine sahip olmalı`);
     }
+    assert.match(html, /id="inputAge"[^>]*min="7"/, 'yaş alanı 7 yaştan başlamalı');
+    assert.match(html, /7–17 yaşta ergenlik evresi/, 'ergen sonuçlarının geniş aralıklı olduğu açıklanmalı');
 });
 
 // Lab alanları type="text": tarayıcı "2,1" girdisini silmesin, virgül/nokta ayrımını biz yönetelim
