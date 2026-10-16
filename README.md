@@ -18,7 +18,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-185%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-187%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
@@ -54,8 +54,12 @@ We offer natural, safe, and alternative solutions to address the decline in test
   kaydırmada sabit kalan sponsor sütunları; telefon ve tablette ise içerikten önce/sonra görünen
   kaydırılabilir sponsor şeridi. Başlık, metin ve bağlantı `src/js/app.js` içindeki tek `SPONSORS`
   listesinden yönetilir (`window.TESTOTAVAN_SPONSORS` ile API'den de beslenebilir); boş liste o sütunu gizler.
-  Sponsorluk/iletişim CTA'ları (`Sponsor ol`, `İletişime geç`, `Detaylar`) `CONTACT_EMAIL`
-  sabitinden yönetilir ve **testosterontavan@gmail.com** adresine mail atar
+  Sponsorluk/iletişim CTA'ları (`Sponsor ol`, `İletişime geç`, `Detaylar`) ve Hakkımızda alt bilgisindeki
+  adres `CONTACT_EMAIL` sabitinden yönetilir; tıklanınca **testotavan@gmail.com** alıcılı, konusu dolu
+  **yeni e-posta ekranı doğrudan açılır** — telefon/tablette `mailto:` ile Gmail/Mail uygulaması,
+  masaüstünde Gmail'in "Yeni ileti" penceresi (yeni sekmede). Masaüstünde `mailto:` çoğu zaman tanımlı
+  bir posta uygulaması olmadığı için hiçbir şey açmaz; Gmail'in web yazma bağlantısı ise mobilde gelen
+  kutusuna düştüğünden bağlantı cihaza göre seçilir (`contactLink()` / `enhanceContactLinks()`)
 - **Sayfa görüntüleme istatistikleri** — Neon Postgres üzerinde sayaç
 - **Mobil öncelikli, tek sayfa arayüz** — koyu tema, alt navigasyon, canonical URL, Open Graph + WebApplication yapılandırılmış verisi, `robots.txt` ve geçerli sitemap
 - **Güvenlik başlıkları** — `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (bkz. `vercel.json`)
@@ -200,8 +204,9 @@ npm test
 
 `tests/sponsors.test.mjs`; sağ/sol sponsor raylarının sayfa gövdesinde olduğunu (dar ekranda şerit,
 geniş ekranda yan sütun), sponsor kartlarının tek listeden üretildiğini, harici sponsor bağlantılarının
-`rel="noopener nofollow sponsored"` taşıdığını ve kilitli/bulanık plan önizlemesinin kaldırılıp kişisel
-planın doğrudan gösterildiğini denetler.
+`rel="noopener nofollow sponsored"` taşıdığını, iletişim bağlantılarının cihaza göre yazma ekranını
+(mobilde `mailto:`, masaüstünde Gmail "Yeni ileti") testotavan@gmail.com alıcısıyla açtığını ve
+kilitli/bulanık plan önizlemesinin kaldırılıp kişisel planın doğrudan gösterildiğini denetler.
 
 
 ## ⚡ PageSpeed yaklaşımı
