@@ -330,7 +330,7 @@ Davranış kuralları:
 | `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
-| `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar. `/api/forum?stats=1` adresine yönlenir (60 sn CDN önbelleği) |
+| `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar, son konular (`recent`, başlık + tarih + yanıt sayısı). `/api/forum?stats=1` adresine yönlenir (60 sn CDN önbelleği) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
 | `/blog/`, `/blog/<slug>/` | `GET` | Blog arşivi ve her yazının kalıcı SEO sayfası (sunucu tarafında HTML) |
 | `/forum/t/<id>/` | `GET` | Forum konusunun kalıcı, JavaScript'siz okunabilen sayfası |
@@ -419,9 +419,18 @@ nabız ucunu doğrular.
   yazar. Konu başlıkları gerçek `<a href="/forum/t/...">` bağlantısıdır; JavaScript açıkken
   sayfa içinde açılır, kapalıyken kalıcı sayfaya gider.
 - **Meydan nabzı ve filtreler:** `/api/forum-stats` konu/yanıt/üye/görüntülenme toplamlarını,
-  kategori dağılımını, öne çıkan konuları ve en aktif yazarları 60 saniyelik CDN önbelleğiyle
-  döner. Arayüzde arama (debounce'lu, `q`), kategori çipleri ve `new | top | active | unanswered`
-  sıralaması sunucu tarafında uygulanır; sayfalama 30 konudur.
+  kategori dağılımını, öne çıkan konuları, en aktif yazarları ve son altı konuyu (`recent`)
+  60 saniyelik CDN önbelleğiyle döner. Arayüzde arama (debounce'lu, `q`, üst çubukta),
+  kategori çipleri ve `new | top | active | unanswered` sıralaması sunucu tarafında uygulanır;
+  sayfalama 30 konudur.
+- **Tahta düzeni:** Konu listesi kart değil, Donanım Arşivi mantığında sabit kolonlu bir tahtadır:
+  `# · Konu · Forum · Cevap · Hit · Gönderim · Son yazan`. Bölüm sekmeleri (Yeni mesajlar /
+  Sıcak konular / En çok yanıt / Yanıtsız) ve kolon başlıkları aynı sıralama durumunu paylaşır;
+  seçili sekme altı çizili turkuaz vurgu alır. `Son yazan` kolonu listenin SQL'inde
+  `LEFT JOIN LATERAL` ile çözülen en güncel onaylı yanıtı gösterir. Sağ rayda **Yeni Konu Aç**
+  düğmesi, **En Son İçerikler** paneli (`recent`, başlık + `YYYY-AA-GG ss:dd`), topluluk nabzı,
+  öne çıkan yazarlar ve kurallar bulunur. 700 px altında satırlar yatay kaydırma yerine
+  iki kolona (konu + mobil özet) iner.
 - Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
   `ADMIN_PASSWORD` ortam değişkenlerini kullanır. İlk API isteği `forum_threads`,
   `forum_replies`, `forum_limits`, `forum_users`, `forum_sessions` ve `forum_likes`

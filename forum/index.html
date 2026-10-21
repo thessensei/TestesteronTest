@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#06090c">
+  <meta name="theme-color" content="#080b0e">
   <meta name="robots" content="index,follow">
   <meta name="description" content="TestoTavan Meydanı: antrenman, beslenme ve günlük alışkanlıklar üzerine topluluk forumu. Konular kendi kalıcı sayfalarında yayınlanır. Paylaşımlar tıbbi tavsiye değildir.">
   <link rel="canonical" href="https://testosteron-test.vercel.app/forum/">
@@ -44,42 +44,59 @@
   <script type="module" src="/forum/forum.js"></script>
 </head>
 <body>
-<a class="skip" href="#listing">İçeriğe geç</a>
+<a class="skip" href="#board">İçeriğe geç</a>
+
+<!-- ÜST ÇUBUK: marka, arama, dil ve hesap — koyu, ince ve tek satır -->
 <header class="site-head">
-  <a class="brand" href="/">
-    <img src="/assets/logo.webp" alt="" width="30" height="30" onerror="this.src='/assets/logo.png'">
-    <strong>TestoTavan</strong><span>MEYDAN</span>
-  </a>
-  <nav class="head-nav" aria-label="Bölümler">
-    <a href="/blog/">Dergi</a>
-    <a href="/">Analiz</a>
-    <a href="/#aboutPage">Hakkımızda</a>
-  </nav>
-  <div class="header-actions">
-    <label class="sr-only" for="forum-lang">Dil</label>
-    <select id="forum-lang" aria-label="Dil">
-      <option value="tr">TR</option>
-      <option value="en">EN</option>
-      <option value="de">DE</option>
-      <option value="ja">JA</option>
-    </select>
-    <div id="auth-user" hidden>
-      <span id="auth-name" class="auth-chip"></span>
-      <button id="logout" class="secondary small" type="button">Çıkış</button>
+  <div class="head-inner">
+    <a class="brand" href="/">
+      <img src="/assets/logo.webp" alt="" width="30" height="30" onerror="this.src='/assets/logo.png'">
+      <span class="brand-text"><strong>TestoTavan</strong><span>MEYDAN</span></span>
+    </a>
+
+    <div class="search-field head-search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <label class="sr-only" for="forum-search" data-i18n="searchLabel">Ara</label>
+      <input id="forum-search" type="search" autocomplete="off" placeholder="Konu ara…" data-i18n-placeholder="search">
     </div>
-    <div id="auth-guest" class="auth-guest">
-      <button id="show-login" class="secondary small" type="button">Giriş yap</button>
-      <button id="show-register" class="small" type="button">Kayıt ol</button>
+
+    <div class="header-actions">
+      <select id="forum-lang" aria-label="Dil">
+        <option value="tr">TR</option>
+        <option value="en">EN</option>
+        <option value="de">DE</option>
+        <option value="ja">JA</option>
+      </select>
+      <div id="auth-user" hidden>
+        <span id="auth-name" class="auth-chip"></span>
+        <button id="logout" class="secondary small" type="button">Çıkış</button>
+      </div>
+      <div id="auth-guest" class="auth-guest">
+        <button id="show-login" class="secondary small" type="button">Giriş yap</button>
+        <button id="show-register" class="small" type="button">Kayıt ol</button>
+      </div>
     </div>
   </div>
+
+  <!-- İKİNCİ SATIR: Donanım Arşivi'ndeki bölüm şeridinin karşılığı -->
+  <nav class="sub-nav" aria-label="Bölümler">
+    <a class="on" href="/forum/" aria-current="page">Meydan</a>
+    <a href="/blog/">Dergi</a>
+    <a href="/#physicalPage">Analiz</a>
+    <a href="/#bloodPage">Doğrulama</a>
+    <a href="/#aboutPage">Hakkımızda</a>
+    <span class="sub-nav-spacer"></span>
+    <a class="sub-link" href="/sitemap.xml">Site haritası</a>
+    <a class="sub-link" href="/blog/rss.xml">RSS</a>
+  </nav>
 </header>
 
 <main class="shell">
-  <section class="forum-hero">
-    <div>
+  <!-- Kompakt sayfa başlığı: büyük hero yok, bilgi yoğunluğu önde -->
+  <section class="page-head">
+    <div class="page-head-text">
       <div class="eyebrow" data-i18n="heroEyebrow">TESTOTAVAN MEYDAN</div>
       <h1 id="page-title">Gelişim bir sohbetle başlar.</h1>
-      <p class="intro" data-i18n="intro">Antrenman, beslenme ve günlük alışkanlıklar üzerine toplulukla konuş.</p>
     </div>
     <div class="hero-stats" id="forum-stats" aria-live="polite">
       <div class="stat"><b data-stat="threads">—</b><span data-i18n="statsThreads">Konu</span></div>
@@ -91,33 +108,48 @@
 
   <div class="layout">
     <div class="main-col">
-      <div class="notice">
-        <span class="dot" aria-hidden="true"></span>
-        <p data-i18n="aside">Rumuz yerine hesabın görünür. Kişisel sağlık verilerini paylaşma. Buradaki paylaşımlar tıbbi tavsiye değildir. Saygılı ol; konu ve yanıtlar admin onayından sonra yayınlanır.</p>
-      </div>
       <p id="status" role="status" aria-live="polite"></p>
 
-      <div class="toolbar-card">
-        <div class="search-field">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-          <label class="sr-only" for="forum-search" data-i18n="searchLabel">Ara</label>
-          <input id="forum-search" type="search" autocomplete="off" placeholder="Konu ara…" data-i18n-placeholder="search">
-        </div>
-        <div class="chips" id="category-chips" role="tablist" aria-label="Kategoriler"></div>
-        <div class="sort-tabs" id="sort-tabs" role="tablist" aria-label="Sıralama">
-          <button type="button" role="tab" data-sort="new" aria-selected="true" data-i18n="sortNew">Yeni</button>
-          <button type="button" role="tab" data-sort="top" aria-selected="false" data-i18n="sortTop">Popüler</button>
-          <button type="button" role="tab" data-sort="active" aria-selected="false" data-i18n="sortActive">En çok yanıt</button>
-          <button type="button" role="tab" data-sort="unanswered" aria-selected="false" data-i18n="sortUnanswered">Yanıtsız</button>
-        </div>
-      </div>
-
       <section id="listing" aria-labelledby="list-title">
-        <div class="list-head">
-          <h2 id="list-title" data-i18n="topics">Konular</h2>
-          <button id="refresh" type="button" class="secondary small" data-i18n="refresh">Yenile</button>
+        <h2 class="sr-only" id="list-title" data-i18n="topics">Konular</h2>
+
+        <div class="notice">
+          <span class="dot" aria-hidden="true"></span>
+          <p data-i18n="aside">Rumuz yerine hesabın görünür. Kişisel sağlık verilerini paylaşma. Buradaki paylaşımlar tıbbi tavsiye değildir. Saygılı ol; konu ve yanıtlar admin onayından sonra yayınlanır.</p>
         </div>
-        <div id="threads" class="thread-list"></div>
+
+        <div class="board" id="board">
+          <!-- Durum sekmeleri: DA'daki "Yeni mesajlar / Sıcak fırsatlar" şeridi -->
+          <div class="board-bar">
+            <div class="board-tabs" id="sort-tabs" role="tablist" aria-label="Sıralama">
+              <button type="button" role="tab" data-sort="new" aria-selected="true" data-i18n="tabNew">Yeni mesajlar</button>
+              <button type="button" role="tab" data-sort="top" aria-selected="false" data-i18n="tabHot">Sıcak konular</button>
+              <button type="button" role="tab" data-sort="active" aria-selected="false" data-i18n="sortActive">En çok yanıt</button>
+              <button type="button" role="tab" data-sort="unanswered" aria-selected="false" data-i18n="sortUnanswered">Yanıtsız</button>
+            </div>
+            <button id="refresh" type="button" class="ghost-button" data-i18n="refresh">Yenile</button>
+          </div>
+
+          <!-- Forum (kategori) şeridi -->
+          <div class="board-filter">
+            <span class="filter-label" data-i18n="boardForums">Forumlar</span>
+            <div class="chips" id="category-chips" role="group" aria-label="Kategoriler"></div>
+          </div>
+
+          <!-- Kolon başlıkları: aynı ızgarayı paylaşır, tıklanabilir olanlar sıralar -->
+          <div class="board-head" role="presentation">
+            <span class="c-index">#</span>
+            <span class="c-topic" data-i18n="colTopic">Konu</span>
+            <span class="c-forum" data-i18n="colForum">Forum</span>
+            <span class="c-num" data-sort="active" data-i18n="colReplies">Cevap</span>
+            <span class="c-num" data-sort="top" data-i18n="colViews">Hit</span>
+            <span class="c-when" data-i18n="colPosted">Gönderim</span>
+            <span class="c-last" data-i18n="colLast">Son yazan</span>
+          </div>
+
+          <div id="threads" class="thread-list" role="list"></div>
+        </div>
+
         <div class="pager">
           <button id="previous" type="button" class="secondary small" data-i18n="prev">← Önceki</button>
           <span id="page" class="meta"></span>
@@ -144,14 +176,16 @@
               <option value="Deneyimler">Deneyimler</option>
             </select>
           </label>
-          <label data-i18n-label="titleField">Konu başlığı<input name="title" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
+          <label data-i18n-label="titleField">Konu başlığı<input name="title" type="text" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
           <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
           <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
         </form>
+
       </section>
 
       <section id="detail" hidden>
-        <button id="back" type="button" class="secondary small" data-i18n="back">← Tüm konular</button>
+        <button id="back" type="button" class="ghost-button" data-i18n="back">← Tüm konular</button>
+        <header class="thread-head" id="thread-head"></header>
         <div id="conversation"></div>
         <div class="pager">
           <button id="reply-prev" type="button" class="secondary small" data-i18n="reply-prev">← Önceki yanıtlar</button>
@@ -180,15 +214,15 @@
         <form id="login-form">
           <h2 data-i18n="login-title">Hesabınla devam et</h2>
           <p class="meta" data-i18n="login-help">Oturum 14 gün açık kalır. Paylaşımlarda kullanıcı adın görünür.</p>
-          <label data-i18n-label="username">Kullanıcı adı<input name="username" required minlength="3" maxlength="20" autocomplete="username"></label>
+          <label data-i18n-label="username">Kullanıcı adı<input name="username" type="text" required minlength="3" maxlength="20" autocomplete="username"></label>
           <label data-i18n-label="password">Şifre<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="current-password"></label>
           <button type="submit" data-i18n="login-submit">Giriş yap</button>
         </form>
         <form id="register-form" hidden>
           <h2 data-i18n="register-title">Ücretsiz hesap oluştur</h2>
           <p class="meta" data-i18n="register-help">3–20 karakterlik bir kullanıcı adı ve en az 8 karakterlik, harf ile rakam içeren bir şifre seç.</p>
-          <label class="hp" aria-hidden="true">Web sitesi<input name="website" tabindex="-1" autocomplete="off"></label>
-          <label data-i18n-label="username">Kullanıcı adı<input name="username" required minlength="3" maxlength="20" autocomplete="username"></label>
+          <label class="hp" aria-hidden="true">Web sitesi<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+          <label data-i18n-label="username">Kullanıcı adı<input name="username" type="text" required minlength="3" maxlength="20" autocomplete="username"></label>
           <label data-i18n-label="password">Şifre<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
           <label data-i18n-label="confirm">Şifre tekrar<input name="passwordConfirm" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
           <button type="submit" data-i18n="register-submit">Kayıt ol</button>
@@ -197,14 +231,31 @@
     </div>
 
     <aside class="rail" aria-label="Topluluk özeti">
+      <!-- DA'daki yeşil "Yeni Konu Aç" düğmesinin karşılığı -->
+      <a class="rail-cta" id="rail-new-topic" href="#new-thread" data-i18n="newTopic">Yeni Konu Aç</a>
+
+      <section class="panel panel-recent">
+        <h2 data-i18n="latestContent">En Son İçerikler</h2>
+        <ul id="rail-recent" class="recent-list">
+          <li class="meta" data-i18n="loading">Konular yükleniyor…</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2 data-i18n="boardForums">Forumlar</h2>
+        <ul id="rail-forums" class="forum-list"></ul>
+      </section>
+
       <section class="panel">
         <h2 data-i18n="railPulse">Topluluk nabzı</h2>
         <ol id="rail-trending" class="rail-list"><li class="meta" data-i18n="loading">Konular yükleniyor…</li></ol>
       </section>
+
       <section class="panel">
         <h2 data-i18n="railAuthors">Öne çıkan yazarlar</h2>
         <ol id="rail-contributors" class="rail-list"></ol>
       </section>
+
       <section class="panel guidelines">
         <h2 data-i18n="railGuidelines">Meydan kuralları</h2>
         <ul>

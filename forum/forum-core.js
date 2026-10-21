@@ -56,7 +56,10 @@ export const UI = {
     guideline3: 'Kaynak varsa bağlantısını ekle, kesin tedavi vaadi verme.',
     guideline4: 'Konular admin onayından sonra yayınlanır.',
     allCategories: 'Tümü', noResults: 'Bu filtrelerle konu bulunamadı.', clearFilters: 'Filtreleri temizle',
-    sharePage: 'Konu sayfasını paylaş', openPage: 'Kalıcı sayfa', latestTopic: 'Son konu'
+    sharePage: 'Konu sayfasını paylaş', openPage: 'Kalıcı sayfa', latestTopic: 'Son konu',
+    boardForums: 'Forumlar', tabNew: 'Yeni mesajlar', tabHot: 'Sıcak konular',
+    colTopic: 'Konu', colForum: 'Forum', colReplies: 'Cevap', colViews: 'Hit', colPosted: 'Gönderim', colLast: 'Son yazan',
+    newTopic: 'Yeni Konu Aç', latestContent: 'En Son İçerikler', noLastReply: 'Yanıt yok'
   },
   en: {
     site: '← Back to site', eyebrow: 'LEARN TOGETHER, SHARE WHAT WORKS',
@@ -101,7 +104,10 @@ export const UI = {
     guideline3: 'Add a link when you cite a source; never promise a cure.',
     guideline4: 'Topics go live after admin approval.',
     allCategories: 'All', noResults: 'No topics match these filters.', clearFilters: 'Clear filters',
-    sharePage: 'Share topic page', openPage: 'Permalink', latestTopic: 'Latest topic'
+    sharePage: 'Share topic page', openPage: 'Permalink', latestTopic: 'Latest topic',
+    boardForums: 'Forums', tabNew: 'New posts', tabHot: 'Hot topics',
+    colTopic: 'Topic', colForum: 'Forum', colReplies: 'Replies', colViews: 'Views', colPosted: 'Posted', colLast: 'Last reply',
+    newTopic: 'Start a topic', latestContent: 'Latest activity', noLastReply: 'No replies'
   },
   de: {
     site: '← Zurück zur Seite', eyebrow: 'GEMEINSAM LERNEN, ERFAHRUNG TEILEN',
@@ -146,7 +152,10 @@ export const UI = {
     guideline3: 'Verlinke Quellen, versprich keine Heilung.',
     guideline4: 'Themen erscheinen nach Admin-Freigabe.',
     allCategories: 'Alle', noResults: 'Keine Themen für diese Filter.', clearFilters: 'Filter zurücksetzen',
-    sharePage: 'Themenseite teilen', openPage: 'Permalink', latestTopic: 'Neuestes Thema'
+    sharePage: 'Themenseite teilen', openPage: 'Permalink', latestTopic: 'Neuestes Thema',
+    boardForums: 'Foren', tabNew: 'Neue Beiträge', tabHot: 'Heiße Themen',
+    colTopic: 'Thema', colForum: 'Forum', colReplies: 'Antworten', colViews: 'Aufrufe', colPosted: 'Erstellt', colLast: 'Letzte Antwort',
+    newTopic: 'Thema erstellen', latestContent: 'Neueste Inhalte', noLastReply: 'Keine Antworten'
   },
   ja: {
     site: '← サイトに戻る', eyebrow: '一緒に学び、経験を共有する',
@@ -191,7 +200,10 @@ export const UI = {
     guideline3: '出典がある場合はリンクを添え、治療を約束しないでください。',
     guideline4: 'トピックは管理者の承認後に公開されます。',
     allCategories: 'すべて', noResults: '条件に合うトピックがありません。', clearFilters: '絞り込みを解除',
-    sharePage: 'トピックページを共有', openPage: '固定リンク', latestTopic: '最新トピック'
+    sharePage: 'トピックページを共有', openPage: '固定リンク', latestTopic: '最新トピック',
+    boardForums: 'フォーラム', tabNew: '新着メッセージ', tabHot: '注目トピック',
+    colTopic: 'トピック', colForum: 'フォーラム', colReplies: '返信', colViews: '閲覧', colPosted: '投稿日', colLast: '最新の返信',
+    newTopic: 'トピックを作成', latestContent: '最新の投稿', noLastReply: '返信なし'
   }
 };
 

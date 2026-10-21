@@ -15,7 +15,12 @@ function fakeSql() {
     if (/GROUP BY category/.test(text)) return [{ category: 'Genel', threads: 8 }, { category: 'Beslenme', threads: 5 }];
     if (/ORDER BY view_count DESC/.test(text)) return [{ id: 't1', title: 'Uyku düzeni', view_count: 320 }, { id: 't2', title: 'Protein', view_count: 210 }];
     if (/FROM authors GROUP BY author/.test(text)) return [{ author: 'Ada', posts: 14 }, { author: 'Kaan', posts: 9 }];
-    if (/SELECT id, title FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC/.test(text)) return [{ id: 't3', title: 'Yeni konu' }];
+    if (/ORDER BY t\.created_at DESC, t\.id LIMIT 6/.test(text)) {
+      return [
+        { id: 't3', title: 'Yeni konu', category: 'Genel', author: 'Ada', created_at: '2026-10-20T18:07:00Z', replies: 2 },
+        { id: 't4', title: 'Eski konu', category: 'Uyku', author: 'Kaan', created_at: '2026-10-19T09:00:00Z', replies: 0 }
+      ];
+    }
     return [];
   };
   return { sql, queries };
@@ -45,7 +50,11 @@ test('forum istatistikleri tek yanıtta toplanır', async () => {
     categories: [{ name: 'Genel', threads: 8 }, { name: 'Beslenme', threads: 5 }],
     trending: [{ id: 't1', title: 'Uyku düzeni', views: 320 }, { id: 't2', title: 'Protein', views: 210 }],
     contributors: [{ author: 'Ada', posts: 14 }, { author: 'Kaan', posts: 9 }],
-    latest: { id: 't3', title: 'Yeni konu' }
+    latest: { id: 't3', title: 'Yeni konu' },
+    recent: [
+      { id: 't3', title: 'Yeni konu', category: 'Genel', author: 'Ada', replies: 2, created_at: '2026-10-20T18:07:00Z' },
+      { id: 't4', title: 'Eski konu', category: 'Uyku', author: 'Kaan', replies: 0, created_at: '2026-10-19T09:00:00Z' }
+    ]
   });
   assert.match(res.headers['Cache-Control'], /s-maxage=60/);
   assert.match(res.headers['Cache-Control'], /stale-while-revalidate=600/);
@@ -100,4 +109,6 @@ test('forum sayfasındaki canlı şerit aynı toplayıcıyı kullanır', async (
   assert.equal(stats.threads, 18);
   assert.equal(stats.categories.length, 2);
   assert.deepEqual(stats.latest, { id: 't3', title: 'Yeni konu' });
+  assert.equal(stats.recent.length, 2, 'son içerikler paneli için liste dönmeli');
+  assert.equal(stats.recent[0].created_at, '2026-10-20T18:07:00Z');
 });
