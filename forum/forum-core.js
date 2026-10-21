@@ -46,7 +46,17 @@ export const UI = {
     copyLink: 'Bağlantıyı kopyala', copied: 'Bağlantı kopyalandı.', copyFailed: 'Bağlantı kopyalanamadı.',
     posts: 'mesaj', you: 'sen', topicOwner: 'Konu sahibi', jumpQuote: 'Alıntıya git',
     'rank-new': 'Yeni üye', 'rank-member': 'Üye', 'rank-active': 'Aktif üye', 'rank-veteran': 'Kıdemli üye',
-    anchorMissing: 'Bağlantıdaki mesaj bu sayfada görünmüyor.'
+    anchorMissing: 'Bağlantıdaki mesaj bu sayfada görünmüyor.',
+    heroEyebrow: 'TESTOTAVAN MEYDAN', search: 'Konu ara…', searchLabel: 'Ara',
+    sortNew: 'Yeni', sortTop: 'Popüler', sortActive: 'En çok yanıt', sortUnanswered: 'Yanıtsız',
+    statsThreads: 'Konu', statsReplies: 'Yanıt', statsMembers: 'Üye', statsViews: 'Görüntülenme',
+    railPulse: 'Topluluk nabzı', railAuthors: 'Öne çıkan yazarlar', railGuidelines: 'Meydan kuralları',
+    guideline1: 'Saygılı ol; kişiye değil fikre odaklan.',
+    guideline2: 'Kişisel sağlık verisi ve reçete paylaşma.',
+    guideline3: 'Kaynak varsa bağlantısını ekle, kesin tedavi vaadi verme.',
+    guideline4: 'Konular admin onayından sonra yayınlanır.',
+    allCategories: 'Tümü', noResults: 'Bu filtrelerle konu bulunamadı.', clearFilters: 'Filtreleri temizle',
+    sharePage: 'Konu sayfasını paylaş', openPage: 'Kalıcı sayfa', latestTopic: 'Son konu'
   },
   en: {
     site: '← Back to site', eyebrow: 'LEARN TOGETHER, SHARE WHAT WORKS',
@@ -81,7 +91,17 @@ export const UI = {
     copyLink: 'Copy link', copied: 'Link copied.', copyFailed: 'Could not copy the link.',
     posts: 'posts', you: 'you', topicOwner: 'Topic author', jumpQuote: 'Go to the quoted post',
     'rank-new': 'Newcomer', 'rank-member': 'Member', 'rank-active': 'Active member', 'rank-veteran': 'Veteran',
-    anchorMissing: 'The linked post is not on this page.'
+    anchorMissing: 'The linked post is not on this page.',
+    heroEyebrow: 'TESTOTAVAN COMMONS', search: 'Search topics…', searchLabel: 'Search',
+    sortNew: 'Newest', sortTop: 'Popular', sortActive: 'Most replies', sortUnanswered: 'Unanswered',
+    statsThreads: 'Topics', statsReplies: 'Replies', statsMembers: 'Members', statsViews: 'Views',
+    railPulse: 'Community pulse', railAuthors: 'Top authors', railGuidelines: 'Commons guidelines',
+    guideline1: 'Be respectful; focus on the idea, not the person.',
+    guideline2: 'Do not share personal health data or prescriptions.',
+    guideline3: 'Add a link when you cite a source; never promise a cure.',
+    guideline4: 'Topics go live after admin approval.',
+    allCategories: 'All', noResults: 'No topics match these filters.', clearFilters: 'Clear filters',
+    sharePage: 'Share topic page', openPage: 'Permalink', latestTopic: 'Latest topic'
   },
   de: {
     site: '← Zurück zur Seite', eyebrow: 'GEMEINSAM LERNEN, ERFAHRUNG TEILEN',
@@ -116,7 +136,17 @@ export const UI = {
     copyLink: 'Link kopieren', copied: 'Link kopiert.', copyFailed: 'Link konnte nicht kopiert werden.',
     posts: 'Beiträge', you: 'du', topicOwner: 'Themenautor', jumpQuote: 'Zum Zitat springen',
     'rank-new': 'Neu dabei', 'rank-member': 'Mitglied', 'rank-active': 'Aktives Mitglied', 'rank-veteran': 'Veteran',
-    anchorMissing: 'Der verlinkte Beitrag ist nicht auf dieser Seite.'
+    anchorMissing: 'Der verlinkte Beitrag ist nicht auf dieser Seite.',
+    heroEyebrow: 'TESTOTAVAN FORUM', search: 'Themen suchen…', searchLabel: 'Suchen',
+    sortNew: 'Neueste', sortTop: 'Beliebt', sortActive: 'Meiste Antworten', sortUnanswered: 'Unbeantwortet',
+    statsThreads: 'Themen', statsReplies: 'Antworten', statsMembers: 'Mitglieder', statsViews: 'Aufrufe',
+    railPulse: 'Community-Puls', railAuthors: 'Top-Autoren', railGuidelines: 'Forum-Regeln',
+    guideline1: 'Bleib respektvoll; diskutiere die Idee, nicht die Person.',
+    guideline2: 'Teile keine persönlichen Gesundheitsdaten oder Rezepte.',
+    guideline3: 'Verlinke Quellen, versprich keine Heilung.',
+    guideline4: 'Themen erscheinen nach Admin-Freigabe.',
+    allCategories: 'Alle', noResults: 'Keine Themen für diese Filter.', clearFilters: 'Filter zurücksetzen',
+    sharePage: 'Themenseite teilen', openPage: 'Permalink', latestTopic: 'Neuestes Thema'
   },
   ja: {
     site: '← サイトに戻る', eyebrow: '一緒に学び、経験を共有する',
@@ -151,7 +181,17 @@ export const UI = {
     copyLink: 'リンクをコピー', copied: 'リンクをコピーしました。', copyFailed: 'リンクをコピーできませんでした。',
     posts: '投稿', you: 'あなた', topicOwner: 'トピック投稿者', jumpQuote: '引用元へ移動',
     'rank-new': '新メンバー', 'rank-member': 'メンバー', 'rank-active': 'アクティブ', 'rank-veteran': 'ベテラン',
-    anchorMissing: 'リンク先の投稿はこのページにありません。'
+    anchorMissing: 'リンク先の投稿はこのページにありません。',
+    heroEyebrow: 'TESTOTAVAN フォーラム', search: 'トピックを検索…', searchLabel: '検索',
+    sortNew: '新着', sortTop: '人気', sortActive: '返信が多い', sortUnanswered: '未回答',
+    statsThreads: 'トピック', statsReplies: '返信', statsMembers: 'メンバー', statsViews: '閲覧',
+    railPulse: 'コミュニティの動き', railAuthors: '注目の投稿者', railGuidelines: 'フォーラムのルール',
+    guideline1: '敬意を持ち、人ではなく意見について話しましょう。',
+    guideline2: '個人の健康データや処方を共有しないでください。',
+    guideline3: '出典がある場合はリンクを添え、治療を約束しないでください。',
+    guideline4: 'トピックは管理者の承認後に公開されます。',
+    allCategories: 'すべて', noResults: '条件に合うトピックがありません。', clearFilters: '絞り込みを解除',
+    sharePage: 'トピックページを共有', openPage: '固定リンク', latestTopic: '最新トピック'
   }
 };
 

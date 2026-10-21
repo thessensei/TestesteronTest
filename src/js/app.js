@@ -1464,6 +1464,16 @@ function openDeepLinkedContent(){
 
 document.addEventListener('DOMContentLoaded', openDeepLinkedContent);
 
+// Sunucu tarafında üretilen blog/forum sayfalarındaki "Test Analizi" bağlantıları
+// /#physicalPage gibi hedeflerle gelir; SPA açılışta ilgili sekmeyi açar.
+function openHashPage(){
+    const target=(window.location.hash||'').replace('#','');
+    if(!['homePage','physicalPage','bloodPage','blogPage','aboutPage','adminPage'].includes(target)) return;
+    changePage(target);
+}
+document.addEventListener('DOMContentLoaded', openHashPage);
+window.addEventListener('hashchange', openHashPage);
+
 // Dil değiştiğinde dinamik basılan adımlar, notlar ve laboratuvar yardımcıları da
 // yeni sözlükle tekrar üretilir. Böylece yalnızca sayfadaki başlıklar değil alt
 // açıklamalar da seçilen dile geçer.

@@ -21,5 +21,13 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/blog/rss.xml", "destination": "/api/blog-rss" },
+    { "source": "/feed.xml", "destination": "/api/blog-rss" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/blog", "destination": "/api/blog-page" },
+    { "source": "/blog/(.*)", "destination": "/api/blog-page?slug=$1" },
+    { "source": "/forum/t/(.*)", "destination": "/api/forum-page?id=$1" }
   ]
 }

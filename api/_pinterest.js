@@ -86,13 +86,16 @@ export function resolveSiteUrl(headers = {}) {
 }
 
 /**
- * Pinin hedef bağlantısı — Vercel'deki canlı yazıya derin bağlantı.
- * Ana sayfa `?icerik=<id>` parametresini okur ve ilgili yazıyı açıp gösterir.
+ * Pinin hedef bağlantısı.
+ * Slug varsa yazının kendi SEO sayfasına (/blog/<slug>/), yoksa ana sayfanın
+ * `?icerik=<id>` derin bağlantısına gider. Eski çağrılar iki parametreyle çalışır.
  */
-export function canonicalPostUrl(id, siteUrl) {
+export function canonicalPostUrl(id, siteUrl, slug = '') {
   const base = oneLine(siteUrl, 300).replace(/\/+$/, '');
   const postId = oneLine(id, 120);
   if (!base || !postId) return '';
+  const postSlug = oneLine(slug, 160).replace(/[^A-Za-z0-9-]/g, '');
+  if (postSlug) return `${base}/blog/${encodeURIComponent(postSlug)}/`;
   return `${base}/?icerik=${encodeURIComponent(postId)}`;
 }
 
@@ -118,7 +121,7 @@ export function buildRichPin(item, options = {}) {
   const siteUrl = options.siteUrl ?? '';
   const title = oneLine(item?.title, PINTEREST_MAX_TITLE);
   const imageUrl = resolvePinImageUrl(item?.cover_url, siteUrl);
-  const link = canonicalPostUrl(item?.id, siteUrl);
+  const link = canonicalPostUrl(item?.id, siteUrl, item?.slug);
   const description = buildPinDescription(item);
 
   if (!boardId) return { ok: false, reason: 'board_id_missing' };
