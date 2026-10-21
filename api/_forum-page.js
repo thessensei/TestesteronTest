@@ -5,7 +5,7 @@
  * Böylece arama motorları ve paylaşım önizlemeleri konu başlığını, ilk mesajı ve
  * onaylı yanıtları JavaScript çalıştırmadan görür (DiscussionForumPosting JSON-LD).
  *
- * Adres: vercel.json → /forum/t/<id>/ → /api/forum-page?id=<id>
+ * Adres: vercel.json → /forum/t/<id>/ → /api/seo?type=thread&id=<id>
  */
 
 import { neon } from '@neondatabase/serverless';

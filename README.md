@@ -111,11 +111,12 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
 │   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD) — slug üretir, kaynakça temizler, Pinterest tetikler
-│   ├── blog-page.js      #   GET /blog/ ve /blog/<slug>/ — sunucu tarafında üretilen SEO sayfaları
-│   ├── sitemap.js        #   GET /sitemap.xml — dinamik site haritası
-│   ├── blog-rss.js       #   GET /blog/rss.xml — RSS 2.0 akışı
-│   ├── forum-page.js     #   GET /forum/t/<id>/ — konuların kalıcı, aranabilir sayfası
-│   ├── forum-stats.js    #   GET /api/forum-stats — topluluk nabzı (konu, yanıt, üye, görüntülenme)
+│   ├── seo.js            #   /blog/, /blog/<slug>/, /blog/rss.xml, /sitemap.xml, /forum/t/<id>/ yönlendiricisi
+│   ├── _blog-page.js      #   Blog arşivi + yazı üreticisi (private)
+│   ├── _sitemap.js        #   Dinamik site haritası (private)
+│   ├── _blog-rss.js       #   RSS 2.0 akışı (private)
+│   ├── _forum-page.js     #   Konuların kalıcı, aranabilir sayfası (private)
+│   ├── _forum-stats.js    #   Topluluk nabzı toplayıcısı (private; /api/forum?stats=1)
 │   └── media/            #   Görsel yükleme ve sunma (/api/media/<id>)
 ├── tools/
 │   ├── build.mjs                     # src/ → yayın dosyaları (CSS/JS küçültme + hash)
@@ -329,7 +330,7 @@ Davranış kuralları:
 | `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
-| `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar (60 sn CDN önbelleği) |
+| `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar. `/api/forum?stats=1` adresine yönlenir (60 sn CDN önbelleği) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
 | `/blog/`, `/blog/<slug>/` | `GET` | Blog arşivi ve her yazının kalıcı SEO sayfası (sunucu tarafında HTML) |
 | `/forum/t/<id>/` | `GET` | Forum konusunun kalıcı, JavaScript'siz okunabilen sayfası |
@@ -350,11 +351,11 @@ Blog ve forum, ana SPA'nın içinde kaybolan sekmeler değil; **kendi keşif yü
 
 | Yüzey | Adres | Üretim | SEO çıktısı |
 | --- | --- | --- | --- |
-| Arşiv | `/blog/` | `api/blog-page.js` → `renderBlogHub` | canonical, kategori filtreleri, `ItemList` + `Blog` JSON-LD, RSS bağlantısı |
-| Yazı | `/blog/<slug>/` | `api/blog-page.js` → `renderBlogPost` | canonical, TR/EN/DE/JA hreflang, `BlogPosting` + `BreadcrumbList` + `FAQPage`, Open Graph/Twitter, içindekiler, ilgili yazılar, paylaşım |
+| Arşiv | `/blog/` | `api/_blog-page.js` → `renderBlogHub` | canonical, kategori filtreleri, `ItemList` + `Blog` JSON-LD, RSS bağlantısı |
+| Yazı | `/blog/<slug>/` | `api/_blog-page.js` → `renderBlogPost` | canonical, TR/EN/DE/JA hreflang, `BlogPosting` + `BreadcrumbList` + `FAQPage`, Open Graph/Twitter, içindekiler, ilgili yazılar, paylaşım |
 | Tarif | `/blog/<slug>/` | aynı | `Recipe` JSON-LD (malzeme, adım, süre) |
 | Forum | `/forum/` | `forum/index.html` + `/api/forum` + `/api/forum-stats` | canonical, `Organization` + `DiscussionForumPosting`, canlı istatistik şeridi, arama/kategori/sıralama |
-| Konu | `/forum/t/<id>/` | `api/forum-page.js` | canonical, `DiscussionForumPosting` + `BreadcrumbList`, yazar rütbesi, benzer konular |
+| Konu | `/forum/t/<id>/` | `api/_forum-page.js` | canonical, `DiscussionForumPosting` + `BreadcrumbList`, yazar rütbesi, benzer konular |
 
 **Kaynakça kuralı:** yazı ister AI ile ister elle üretilsin, `Kaynak:`, `Kaynakça`, `Referanslar`,
 çıplak URL ve atıf listesi satırları `api/_seo.js → stripSourceReferences` ile hem kayıt sırasında

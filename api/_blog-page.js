@@ -6,9 +6,9 @@
  * JSON-LD (BlogPosting + BreadcrumbList + FAQPage) ve sitemap/RSS aynı kaynaktan beslenir.
  *
  * Adres yönlendirmesi vercel.json içindedir:
- *   /blog            → /api/blog-page
- *   /blog/<slug>/    → /api/blog-page?slug=<slug>
- *   /blog/rss.xml    → /api/blog-rss
+ *   /blog            → /api/seo?type=blog
+ *   /blog/<slug>/    → /api/seo?type=blog&slug=<slug>
+ *   /blog/rss.xml    → /api/seo?type=rss
  */
 
 import {

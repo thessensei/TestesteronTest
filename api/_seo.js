@@ -2,8 +2,8 @@
  * TestoTavan — SEO çekirdeği (private modül).
  *
  * Blog yazıları ve forum konuları artık kendi kalıcı adreslerinde sunulur:
- *   /blog/<slug>/      → api/blog-page.js  (sunucu tarafında üretilen HTML)
- *   /forum/t/<id>/     → api/forum-page.js (sunucu tarafında üretilen HTML)
+ *   /blog/<slug>/      → api/seo.js → api/_blog-page.js (sunucu tarafında üretilen HTML)
+ *   /forum/t/<id>/     → api/seo.js → api/_forum-page.js (sunucu tarafında üretilen HTML)
  *
  * Bu modül iki bölümün ortak ihtiyaçlarını karşılar:
  *  - Türkçe karakterleri doğru sadeleştiren slug üretimi

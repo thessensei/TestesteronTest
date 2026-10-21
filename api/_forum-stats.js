@@ -30,6 +30,23 @@ export function shapeStats({ totals = {}, categories = [], trending = [], contri
   return stats;
 }
 
+/** Forum nabzını toplar; `api/forum?stats=1` ve testler aynı fonksiyonu kullanır. */
+export async function collectForumStats(sql) {
+  const [totals] = await sql`SELECT
+    (SELECT COUNT(*)::int FROM forum_threads WHERE approved=TRUE) AS threads,
+    (SELECT COUNT(*)::int FROM forum_replies WHERE approved=TRUE) AS replies,
+    (SELECT COUNT(*)::int FROM forum_users) AS members,
+    (SELECT COALESCE(SUM(view_count),0)::int FROM forum_threads WHERE approved=TRUE) AS views`;
+  const categories = await sql`SELECT category, COUNT(*)::int AS threads FROM forum_threads WHERE approved=TRUE GROUP BY category ORDER BY threads DESC`;
+  const trending = await sql`SELECT id, title, view_count FROM forum_threads WHERE approved=TRUE ORDER BY view_count DESC, created_at DESC LIMIT 5`;
+  const contributors = await sql`WITH authors AS (
+      SELECT author FROM forum_threads WHERE approved=TRUE
+      UNION ALL SELECT author FROM forum_replies WHERE approved=TRUE
+    ) SELECT author, COUNT(*)::int AS posts FROM authors GROUP BY author ORDER BY posts DESC LIMIT 5`;
+  const latest = await sql`SELECT id, title FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC LIMIT 1`;
+  return shapeStats({ totals, categories, trending, contributors, latest });
+}
+
 export function createForumStatsHandler(options = {}) {
   const connect = options.connect || (() => {
     if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL tanımlı değil.');
@@ -47,20 +64,7 @@ export function createForumStatsHandler(options = {}) {
       const sql = options.sql || connect();
       await prepareForum(sql);
 
-      const [totals] = await sql`SELECT
-        (SELECT COUNT(*)::int FROM forum_threads WHERE approved=TRUE) AS threads,
-        (SELECT COUNT(*)::int FROM forum_replies WHERE approved=TRUE) AS replies,
-        (SELECT COUNT(*)::int FROM forum_users) AS members,
-        (SELECT COALESCE(SUM(view_count),0)::int FROM forum_threads WHERE approved=TRUE) AS views`;
-      const categories = await sql`SELECT category, COUNT(*)::int AS threads FROM forum_threads WHERE approved=TRUE GROUP BY category ORDER BY threads DESC`;
-      const trending = await sql`SELECT id, title, view_count FROM forum_threads WHERE approved=TRUE ORDER BY view_count DESC, created_at DESC LIMIT 5`;
-      const contributors = await sql`WITH authors AS (
-          SELECT author FROM forum_threads WHERE approved=TRUE
-          UNION ALL SELECT author FROM forum_replies WHERE approved=TRUE
-        ) SELECT author, COUNT(*)::int AS posts FROM authors GROUP BY author ORDER BY posts DESC LIMIT 5`;
-      const latest = await sql`SELECT id, title FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC LIMIT 1`;
-
-      return res.status(200).json(shapeStats({ totals, categories, trending, contributors, latest }));
+      return res.status(200).json(await collectForumStats(sql));
     } catch (error) {
       console.error('[forum-stats]', error);
       return res.status(200).json(emptyStats());

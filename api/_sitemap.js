@@ -5,7 +5,7 @@
  * Veritabanı geçici olarak erişilemezse yalnızca sabit sayfalar döner:
  * arama motoruna her koşulda geçerli XML verilir.
  *
- * Adres: vercel.json → /sitemap.xml → /api/sitemap
+ * Adres: vercel.json → /sitemap.xml → /api/seo?type=sitemap
  */
 
 import { blogPostPath, DEFAULT_SITE_URL, forumThreadPath, resolveSiteUrl, sectionBase } from './_seo.js';

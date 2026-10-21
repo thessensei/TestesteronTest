@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBlogPageHandler } from '../api/blog-page.js';
-import { createForumPageHandler, renderForumThread } from '../api/forum-page.js';
+import { createBlogPageHandler } from '../api/_blog-page.js';
+import { createForumPageHandler, renderForumThread } from '../api/_forum-page.js';
+import { resolveSeoRoute } from '../api/seo.js';
 
 const ORIGIN = 'https://testosteron-test.vercel.app';
 const THREAD_ID = '12345678-1234-4123-8123-123456789abc';
@@ -218,4 +219,13 @@ test('konu sayfası üreticisi yazar rütbesini ve beğeni sayısını işler', 
   assert.match(html, /Kıdemli üye|Veteran/);
   assert.match(html, /4/, 'beğeni sayısı görünmeli');
   assert.match(html, /Sabit konu|Pinned/);
+});
+
+
+test('tek SEO fonksiyonu blog, rss, site haritası ve konu isteklerini yönlendirir', () => {
+  const routes = ['blog', 'rss', 'sitemap', 'thread'].map(type => resolveSeoRoute({ type }));
+  for (const route of routes) assert.equal(typeof route, 'function');
+  assert.equal(new Set(routes).size, 4, 'her tür farklı işleyiciye gitmeli');
+  assert.equal(resolveSeoRoute({}), routes[0], 'tür yoksa blog arşivi varsayılan');
+  assert.equal(resolveSeoRoute({ type: 'bilinmeyen' }), routes[0]);
 });

@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
 import { CATEGORIES, EDIT_WINDOW_MS, prepareForum, quoteExcerpt, validateEdit, validateLike, validatePost, validId } from './_forum.js';
 import { findForumUserByToken, readForumToken } from './_forum-auth.js';
+import { collectForumStats } from './_forum-stats.js';
 
 const MODERATION_ACTIONS = ['approve', 'lock', 'unlock', 'pin', 'unpin'];
 
@@ -68,6 +69,12 @@ export function createForumHandler(connect = neon) {
       const manage = query.manage === '1' && admin;
       const token = readForumToken(req);
       if (req.method === 'GET') {
+        // Meydan nabzı: /api/forum-stats → /api/forum?stats=1 (vercel.json).
+        // Ayrı bir sunucu fonksiyonu açmadan aynı bağlantı havuzu kullanılır.
+        if (query.stats === '1') {
+          res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+          return res.status(200).json(await collectForumStats(sql));
+        }
         const viewer = token ? await findForumUserByToken(sql, token) : null;
         const viewerId = viewer?.id ?? null;
         const offset = Math.min(100000, Math.max(0, parseInt(query.offset, 10) || 0));

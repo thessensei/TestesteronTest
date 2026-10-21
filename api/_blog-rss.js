@@ -4,7 +4,7 @@
  * RSS, arama motorları ve içerik toplayıcılar için ikinci bir keşif kanalıdır;
  * her yazının canonical adresi, özeti ve kapak görseliyle listelenir.
  *
- * Adres: vercel.json → /blog/rss.xml → /api/blog-rss
+ * Adres: vercel.json → /blog/rss.xml → /api/seo?type=rss
  */
 
 import { blogPostPath, DEFAULT_SITE_URL, metaDescription, oneLine, resolveSiteUrl, safeCover, sectionBase, stripSourceReferences } from './_seo.js';

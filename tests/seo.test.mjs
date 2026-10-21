@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildSitemap } from '../api/sitemap.js';
-import { buildFeed } from '../api/blog-rss.js';
+import { buildSitemap } from '../api/_sitemap.js';
+import { buildFeed } from '../api/_blog-rss.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const productionOrigin = 'https://testosteron-test.vercel.app';
@@ -81,10 +81,21 @@ test('robots.txt sitemap adresini bildirir ve yönetim/API yollarını tarama d�
 test('vercel.json blog, rss, sitemap ve forum konu adreslerini fonksiyonlara bağlar', () => {
   const config = JSON.parse(read('vercel.json'));
   const rewrites = Object.fromEntries(config.rewrites.map(rule => [rule.source, rule.destination]));
-  assert.equal(rewrites['/sitemap.xml'], '/api/sitemap');
-  assert.equal(rewrites['/blog/rss.xml'], '/api/blog-rss');
-  assert.equal(rewrites['/blog/(.*)'], '/api/blog-page?slug=$1');
-  assert.equal(rewrites['/forum/t/(.*)'], '/api/forum-page?id=$1');
+  assert.equal(rewrites['/sitemap.xml'], '/api/seo?type=sitemap');
+  assert.equal(rewrites['/blog/rss.xml'], '/api/seo?type=rss');
+  assert.equal(rewrites['/blog/(.*)'], '/api/seo?type=blog&slug=$1');
+  assert.equal(rewrites['/forum/t/(.*)'], '/api/seo?type=thread&id=$1');
+  assert.equal(rewrites['/api/forum-stats'], '/api/forum?stats=1');
+  assert.equal(rewrites['/feed.xml'], '/api/seo?type=rss');
+
+  // Vercel Hobby planı 12 fonksiyonla sınırlı: SEO uç noktaları tek dosyada toplanmalı.
+  const publicFunctions = fs.readdirSync(path.join(root, 'api'))
+    .filter(name => name.endsWith('.js') && !name.startsWith('_'));
+  assert.ok(publicFunctions.length <= 12, `ortak fonksiyon sayısı sınırı aşıldı: ${publicFunctions.join(', ')}`);
+  assert.ok(publicFunctions.includes('seo.js'), 'SEO yönlendiricisi yayında olmalı');
+  for (const privateOnly of ['blog-page.js', 'blog-rss.js', 'sitemap.js', 'forum-page.js', 'forum-stats.js']) {
+    assert.equal(publicFunctions.includes(privateOnly), false, `${privateOnly} ayrı fonksiyon olarak yayınlanmamalı`);
+  }
 });
 
 test('ana sayfada index izni, canonical, sosyal önizleme ve geçerli JSON-LD bulunur', () => {

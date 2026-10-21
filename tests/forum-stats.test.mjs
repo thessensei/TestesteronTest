@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createForumStatsHandler, emptyStats, shapeStats } from '../api/forum-stats.js';
+import { collectForumStats, createForumStatsHandler, emptyStats, shapeStats } from '../api/_forum-stats.js';
 
 /** Sorgu metnine göre şekilli yanıt dönen sahte SQL. */
 function fakeSql() {
@@ -91,4 +91,13 @@ test('şekillendirme eksik ve bozuk alanları sıfıra indirger', () => {
   assert.deepEqual(stats.trending, [{ id: 'a', title: 'A', views: 7 }]);
   assert.deepEqual(stats.contributors, [{ author: 'Ada', posts: 2 }]);
   assert.equal(stats.latest, null);
+});
+
+
+test('forum sayfasındaki canlı şerit aynı toplayıcıyı kullanır', async () => {
+  const { sql } = fakeSql();
+  const stats = await collectForumStats(sql);
+  assert.equal(stats.threads, 18);
+  assert.equal(stats.categories.length, 2);
+  assert.deepEqual(stats.latest, { id: 't3', title: 'Yeni konu' });
 });

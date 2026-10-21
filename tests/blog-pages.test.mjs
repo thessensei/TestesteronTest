@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {
   metaDescription, renderRichText, slugify, stripSourceReferences, extractFaq, resolveSiteUrl, sectionBase, blogPostPath
 } from '../api/_seo.js';
-import { createBlogPageHandler, renderBlogHub, renderBlogPost, localizedContent } from '../api/blog-page.js';
-import { buildSitemap } from '../api/sitemap.js';
+import { createBlogPageHandler, renderBlogHub, renderBlogPost, localizedContent } from '../api/_blog-page.js';
+import { buildSitemap } from '../api/_sitemap.js';
 
 const ORIGIN = 'https://testosteron-test.vercel.app';
 
