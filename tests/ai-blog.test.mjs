@@ -431,15 +431,21 @@ test('çeviri doğrulaması Türkçe kalan malzeme adlarını eksik kabul eder',
   assert.equal(isTranslationComplete({ ...translation, ingredients: ['2 eggs'] }, source, 'en'), true);
 });
 
-test('yedek tarif çevirisi kısmen Türkçe kalan malzeme listesini gizler', async () => {
+test('yedek tarif çevirisi malzeme listesini Türkçe bırakmaz', async () => {
   const { article } = extractArticleFromHtml(SAMPLE_RECIPE_HTML, 'https://yemek.ornek.com/tavuk-bulgur');
   const fallback = buildFallbackRecipePost(article);
   const result = await ensureCompleteTranslations(fallback, {
     networkTranslate: false,
     env: { ENABLE_MACHINE_TRANSLATION: '0' }
   });
+  // Başlık/gövde yedeği hâlâ eksik sayılır; malzeme satırları ise sözlükle çevrilir.
   assert.equal(result.report.en, 'incomplete');
-  assert.deepEqual(result.item.translations.en.ingredients, []);
+  const ingredients = result.item.translations.en.ingredients;
+  assert.ok(Array.isArray(ingredients));
+  for (const line of ingredients) {
+    assert.doesNotMatch(line, /[çğışÇĞİŞ]/, `Türkçe karakter kalmamalı: ${line}`);
+    assert.doesNotMatch(line, /\b(tavuk|yumurta|zeytinyağı|göğsü|yemek|bardak|kaşık|adet)\b/i, `Türkçe kelime kalmamalı: ${line}`);
+  }
 });
 
 test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', async () => {

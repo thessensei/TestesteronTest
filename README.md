@@ -50,6 +50,8 @@ We offer natural, safe, and alternative solutions to address the decline in test
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
+- **Düzenleme / yayınlama ayrımı** — bir içeriği düzenlerken formun tek düğmesi **Kaydet**'tir ve “Herkese açık yayınla” ekranda görünmez; kayıttan sonra form düzenleme modunda kalır. **＋ Yeni içerik** düğmesi temiz form açar, yayınlama düğmesi yalnızca o modda görünür
+- **Otomatik malzeme** — yemek tariflerinde “İçerik / hazırlanış” metnindeki malzeme listesi kendiliğinden çıkarılır; Türkçe liste değişince boş EN/DE/JA listeleri otomatik doldurulur. Elle yazılan dile dokunulmaz; `⤓ Metinden çıkar` ve `⇄ Boş dilleri doldur` düğmeleri aynı işi isteğe bağlı çalıştırır
 - **4 Dilli AI İçerik Stüdyosu** — admin paneline girilen haber/makale/tarif bağlantısından önce güvenilir Türkçe ana taslağı çıkarır; EN, DE ve JA çevirilerini tek karma yanıt yerine **üç bağımsız AI turunda** üretir. Her dil; hedef dil, eksiksiz başlık/özet/gövde, sayı ve URL koruması, paragraf/liste yapısı, süre, malzeme sayısı-sırası ve miktarlar açısından kalite kapısından geçer. Başarısız çeviri sorun listesiyle otomatik yeniden denenir; sonuçlar panelde dil başına kalite puanı ve durum kartıyla gösterilir. Gemini, OpenAI, Groq, Claude, Kimi ve DeepSeek desteklenir; AI yoksa yedek makine/yerel çeviri zinciri kullanılır (`ENABLE_MACHINE_TRANSLATION=0` ile ağ çevirisi kapatılabilir)
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
@@ -97,7 +99,8 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── logo.webp         # Arayüzde kullanılan logo (256 px, ~6 KB)
 │   ├── logo.png          # Favicon / apple-touch-icon ve WebP desteklemeyen tarayıcı yedeği (192 px)
 │   └── logo-source.png   # 1024 px kaynak görsel (yayına gönderilmez, yeni boyut üretmek için)
-├── admin/index.html      # Yönetim paneli (görsel yükleme + kategori)
+├── admin/index.html      # Yönetim paneli (içerik stüdyosu, görsel yükleme, düzenleme modu)
+├── admin/ingredients.js  # Malzeme ayıklama/tekilleştirme yardımcıları (tarayıcı + testler)
 ├── api/                  # Vercel serverless functions
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
@@ -326,7 +329,7 @@ Davranış kuralları:
 | `/api/session` | `GET` | Oturumun doğrulanmış mı olduğunu döner |
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
 | `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
-| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir (admin yetkisi ister) |
+| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir, `mode: "ingredients"` yalnızca malzeme satırlarını çevirir (admin yetkisi ister) |
 | `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
