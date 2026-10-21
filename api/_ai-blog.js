@@ -20,6 +20,7 @@ import {
   preferTranslated,
   repairTranslation
 } from './_translate.js';
+import { stripSourceReferences, wordCount } from './_seo.js';
 
 export const NEWS_FETCH_TIMEOUT_MS = 10000;
 export const AI_TIMEOUT_MS = 25000;
@@ -630,6 +631,81 @@ export function estimateReadingTime(text) {
 }
 
 /**
+ * Yerleşik taslağın "günlük hayata çeviri" ve değerlendirme blokları.
+ * Makine çevirisine bırakılmaz: her dilde doğal, elle yazılmış metin kullanılır.
+ */
+const FALLBACK_SECTIONS = {
+  tr: {
+    practice: ['## Günlük Hayata Çeviri',
+      '- Uyku saatini sabitleyin: her gün aynı saatte yatıp aynı saatte kalkın.',
+      '- Sabah ilk 30 dakikada doğal gün ışığı alın.',
+      '- Haftada 2–3 direnç antrenmanı planlayın.',
+      '- Protein, çinko ve magnezyumu günlük düzende tutun.',
+      '- Stres yönetimini (nefes, yürüyüş, ekran molası) programa ekleyin.'].join('\n'),
+    assessment: 'TestoTavan Değerlendirmesi:\nUyku kalitesi, dengeli beslenme, düzenli direnç egzersizi ve stres yönetimi genel sağlık ile hormonal dengeyi destekleyen temel yapı taşlarıdır. Yeni araştırmaları değerlendirirken kişisel sağlık durumunuzu ve laboratuvar bulgularınızı bir hekimle birlikte ele almanız önerilir.'
+  },
+  en: {
+    practice: ['## Putting it into practice',
+      '- Fix your sleep window: go to bed and wake up at the same time every day.',
+      '- Get natural daylight within the first 30 minutes after waking.',
+      '- Plan 2–3 resistance sessions per week.',
+      '- Keep protein, zinc and magnesium consistent in your daily routine.',
+      '- Schedule stress management (breathing, walking, screen breaks).'].join('\n'),
+    assessment: 'TestoTavan assessment:\nSleep quality, balanced nutrition, regular resistance training and stress management are the building blocks of general health and hormonal balance. Review new findings together with your physician and your own lab results.'
+  },
+  de: {
+    practice: ['## In den Alltag übersetzen',
+      '- Fixiere dein Schlaffenster: Geh jeden Tag zur gleichen Zeit ins Bett und steh zur gleichen Zeit auf.',
+      '- Hole dir in den ersten 30 Minuten nach dem Aufwachen natürliches Tageslicht.',
+      '- Plane 2–3 Krafttrainings pro Woche.',
+      '- Halte Protein, Zink und Magnesium täglich konstant.',
+      '- Nimm Stressmanagement (Atmen, Spazieren, Bildschirmpausen) in deinen Plan auf.'].join('\n'),
+    assessment: 'TestoTavan-Einschätzung:\nSchlafqualität, ausgewogene Ernährung, regelmäßiges Krafttraining und Stressmanagement sind die Grundbausteine von Gesundheit und Hormonbalance. Besprich neue Erkenntnisse mit deiner Ärztin oder deinem Arzt und deinen eigenen Laborwerten.'
+  },
+  ja: {
+    practice: ['## 日常生活への落とし込み',
+      '- 睡眠時間を固定しましょう。毎日同じ時刻に寝て、同じ時刻に起きます。',
+      '- 起床後30分以内に自然光を浴びましょう。',
+      '- 週2〜3回の筋力トレーニングを計画しましょう。',
+      '- たんぱく質・亜鉛・マグネシウムを毎日安定して摂りましょう。',
+      '- ストレス管理（呼吸法、散歩、画面から離れる時間）を予定に入れましょう。'].join('\n'),
+    assessment: 'TestoTavanの評価:\n睡眠の質、バランスの取れた食事、定期的な筋力トレーニング、ストレス管理は、健康とホルモンバランスの土台です。新しい研究は、主治医と自分の検査結果とあわせて評価してください。'
+  }
+};
+
+const FAQ_HEADING = {
+  tr: 'Sık Sorulan Sorular', en: 'Frequently Asked Questions', de: 'Häufige Fragen', ja: 'よくある質問'
+};
+
+const FAQ_QUESTIONS = {
+  tr: ['Bu yazı hangi konuyu ele alıyor?', 'Araştırmanın öne çıkan bulgusu nedir?', 'Bu bilgiler günlük hayatta nasıl kullanılır?'],
+  en: ['What does this article cover?', 'What is the main finding of the research?', 'How can I use this information in daily life?'],
+  de: ['Worum geht es in diesem Artikel?', 'Was ist das zentrale Ergebnis der Studie?', 'Wie lässt sich das im Alltag umsetzen?'],
+  ja: ['この記事は何を扱っていますか？', '研究の主な発見は何ですか？', 'この情報を日常生活でどう活かせますか？']
+};
+
+/**
+ * Yedek taslaklara yapılandırılmış SSS ekler. Her yanıt 24+ karakterdir ve
+ * soru işaretiyle bitmez; böylece /blog/<slug>/ sayfası FAQPage JSON-LD üretir.
+ */
+function fallbackFaq(lang, answers) {
+  const questions = FAQ_QUESTIONS[lang];
+  const cleaned = answers.map(value => String(value || '').replace(/\s+/g, ' ').replace(/^[-*•]\s+/, '').trim());
+  const pairs = cleaned.slice(0, 3).map((answer, index) => [questions[index], answer]);
+  return `## ${FAQ_HEADING[lang]}\n${pairs.map(([question, answer]) => `${question}\n${answer}`).join('\n\n')}`;
+}
+
+function firstHighlight(body) {
+  const match = String(body || '').match(/^\d{1,2}\.\s+(.+)$/m);
+  return match ? match[1].trim() : '';
+}
+
+function lastBullet(section) {
+  const lines = String(section || '').split('\n').filter(line => /^[-*•]\s+/.test(line));
+  return lines.length ? lines.at(-1).replace(/^[-*•]\s+/, '').trim() : '';
+}
+
+/**
  * AI yanıtı olmadan veya AI servisine ulaşılamadığında devreye giren
  * yerleşik akıllı blog oluşturucu (4 dil: TR, EN, DE, JA).
  */
@@ -651,32 +727,56 @@ export function buildFallbackBlogPost(article) {
     .filter(s => s.length >= 40 && s.length <= 220);
 
   const highlights = sentences.slice(0, 4);
-  const mainParagraphs = rawParagraphs.slice(0, 6);
+  // Uzun kaynaklarda daha fazla bağlam taşınır; yine de gövde sınırlı tutulur.
+  const mainParagraphs = rawParagraphs.slice(0, 12);
 
-  const sourceLine = article?.siteName
-    ? `Kaynak: ${article.siteName}${article?.url ? ` (${article.url})` : ''}`
-    : (article?.url ? `Kaynak: ${article.url}` : '');
-
-  const trBodyParts = [
+  // Ortak gövde: çeviri motoruna yalnızca kaynak cümleler gider.
+  const sharedBody = [
     mainParagraphs.length ? mainParagraphs.join('\n\n') : summaryTr,
     highlights.length
-      ? `Öne Çıkan Noktalar:\n${highlights.map((h, i) => `${i + 1}. ${h}`).join('\n')}`
-      : '',
-    'TestoTavan Değerlendirmesi:\nUyku kalitesi, dengeli beslenme, düzenli direnç egzersizi ve stres yönetimi genel sağlık ile hormonal dengeyi destekleyen temel yapı taşlarıdır. Yeni araştırmaları değerlendirirken kişisel sağlık durumunuzu ve laboratuvar bulgularınızı bir hekimle birlikte ele almanız önerilir.',
-    sourceLine,
-    'Not: Bu içerik bilgilendirme amaçlıdır; tıbbi teşhis veya tedavi yerine geçmez.'
-  ].filter(Boolean);
+      ? `## Öne Çıkan Noktalar\n${highlights.map((h, i) => `${i + 1}. ${h}`).join('\n')}`
+      : ''
+  ].filter(Boolean).join('\n\n');
 
-  const bodyTr = clean(trBodyParts.join('\n\n'), 20000);
+  const faqTr = fallbackFaq('tr', [
+    summaryTr,
+    highlights[0] || summaryTr,
+    lastBullet(FALLBACK_SECTIONS.tr.practice) || FALLBACK_SECTIONS.tr.assessment.split('\n')[1]
+  ]);
+  const sectionsTr = `${FALLBACK_SECTIONS.tr.practice}\n\n${faqTr}\n\n${FALLBACK_SECTIONS.tr.assessment}`;
+  const bodyTr = clean(stripSourceReferences(`${sharedBody}\n\n${sectionsTr}`), 20000);
   const timeTr = estimateReadingTime(bodyTr);
 
   const source = {
     category: cat.tr,
     title: titleTr,
     summary: summaryTr,
-    body: bodyTr,
+    body: stripSourceReferences(sharedBody),
     time: timeTr
   };
+
+  const translations = {};
+  for (const lang of ['en', 'de', 'ja']) {
+    const baseTranslation = localTranslateFields(source, lang);
+    const localizedBody = String(baseTranslation.body || '').replace(
+      /(^|\n)(?:##\s*)?(?:Öne Çıkan Noktalar|Key Points|Wichtige Punkte|要点)[:：]?/g,
+      `$1## ${({ en: 'Key Points', de: 'Wichtige Punkte', ja: '要点' })[lang]}`
+    );
+    const localizedSections = [
+      FALLBACK_SECTIONS[lang].practice,
+      fallbackFaq(lang, [
+        baseTranslation.summary,
+        firstHighlight(localizedBody) || baseTranslation.summary,
+        lastBullet(FALLBACK_SECTIONS[lang].practice) || FALLBACK_SECTIONS[lang].assessment.split('\n')[1]
+      ]),
+      FALLBACK_SECTIONS[lang].assessment
+    ].join('\n\n');
+    translations[lang] = {
+      ...baseTranslation,
+      category: cat[lang],
+      body: clean(stripSourceReferences([localizedBody, localizedSections].filter(Boolean).join('\n\n')), 20000)
+    };
+  }
 
   return {
     type: 'blog',
@@ -687,11 +787,7 @@ export function buildFallbackBlogPost(article) {
     summary: summaryTr,
     body: bodyTr,
     cover_url: resolveSafeImage(article?.image || '', article?.url || ''),
-    translations: {
-      en: localTranslateFields(source, 'en'),
-      de: localTranslateFields(source, 'de'),
-      ja: localTranslateFields(source, 'ja')
-    }
+    translations
   };
 }
 
@@ -717,10 +813,9 @@ export function buildFallbackRecipePost(article) {
       ? `Hazırlanışı:\n${instructions.map((step, index) => `${index + 1}. ${step}`).join('\n')}`
       : 'Hazırlanış adımları kaynak sayfadan alınamadı; bu adımları yayınlamadan önce ekleyip doğrulayın.',
     `Tarif Analizi:\nKaynakta ${ingredients.length} malzeme${recipe.yield ? ` ve ${recipe.yield}` : ''} bilgisi bulunuyor. Tarifin içeriği aşağıdaki malzeme listesine dayanır; kaynakta olmayan miktarlar veya sağlık etkileri varsayılmamıştır.`,
-    `Besin Değeri Notu:\n${nutritionText}`,
-    article?.siteName ? `Kaynak: ${article.siteName}${article?.url ? ` (${article.url})` : ''}` : (article?.url ? `Kaynak: ${article.url}` : '')
+    `Besin Değeri Notu:\n${nutritionText}`
   ].filter(Boolean);
-  const body = clean(bodyParts.join('\n\n'), 20000);
+  const body = clean(stripSourceReferences(bodyParts.join('\n\n')), 20000);
   const source = { category, title, summary, body, time, ingredients };
   return {
     type: 'recipe', category, title, emoji: '🍽️', time, summary, body,
@@ -793,9 +888,9 @@ export function normalizeGeneratedBlog(raw, article) {
     body: raw?.body || article?.body
   });
 
-  const title = clean(raw?.title, 100) || fallback.title;
-  const summary = clean(raw?.summary, 240) || fallback.summary;
-  const body = clean(raw?.body, 20000) || fallback.body;
+  const title = clean(stripSourceReferences(raw?.title || ''), 100) || fallback.title;
+  const summary = clean(stripSourceReferences(raw?.summary || ''), 240) || fallback.summary;
+  const body = clean(stripSourceReferences(raw?.body || ''), 20000) || fallback.body;
   const category = clean(raw?.category, 60) || cat.tr;
   const emoji = clean(raw?.emoji, 8) || cat.emoji;
   const time = clean(raw?.time, 30) || estimateReadingTime(body);
@@ -809,9 +904,9 @@ export function normalizeGeneratedBlog(raw, article) {
     const t = cleanedTrans[lang];
     const fb = fallback.translations[lang];
     t.category = t.category || defaultCats[lang];
-    t.title = clean(preferTranslated(t.title, fb.title, title, lang), 100);
-    t.summary = clean(preferTranslated(t.summary, fb.summary, summary, lang), 240);
-    t.body = clean(preferTranslated(t.body, fb.body, body, lang), 20000);
+    t.title = clean(stripSourceReferences(preferTranslated(t.title, fb.title, title, lang)), 100);
+    t.summary = clean(stripSourceReferences(preferTranslated(t.summary, fb.summary, summary, lang)), 240);
+    t.body = clean(stripSourceReferences(preferTranslated(t.body, fb.body, body, lang)), 20000);
     t.time = t.time || localizeDuration(time, lang);
     t.ingredients = [];
     const repaired = repairTranslation(t, source, lang);
@@ -830,6 +925,27 @@ export function normalizeGeneratedBlog(raw, article) {
     cover_url,
     translations: cleanedTrans
   };
+}
+
+/**
+ * Yayın kalite kapısı: AI taslağı yayına çıkmadan önce ölçülebilir kurallarla denetlenir.
+ * Sorun listesi hem yeniden deneme istemine hem admin panelindeki kalite kartına gider.
+ */
+export function assessBlogDraft(item = {}) {
+  const body = String(item?.body || '');
+  const words = wordCount(body);
+  const issues = [];
+  if (words < 350) issues.push(`gövde çok kısa (${words} kelime)`);
+  if (/^\s*(?:kaynak|kaynakça|referans|source|references?|quellen)\s*[:：]/im.test(body)) issues.push('kaynakça/atıf satırı içeriyor');
+  if (/(?:https?:\/\/|www\.)/i.test(body)) issues.push('gövdede çıplak bağlantı var');
+  const headings = (body.match(/^##\s+\S/gm) || []).length;
+  if (headings < 2) issues.push('en az iki "## " bölüm başlığı yok');
+  if (/(?:sık sorulan|frequently asked|faq|häufige fragen|よくある)/i.test(body) && !/[?？]/.test(body)) issues.push('SSS bölümünde soru yok');
+  if (!/^##\s+.*(?:sık sorulan|frequently asked|faq|häufige fragen|よくある)/im.test(body)) issues.push('SSS (FAQ) bölümü yok');
+  if (String(item?.title || '').length > 95) issues.push('başlık 95 karakteri aşıyor');
+  if (String(item?.summary || '').length > 240) issues.push('özet 240 karakteri aşıyor');
+  const penalty = issues.length * 18 + Math.max(0, 350 - words) / 5;
+  return { ok: issues.length === 0, score: Math.max(0, Math.round(100 - penalty)), issues, words };
 }
 
 /**
@@ -926,22 +1042,26 @@ export function parseAiJson(text) {
   }
 }
 
-function buildAiPrompts(article) {
+export function buildAiPrompts(article, issues = []) {
   const systemPrompt = [
     'Sen TestoTavan platformunun baş sağlık ve bilim editörüsün.',
     'Görevin: Verilen haber/makale içeriğinden yararlanarak bilimsel temelli, özgün, akıcı ve okuyucuya pratik değer katan ana Türkçe blog taslağını üretmektir. Çeviriler ayrı ve bağımsız kalite kontrollü turlarda hazırlanacaktır.',
     'Kurallar:',
     '1. Yalnızca geçerli bir JSON nesnesi döndür; başka açıklama ekleme.',
     '2. "category" alanı Türkçe için şu üçünden en uygunu olmalı: "Hormon Sağlığı", "Yüksek Protein" veya "Uyku".',
-    '3. "title" en fazla 95 karakter, dikkat çekici ve doğru olmalı.',
-    '4. "summary" en fazla 220 karakter, 1-2 cümlelik net özet olmalı.',
-    '5. "body" en az 3-5 paragraf olmalı; haberin temel bulgularını, erkek sağlığı / hormon dengesi / yaşam tarzı açısından önemini, maddeli pratik önerileri ve sonunda tıbbi sorumluluk notunu içermeli.',
-    '6. "time" okuma süresini "5 dk" biçiminde belirtmeli.',
-    '7. Kaynaktaki sayı, oran, kişi, kurum ve bilimsel bulguları koru; kaynakta bulunmayan sonuç, doz veya sağlık vaadi ekleme.',
-    '8. Çeviri üretme ve translations alanı ekleme. Yalnızca yüksek kaliteli Türkçe ana metni hazırla.',
+    '3. "title" en fazla 95 karakter, dikkat çekici ve doğru olmalı; tıklama tuzağı kurma.',
+    '4. "summary" 140-220 karakter arasında, 1-2 cümlelik net bir özet olmalı.',
+    '5. "body" EN AZ 700 kelime olmalı. Bölümleri "## " ile başlayan başlıklarla ayır: "## Neden önemli", "## Araştırma ne gösteriyor", "## Günlük hayata çeviri", "## Kimler dikkat etmeli", "## Sık Sorulan Sorular".',
+    '6. "Günlük hayata çeviri" bölümünde en az 4 madde işareti ("- ") öneri ver; her öneri uygulanabilir ve ölçülebilir olsun.',
+    '7. "Sık Sorulan Sorular" bölümünde 3 soru yaz: her soru "?" ile bitsin, altındaki yanıt 2-3 cümle olsun.',
+    '8. "time" okuma süresini "5 dk" biçiminde belirtmeli.',
+    '9. Kaynaktaki sayı, oran, kişi, kurum ve bilimsel bulguları koru; kaynakta bulunmayan sonuç, doz veya sağlık vaadi ekleme.',
+    '10. KAYNAK/ATIF YAZMA: "Kaynak:", "Kaynakça", "Referanslar", site adı, URL veya bağlantı listesi ekleme. İçerik kendi başına ayakta dursun; okuyucu ek bir siteye gitmek zorunda kalmasın.',
+    '11. Çeviri üretme ve translations alanı ekleme. Yalnızca yüksek kaliteli Türkçe ana metni hazırla.',
+    issues.length ? `12. ÖNCEKİ DENEME ŞU KURALLARI İHLAL ETTİ: ${issues.join('; ')}. Aynı hataları tekrarlama.` : '',
     'JSON Şeması:',
     '{"category":"Hormon Sağlığı","emoji":"🧬","title":"...","summary":"...","body":"...","time":"5 dk"}'
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 
   const userPrompt = [
     `Haber Bağlantısı: ${article.url || ''}`,
@@ -1210,6 +1330,8 @@ export async function generateBlogFromArticle(article, options = {}) {
   let model;
   let warning;
   let raw = {};
+  let quality = null;
+  let retried = false;
 
   if (aiConfig) {
     const aiResult = await callAiProvider(article, aiConfig, options);
@@ -1218,6 +1340,22 @@ export async function generateBlogFromArticle(article, options = {}) {
       provider = aiResult.provider;
       model = aiResult.model;
       raw = aiResult.data || {};
+      quality = assessBlogDraft(normalizeGeneratedBlog(raw, article));
+
+      // Kalite kapısı: yalnızca açıkça istendiğinde ikinci bir yazım turu çalışır.
+      // Daha düşük puanlı bir yeniden deneme ilk taslağı ezmez.
+      if (!quality.ok && options.qualityRetry === true) {
+        const retry = await requestAiJsonWithFallback(aiConfig, buildAiPrompts(article, quality.issues), options);
+        if (retry.ok) {
+          const retryItem = normalizeGeneratedBlog(retry.data, article);
+          const retryQuality = assessBlogDraft(retryItem);
+          retried = true;
+          if (retryQuality.score > quality.score) {
+            raw = retry.data || {};
+            quality = retryQuality;
+          }
+        }
+      }
     } else {
       warning = aiResult.error;
       console.warn(`[ai-blog] ${aiConfig.provider} hatası, yerleşik moda geçiliyor:`, aiResult.error);
@@ -1235,6 +1373,7 @@ export async function generateBlogFromArticle(article, options = {}) {
     provider,
     model,
     warning,
+    quality: { ...(quality || assessBlogDraft(repaired.item)), retried },
     translation: repaired.report,
     translation_quality: repaired.quality,
     item: repaired.item

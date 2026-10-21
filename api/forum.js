@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
-import { EDIT_WINDOW_MS, prepareForum, quoteExcerpt, validateEdit, validateLike, validatePost, validId } from './_forum.js';
+import { CATEGORIES, EDIT_WINDOW_MS, prepareForum, quoteExcerpt, validateEdit, validateLike, validatePost, validId } from './_forum.js';
 import { findForumUserByToken, readForumToken } from './_forum-auth.js';
+import { collectForumStats } from './_forum-stats.js';
 
 const MODERATION_ACTIONS = ['approve', 'lock', 'unlock', 'pin', 'unpin'];
 
@@ -68,6 +69,12 @@ export function createForumHandler(connect = neon) {
       const manage = query.manage === '1' && admin;
       const token = readForumToken(req);
       if (req.method === 'GET') {
+        // Meydan nabzı: /api/forum-stats → /api/forum?stats=1 (vercel.json).
+        // Ayrı bir sunucu fonksiyonu açmadan aynı bağlantı havuzu kullanılır.
+        if (query.stats === '1') {
+          res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+          return res.status(200).json(await collectForumStats(sql));
+        }
         const viewer = token ? await findForumUserByToken(sql, token) : null;
         const viewerId = viewer?.id ?? null;
         const offset = Math.min(100000, Math.max(0, parseInt(query.offset, 10) || 0));
@@ -82,8 +89,27 @@ export function createForumHandler(connect = neon) {
           const posts = await authorPosts(sql, query.id);
           return res.status(200).json({ thread: present(thread, viewer, posts), replies: replies.map(row => present(row, viewer, posts)) });
         }
-        const threads = await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=FALSE AND ${manage}) AS pending_count, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id AND l.user_id=${viewerId})) AS liked FROM forum_threads t WHERE t.approved=TRUE OR ${manage} ORDER BY t.pinned DESC, t.created_at DESC, t.id LIMIT 30 OFFSET ${offset}`;
-        return res.status(200).json({ threads: threads.map(row => present(row, viewer)) });
+        // Liste görünümü: kategori, arama ve sıralama. Varsayılan sıralama ve
+        // sorgu metni sabittir; ek filtreler yalnızca istendiğinde devreye girer.
+        const sort = ['new', 'top', 'active', 'unanswered'].includes(query.sort) ? query.sort : 'new';
+        const category = CATEGORIES.includes(query.category) ? query.category : '';
+        const search = String(query.q || '').replace(/[%_]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+        const needle = search ? `%${search}%` : '';
+        const filtered = Boolean(category || search);
+        const threads = (!filtered && sort === 'new')
+          ? await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=FALSE AND ${manage}) AS pending_count, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id AND l.user_id=${viewerId})) AS liked FROM forum_threads t WHERE t.approved=TRUE OR ${manage} ORDER BY t.pinned DESC, t.created_at DESC, t.id LIMIT 30 OFFSET ${offset}`
+          : await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=FALSE AND ${manage}) AS pending_count, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id AND l.user_id=${viewerId})) AS liked
+            FROM forum_threads t
+            WHERE (t.approved=TRUE OR ${manage})
+              AND (${category}::text = '' OR t.category = ${category}::text)
+              AND (${needle}::text = '' OR t.title ILIKE ${needle} OR t.body ILIKE ${needle})
+            ORDER BY t.pinned DESC,
+              (CASE WHEN ${sort}::text = 'top' THEN (SELECT COUNT(*)::int FROM forum_likes l2 WHERE l2.target_kind='thread' AND l2.target_id=t.id) END) DESC NULLS LAST,
+              (CASE WHEN ${sort}::text = 'active' THEN (SELECT COUNT(*)::int FROM forum_replies r2 WHERE r2.thread_id=t.id AND r2.approved=TRUE) END) DESC NULLS LAST,
+              (CASE WHEN ${sort}::text = 'unanswered' THEN (SELECT COUNT(*)::int FROM forum_replies r3 WHERE r3.thread_id=t.id AND r3.approved=TRUE) END) ASC NULLS LAST,
+              t.created_at DESC, t.id
+            LIMIT 30 OFFSET ${offset}`;
+        return res.status(200).json({ threads: threads.map(row => present(row, viewer)), meta: { sort, category, q: search, offset } });
       }
       if (req.method === 'POST') {
         const user = await findForumUserByToken(sql, readForumToken(req));

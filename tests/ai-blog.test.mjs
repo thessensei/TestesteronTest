@@ -191,7 +191,7 @@ test('classifyArticleCategory ve buildFallbackBlogPost 4 dilde eksiksiz taslak �
   assert.match(draft.time, /^\d+ dk$/);
   assert.ok(draft.title.length > 10 && draft.title.length <= 100);
   assert.ok(draft.summary.length > 20 && draft.summary.length <= 240);
-  assert.ok(draft.body.includes('Öne Çıkan Noktalar:'));
+  assert.ok(draft.body.includes('Öne Çıkan Noktalar'));
 
   for (const lang of ['en', 'de', 'ja']) {
     const t = draft.translations[lang];

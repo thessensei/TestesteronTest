@@ -42,6 +42,10 @@ We offer natural, safe, and alternative solutions to address the decline in test
 - **Numune koşulları ve lojistik** — sabah 07:00–10:00, açlık, biotin kesme; nerede/kaça/kaç günde bilgisi
 - **Anlık sonuç raporu** ve doğal destek önerileri
 - **Blog & Tarifler** — admin panelinden yönetilen içerikler (blog yazıları ve tarifler; kategori, malzeme listesi, kapak görseli)
+  - **Her yazı kendi kalıcı sayfasında:** `/blog/<slug>/` — sunucu tarafında üretilen HTML, canonical,
+    hreflang ve `BlogPosting`/`Recipe`/`FAQPage` JSON-LD. Arşiv `/blog/`, RSS `/blog/rss.xml`.
+    Yayın gövdesindeki kaynakça/atıf satırları **hem üretimde hem kayıtta** ayıklanır; yazı kendi başına ayakta durur
+  - **Ayrı keşif kanalı:** `/sitemap.xml` yazıları, tarifleri ve onaylı forum konularını tek haritada toplar
 - **Dört dilde içerik (TR/EN/DE/JA)** — admin panelinde başlık, özet, içerik ve kategorinin yanı sıra
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
   çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
@@ -98,22 +102,30 @@ We offer natural, safe, and alternative solutions to address the decline in test
 │   ├── _auth.js          #   Ortak: oturum cookie'si, şifre doğrulama (private)
 │   ├── _media.js         #   Ortak: görsel yükleme / URL doğrulama (private)
 │   ├── _content-shape.js #   Ortak: içerik/çeviri alan temizleme, süre yerelleştirme (private)
+│   ├── _seo.js           #   Ortak: slug, kaynak temizleme, zengin metin, JSON-LD, SSR iskeleti (private)
+│   ├── _content-db.js    #   Ortak: içerik tablosu, slug tamamlama, yayın listeleme (private)
 │   ├── _pinterest.js     #   Ortak: Pinterest pin gövdesi + gönderim boru hattı (private)
 │   ├── _ai-blog.js       #   Ortak: haber URL'sinden içerik çıkarma ve 4 dilde AI blog üretimi (private)
 │   ├── ai-blog.js        #   POST /api/ai-blog — haber linkinden otomatik blog taslağı üretir
 │   ├── login.js          #   POST /api/login — admin girişi (IP bazlı rate limit)
 │   ├── session.js        #   GET  /api/session — oturum durumu
 │   ├── stats.js          #   GET|POST /api/stats — sayfa görüntüleme sayacı
-│   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD) — yayında Pinterest tetikleyicisi
+│   ├── content.js        #   Blog & tarif içerik yönetimi (CRUD) — slug üretir, kaynakça temizler, Pinterest tetikler
+│   ├── seo.js            #   /blog/, /blog/<slug>/, /blog/rss.xml, /sitemap.xml, /forum/t/<id>/ yönlendiricisi
+│   ├── _blog-page.js      #   Blog arşivi + yazı üreticisi (private)
+│   ├── _sitemap.js        #   Dinamik site haritası (private)
+│   ├── _blog-rss.js       #   RSS 2.0 akışı (private)
+│   ├── _forum-page.js     #   Konuların kalıcı, aranabilir sayfası (private)
+│   ├── _forum-stats.js    #   Topluluk nabzı toplayıcısı (private; /api/forum?stats=1)
 │   └── media/            #   Görsel yükleme ve sunma (/api/media/<id>)
 ├── tools/
 │   ├── build.mjs                     # src/ → yayın dosyaları (CSS/JS küçültme + hash)
 │   ├── analysis-pages.template.html  # Semptom + kan testi ekranlarının şablonu
 │   └── build-analysis-pages.mjs      # Form satırlarını referans aralıklarından üretir
-├── tests/                # node --test testleri (validation, content, media, build)
-├── vercel.json           # Güvenlik başlıkları + önbellek politikası
+├── forum/                # Etkileşimli topluluk (Meydan): index.html, style.css, forum.js, forum-core.js
+├── tests/                # node --test testleri (validation, content, media, build, SEO)
+├── vercel.json           # Güvenlik başlıkları + önbellek politikası + SEO yönlendirmeleri
 ├── .vercelignore         # Kaynak/test dosyaları yayına gönderilmez
-├── sitemap.xml           # SEO site haritası
 └── package.json
 ```
 
@@ -156,6 +168,8 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `PINTEREST_ACCESS_TOKEN` | Pinterest API v5 erişim tokenı (opsiyonel; yoksa pin gönderilmez) |
 | `PINTEREST_BOARD_ID` | Pinin ekleneceği board kimliği (opsiyonel; yoksa pin gönderilmez) |
 | `SITE_URL` | Yayındaki kök adres, ör. `https://testosteron-test.vercel.app` (opsiyonel) |
+| `BLOG_SITE_URL` | Blog ayrı bir alt alan adında yayınlanacaksa kök adres, ör. `https://blog.testotavan.com` (opsiyonel) |
+| `FORUM_SITE_URL` | Forum ayrı bir alt alan adında yayınlanacaksa kök adres, ör. `https://forum.testotavan.com` (opsiyonel) |
 | `ENABLE_MACHINE_TRANSLATION` | `0` ise AI çevirisi eksik kaldığında yedek çeviri servisi çağrılmaz (opsiyonel) |
 | `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
 | `GEMINI_MODEL` | Gemini model kimliği (opsiyonel; varsayılan `gemini-3.8-flash`; kapatılmış 1.x/2.0 modelleri otomatik güncel modele taşınır) |
@@ -177,7 +191,17 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 
 ### Google'da dizine ekleme
 
-Site haritası `/sitemap.xml` ve tarama kuralları `/robots.txt` adreslerinde yayınlanır. Canonical, Open Graph, yapılandırılmış veri ve forum URL'leri Vercel'deki canlı adres `https://testosteron-test.vercel.app` ile eşleştirilmiştir (`tests/seo.test.mjs` denetler). Başka bir özel alan adı kullanıyorsanız HTML dosyalarındaki bu adresleri, `sitemap.xml` ve `robots.txt` içindeki adresleri de yeni ana alan adınıza göre güncelleyin.
+Site haritası `/sitemap.xml` ve tarama kuralları `/robots.txt` adreslerinde yayınlanır; harita her istekte
+veritabanından üretilir (yazılar, tarifler ve onaylı forum konuları). Canonical, Open Graph ve yapılandırılmış
+veri Vercel'deki canlı adres `https://testosteron-test.vercel.app` ile eşleştirilmiştir (`tests/seo.test.mjs`
+denetler). Başka bir özel alan adı kullanıyorsanız `SITE_URL` değişkenini, `robots.txt` içindeki sitemap
+adresini ve statik HTML dosyalarındaki canonical/OG adreslerini yeni alan adına göre güncelleyin.
+
+**Blog/forum alt alan adı (opsiyonel):** `BLOG_SITE_URL` ve/veya `FORUM_SITE_URL` tanımlandığında sunucu
+tarafında üretilen sayfalar canonical ve site haritası bağlantılarını bu köklere taşır (blog yazıları
+`https://blog.<alan>/<slug>/`, konular `https://forum.<alan>/t/<id>/`). Alt alan adlarını Vercel'e ekleyip
+gerekli yeniden yazma kurallarını tanımladıktan sonra bu değişkenleri açın; tanımlanmazsa her şey
+`/blog/` ve `/forum/` yolları altında, aynı SEO gücüyle çalışır.
 
 **Search Console mülkü:** Mülk türü olarak **URL öneki** seçin ve `https://testosteron-test.vercel.app/` girin. İki doğrulama yöntemi zaten yayında:
 
@@ -306,7 +330,12 @@ Davranış kuralları:
 | `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
+| `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar. `/api/forum?stats=1` adresine yönlenir (60 sn CDN önbelleği) |
 | `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
+| `/blog/`, `/blog/<slug>/` | `GET` | Blog arşivi ve her yazının kalıcı SEO sayfası (sunucu tarafında HTML) |
+| `/forum/t/<id>/` | `GET` | Forum konusunun kalıcı, JavaScript'siz okunabilen sayfası |
+| `/sitemap.xml` | `GET` | Dinamik site haritası (yazılar + tarifler + onaylı konular) |
+| `/blog/rss.xml` | `GET` | RSS 2.0 akışı |
 
 ## ⚠️ Disclaimer
 
@@ -315,6 +344,40 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 ---
 
 © TestoTavan
+
+## 📰 Blog ve Meydan mimarisi
+
+Blog ve forum, ana SPA'nın içinde kaybolan sekmeler değil; **kendi keşif yüzeyi olan iki ayrı bölüm**:
+
+| Yüzey | Adres | Üretim | SEO çıktısı |
+| --- | --- | --- | --- |
+| Arşiv | `/blog/` | `api/_blog-page.js` → `renderBlogHub` | canonical, kategori filtreleri, `ItemList` + `Blog` JSON-LD, RSS bağlantısı |
+| Yazı | `/blog/<slug>/` | `api/_blog-page.js` → `renderBlogPost` | canonical, TR/EN/DE/JA hreflang, `BlogPosting` + `BreadcrumbList` + `FAQPage`, Open Graph/Twitter, içindekiler, ilgili yazılar, paylaşım |
+| Tarif | `/blog/<slug>/` | aynı | `Recipe` JSON-LD (malzeme, adım, süre) |
+| Forum | `/forum/` | `forum/index.html` + `/api/forum` + `/api/forum-stats` | canonical, `Organization` + `DiscussionForumPosting`, canlı istatistik şeridi, arama/kategori/sıralama |
+| Konu | `/forum/t/<id>/` | `api/_forum-page.js` | canonical, `DiscussionForumPosting` + `BreadcrumbList`, yazar rütbesi, benzer konular |
+
+**Kaynakça kuralı:** yazı ister AI ile ister elle üretilsin, `Kaynak:`, `Kaynakça`, `Referanslar`,
+çıplak URL ve atıf listesi satırları `api/_seo.js → stripSourceReferences` ile hem kayıt sırasında
+(`api/content.js`) hem sayfa üretiminde ayıklanır. Dört dilde de aynı kural geçerlidir; AI istemi
+kaynak yazmayı açıkça yasaklar ve kalite kapısı ihlali "kaynakça/atıf satırı içeriyor" olarak işaretler.
+
+**Slug yaşam döngüsü:** `content.slug` ilk yayında üretilir ve bir daha değişmez. Eski kayıtlar ilk
+istekte tamamlanır; `/blog/content-<id>` gibi kimlik tabanlı eski bağlantılar da çalışmaya devam eder.
+Yeni bir yazı yayınlandığında admin paneli doğrudan canlı adresi gösterir.
+
+**Blog üretim hattı:** `api/_ai-blog.js`
+1. Kaynak URL güvenli biçimde okunur (`validateNewsUrl`, SSRF/özel ağ koruması).
+2. Türkçe ana taslak üretilir; `assessBlogDraft` kelime sayısı, başlık/özet sınırı, bölüm yapısı,
+   SSS varlığı, kaynak/URL ihlali ve başlık uzunluğunu puanlar. Düşük puanda **ikinci bir yazım turu**
+   aynı sorun listesiyle çalışır (`qualityRetry`, varsayılan açık).
+3. Yedek modda (AI yokken) gövdeye `## Günlük Hayata Çeviri`, `## Sık Sorulan Sorular`,
+   `TestoTavan Değerlendirmesi` bölümleri eklenir; SSS dört dilde yerelleştirilir.
+4. EN/DE/JA bağımsız çeviri turlarından geçer; her dil kalite kapısıyla denetlenir.
+
+**Testler:** `tests/blog-pages.test.mjs` üreticileri, `tests/blog-routing.test.mjs` HTTP davranışını,
+`tests/seo.test.mjs` site haritası/RSS/robots/`vercel.json` sözleşmesini, `tests/forum-stats.test.mjs`
+nabız ucunu doğrular.
 
 ## Topluluk forumu
 
@@ -349,9 +412,16 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
   Aktif üye / Kıdemli üye), mesaj sayısı ve yanıtlarda **Konu sahibi** rozeti gösterilir.
   Sayım tek sorguda, konudaki yazarlar için yapılır; kullanıcı kimliği (UUID) yanıtlarda
   paylaşılmaz, yalnızca `mine` alanı döner.
-- **Kalıcı bağlantı:** Konu ve mesajlar `/forum/#thread=<uuid>&reply=<uuid>` biçiminde
-  paylaşılabilir; `?thread=<uuid>` adresi de okunur. Kopyala düğmesi bağlantıyı panoya
-  yazar, hedeflenen mesaj vurgulanır ve tarayıcının geri/ileri düğmeleri çalışır.
+- **Kalıcı bağlantı:** Her konunun JavaScript'siz okunabilen bir sayfası vardır:
+  `/forum/t/<uuid>/` (canonical, `DiscussionForumPosting`). Uygulama içinde konular
+  `/forum/#thread=<uuid>&reply=<uuid>` ile de açılır ve `?thread=<uuid>` okunur; kopyala
+  düğmesi her zaman `/forum/t/<uuid>/` adresini (yanıtta `#reply-<uuid>` çapasıyla) panoya
+  yazar. Konu başlıkları gerçek `<a href="/forum/t/...">` bağlantısıdır; JavaScript açıkken
+  sayfa içinde açılır, kapalıyken kalıcı sayfaya gider.
+- **Meydan nabzı ve filtreler:** `/api/forum-stats` konu/yanıt/üye/görüntülenme toplamlarını,
+  kategori dağılımını, öne çıkan konuları ve en aktif yazarları 60 saniyelik CDN önbelleğiyle
+  döner. Arayüzde arama (debounce'lu, `q`), kategori çipleri ve `new | top | active | unanswered`
+  sıralaması sunucu tarafında uygulanır; sayfalama 30 konudur.
 - Mevcut `DATABASE_URL` (Neon PostgreSQL), `SESSION_SECRET` ve admin girişi için
   `ADMIN_PASSWORD` ortam değişkenlerini kullanır. İlk API isteği `forum_threads`,
   `forum_replies`, `forum_limits`, `forum_users`, `forum_sessions` ve `forum_likes`

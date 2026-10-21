@@ -10,6 +10,9 @@
     <meta name="robots" content="index,follow,max-image-preview:large">
     <meta name="theme-color" content="#0A0A0F">
     <link rel="canonical" href="https://testosteron-test.vercel.app/">
+    <!-- Blog ve forum ayrı keşif kanalları: RSS + site haritası -->
+    <link rel="alternate" type="application/rss+xml" title="TestoTavan Dergi" href="/blog/rss.xml">
+    <link rel="sitemap" type="application/xml" title="Site haritası" href="/sitemap.xml">
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="apple-touch-icon" href="assets/logo.png">
     <meta name="google-site-verification" content="ac-bJdohFXsUbq5bD8cVEip7Ryd_nEkaRhNenMmCi8M">
@@ -767,6 +770,12 @@
     <div class="card blog-hero" style="margin-top:16px">
         <h3 style="font-size:19px; max-width:280px; line-height:1.25">Daha güçlü bir yaşam için uygulanabilir bilgiler.</h3>
         <p style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:8px;max-width:330px">Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.</p><div id="viewCounter" style="margin-top:12px;color:var(--gold);font-size:10px">Ziyaret sayısı yükleniyor...</div>
+        <!-- Her yazı kendi SEO sayfasında yayınlanır; arşiv ve topluluk ayrı bölümlerdir. -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+            <a class="filter-chip" href="/blog/" style="text-decoration:none;display:inline-flex;align-items:center">Tüm yazılar →</a>
+            <a class="filter-chip" href="/forum/" style="text-decoration:none;display:inline-flex;align-items:center">Topluluk forumu →</a>
+            <a class="filter-chip" href="/blog/rss.xml" style="text-decoration:none;display:inline-flex;align-items:center">RSS akışı</a>
+        </div>
     </div>
     <div class="ad-slot" aria-label="Reklam alanı" data-ad-slot="content-top">Sponsorlu içerik</div>
     <div class="content-toolbar"><input id="contentSearch" aria-label="Yazı veya tarif ara" class="form-input" type="search" placeholder="Yazı veya tarif ara..." oninput="renderContent()"></div>
@@ -812,7 +821,7 @@
 </section>
 
 <script defer src="js/validation.1399c75f.js"></script>
-<script defer src="js/app.3d357372.js"></script>
+<script defer src="js/app.dbe45ccb.js"></script>
 
 </body>
 </html>

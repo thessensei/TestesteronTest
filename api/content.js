@@ -1,43 +1,37 @@
 import crypto from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
 import { isAdmin } from './_auth.js';
 import { isSafeCoverUrl } from './_media.js';
 import { clean, cleanIngredients, cleanTranslations } from './_content-shape.js';
 import { pinterestRichPinFire } from './_pinterest.js';
+import { connectDb, ensureSlug, listContent, prepareContent, withPublicUrl } from './_content-db.js';
+import { stripSourceReferences } from './_seo.js';
+
+/*
+ * Blog & tarif içerik yönetimi.
+ * Her kayıt yayınlanırken kalıcı bir slug alır: /blog/<slug>/ adresi buradan doğar.
+ * Yayın gövdesindeki kaynakça/atıf satırları sunucu tarafında ayıklanır.
+ */
 
 function db() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL tanımlı değil.');
-  return neon(process.env.DATABASE_URL);
+  return connectDb();
 }
 
-async function prepare(sql) {
-  await sql`CREATE TABLE IF NOT EXISTS content (
-    id TEXT PRIMARY KEY,
-    type TEXT NOT NULL CHECK (type IN ('blog', 'recipe')),
-    category TEXT NOT NULL,
-    title TEXT NOT NULL,
-    emoji TEXT NOT NULL,
-    time_text TEXT NOT NULL,
-    summary TEXT NOT NULL,
-    body TEXT NOT NULL,
-    ingredients JSONB NOT NULL DEFAULT '[]'::jsonb,
-    translations JSONB NOT NULL DEFAULT '{}'::jsonb,
-    published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    cover_url TEXT NOT NULL DEFAULT ''
-  )`;
-  await sql`ALTER TABLE content ADD COLUMN IF NOT EXISTS translations JSONB NOT NULL DEFAULT '{}'::jsonb`;
-  await sql`ALTER TABLE content ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`;
-  await sql`ALTER TABLE content ADD COLUMN IF NOT EXISTS cover_url TEXT NOT NULL DEFAULT ''`;
+/** Çeviri gövdelerinde de kaynakça/atıf satırı bırakılmaz. */
+function sanitizeTranslationBodies(translations) {
+  for (const lang of Object.keys(translations)) {
+    translations[lang].body = stripSourceReferences(translations[lang].body);
+  }
+  return translations;
 }
 
 export default async function handler(req, res) {
   try {
     const sql = db();
-    await prepare(sql);
+    await prepareContent(sql);
 
     if (req.method === 'GET') {
-      const rows = await sql`SELECT id, type, category, title, emoji, time_text AS time, summary, body, ingredients, translations, cover_url, TO_CHAR(published_at, 'YYYY-MM-DD') AS date FROM content ORDER BY published_at DESC`;
+      const rows = await listContent(sql);
+      res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
       return res.status(200).json(rows);
     }
 
@@ -45,18 +39,23 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       const input = req.body || {};
+      const id = `content-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
       const item = {
-        id: `content-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+        id,
         type: input.type === 'recipe' ? 'recipe' : 'blog',
         category: clean(input.category, 60), title: clean(input.title, 100),
         emoji: clean(input.emoji, 8), time: clean(input.time, 30),
-        summary: clean(input.summary, 240), body: clean(input.body, 20000),
+        summary: clean(input.summary, 240), body: stripSourceReferences(clean(input.body, 20000)),
         ingredients: cleanIngredients(input.ingredients),
         translations: cleanTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url)
       };
+      item.translations = sanitizeTranslationBodies(item.translations);
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
       if (item.type === 'recipe' && !item.ingredients.length) return res.status(400).json({ error: 'Tarifler için en az bir malzeme gerekli.' });
-      const [created] = await sql`INSERT INTO content (id,type,category,title,emoji,time_text,summary,body,ingredients,translations,cover_url) VALUES (${item.id},${item.type},${item.category},${item.title},${item.emoji},${item.time},${item.summary},${item.body},${JSON.stringify(item.ingredients)}::jsonb,${JSON.stringify(item.translations)}::jsonb,${item.cover_url}) RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
+
+      const slug = await ensureSlug(sql, item.title, item.id);
+      let [created] = await sql`INSERT INTO content (id,type,category,title,slug,emoji,time_text,summary,body,ingredients,translations,cover_url) VALUES (${item.id},${item.type},${item.category},${item.title},${slug},${item.emoji},${item.time},${item.summary},${item.body},${JSON.stringify(item.ingredients)}::jsonb,${JSON.stringify(item.translations)}::jsonb,${item.cover_url}) RETURNING id,type,category,title,slug,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date,published_at,updated_at`;
+      created = withPublicUrl(created);
 
       // --- Pinterest Rich Pin boru hattı -------------------------------------------------
       // Kayıt commit edildiği anda tetiklenir; başlık, özet, canlı bağlantı ve kapak
@@ -75,11 +74,17 @@ export default async function handler(req, res) {
       const id = clean(req.query.id, 120);
       if (!id) return res.status(400).json({ error: 'İçerik kimliği gerekli.' });
       const input = req.body || {};
-      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8), time: clean(input.time, 30), summary: clean(input.summary, 240), body: clean(input.body, 20000), ingredients: cleanIngredients(input.ingredients), translations: cleanTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url) };
+      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8), time: clean(input.time, 30), summary: clean(input.summary, 240), body: stripSourceReferences(clean(input.body, 20000)), ingredients: cleanIngredients(input.ingredients), translations: sanitizeTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url) };
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
       if (item.type === 'recipe' && !item.ingredients.length) return res.status(400).json({ error: 'Tarifler için en az bir malzeme gerekli.' });
-      const [updated] = await sql`UPDATE content SET type=${item.type},category=${item.category},title=${item.title},emoji=${item.emoji},time_text=${item.time},summary=${item.summary},body=${item.body},ingredients=${JSON.stringify(item.ingredients)}::jsonb,translations=${JSON.stringify(item.translations)}::jsonb,cover_url=${item.cover_url},updated_at=NOW() WHERE id=${id} RETURNING id,type,category,title,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date`;
-      return updated ? res.status(200).json(updated) : res.status(404).json({ error: 'İçerik bulunamadı.' });
+
+      // Slug yayından sonra değişmez: paylaşılan bağlantılar ve arama motoru kaydı bozulmaz.
+      const [existing] = await sql`SELECT slug FROM content WHERE id=${id}`;
+      if (!existing) return res.status(404).json({ error: 'İçerik bulunamadı.' });
+      const slug = existing.slug || await ensureSlug(sql, item.title, id);
+
+      const [updated] = await sql`UPDATE content SET type=${item.type},category=${item.category},title=${item.title},slug=${slug},emoji=${item.emoji},time_text=${item.time},summary=${item.summary},body=${item.body},ingredients=${JSON.stringify(item.ingredients)}::jsonb,translations=${JSON.stringify(item.translations)}::jsonb,cover_url=${item.cover_url},updated_at=NOW() WHERE id=${id} RETURNING id,type,category,title,slug,emoji,time_text AS time,summary,body,ingredients,translations,cover_url,TO_CHAR(published_at,'YYYY-MM-DD') AS date,published_at,updated_at`;
+      return updated ? res.status(200).json(withPublicUrl(updated)) : res.status(404).json({ error: 'İçerik bulunamadı.' });
     }
 
     if (req.method === 'DELETE') {

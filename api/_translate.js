@@ -834,6 +834,7 @@ export function translationSystemPrompt(langs, context = {}) {
     '- English must read as native editorial English; German as native editorial German; Japanese as natural Japanese script, never romaji.',
     '- Keep title within 100 characters and summary within 240 characters without losing facts; body must stay within 20,000 characters.',
     '- Keep the meaning and medical caution level exact. Do not strengthen evidence, invent benefits, diagnoses, dosages or treatment advice.',
+    '- Never output source citations, bibliography lines, "Kaynak:" labels or raw URLs; the translated body must stay self-contained.',
     '- category must be exactly: en "Hormone Health" | "High Protein" | "Sleep"; de "Hormongesundheit" | "Proteinreich" | "Schlaf"; ja "ホルモン健康" | "高たんぱく" | "睡眠".',
     '- Before answering, silently verify sentence coverage, numbers, paragraph/list structure and ingredient count.',
     langs.length === 1

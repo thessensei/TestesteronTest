@@ -1,5 +1,5 @@
 import {
-  CATEGORY_KEYS, EDIT_WINDOW_MS, PAGE_SIZE, REPLY_PAGE,
+  CATEGORIES, CATEGORY_KEYS, EDIT_WINDOW_MS, PAGE_SIZE, REPLY_PAGE,
   escapeHtml as esc, formatCount, formatDateTime, hashFor, initials, normalizeLang,
   rankKey, relativeTime, routeFromHash, translator, withinEditWindow
 } from './forum-core.js';
@@ -26,6 +26,10 @@ let t = translator(lang);
 let manage = false, offset = 0, replyOffset = 0, current = null, user = null, authMode = null;
 let listing = { threads: [], thread: null, replies: [] };
 let quoting = null, editing = null;
+// Meydan filtreleri: varsayılan olarak yeni konular, tüm kategoriler, arama yok.
+let sort = 'new', category = '', searchText = '';
+let stats = { threads: 0, replies: 0, members: 0, views: 0, categories: [], trending: [], contributors: [] };
+let searchTimer = null;
 
 const catLabel = value => (CATEGORY_KEYS[value] ? t(CATEGORY_KEYS[value]) : value);
 const status = message => { $('status').textContent = message || ''; };
@@ -51,7 +55,54 @@ function applyLanguage() {
   $('logout').textContent = t('logout');
   $('show-login').textContent = t('login-submit');
   $('show-register').textContent = t('register-submit');
+  if ($('forum-search')) $('forum-search').placeholder = t('search');
   if (user) $('composer-as').textContent = `${t('postedAs')}: ${user.username}`;
+  renderFilters();
+  renderStats();
+}
+
+/* ---------- topluluk nabzı ve filtreler ---------- */
+
+function renderStats() {
+  const set = (key, value) => {
+    const node = document.querySelector(`[data-stat="${key}"]`);
+    if (node) node.textContent = formatCount(value, lang);
+  };
+  set('threads', stats.threads);
+  set('replies', stats.replies);
+  set('members', stats.members);
+  set('views', stats.views);
+
+  $('rail-trending').innerHTML = (stats.trending || []).map(item => (
+    `<li><a href="/forum/t/${esc(item.id)}/">${esc(item.title)}</a><span class="count">${formatCount(item.views, lang)}</span></li>`
+  )).join('') || `<li class="meta">${esc(t('empty'))}</li>`;
+
+  $('rail-contributors').innerHTML = (stats.contributors || []).map(item => (
+    `<li><span>${esc(item.author)}</span><span class="count">${formatCount(item.posts, lang)} ${esc(t('posts'))}</span></li>`
+  )).join('') || `<li class="meta">${esc(t('empty'))}</li>`;
+}
+
+function renderFilters() {
+  const counts = new Map((stats.categories || []).map(row => [row.name, row.threads]));
+  const chip = (value, label, count, active) => `<button type="button" class="chip${active ? ' on' : ''}" data-category="${esc(value)}" role="tab" aria-selected="${active ? 'true' : 'false'}">${esc(label)}<span class="count">${formatCount(count, lang)}</span></button>`;
+  const chips = [chip('', t('allCategories'), stats.threads || 0, !category)];
+  for (const name of CATEGORIES) chips.push(chip(name, catLabel(name), counts.get(name) || 0, category === name));
+  if (category || searchText) chips.push(`<button type="button" class="chip" data-clear>${esc(t('clearFilters'))}</button>`);
+  $('category-chips').innerHTML = chips.join('');
+  document.querySelectorAll('#sort-tabs [data-sort]').forEach(button => {
+    button.setAttribute('aria-selected', button.dataset.sort === sort ? 'true' : 'false');
+  });
+}
+
+async function loadStats() {
+  try {
+    const response = await fetch('/api/forum-stats');
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data && typeof data === 'object' && 'threads' in data) stats = { ...stats, ...data };
+    renderStats();
+    renderFilters();
+  } catch { /* istatistikler ikincil: hata sayfayı durdurmaz */ }
 }
 
 function renderAuth() {
@@ -210,10 +261,12 @@ function renderList() {
       manage && item.pending_count ? `<span class="badge waiting">${formatCount(item.pending_count, lang)} ${esc(t('pending'))}</span>` : ''
     ].join('');
     return `<article class="topic-row" data-thread="${esc(item.id)}">
+      <span class="avatar" aria-hidden="true">${esc(initials(item.author))}</span>
       <div class="row-main">
         <div class="badges">${badges}</div>
-        <h2><button class="topic" type="button" data-open="${esc(item.id)}">${esc(item.title)}</button></h2>
-        <p class="row-meta"><span class="avatar small" aria-hidden="true">${esc(initials(item.author))}</span> ${esc(item.author)} · ${timeTag(item.created_at)}</p>
+        <h2><a class="topic" href="/forum/t/${esc(item.id)}/" data-open="${esc(item.id)}">${esc(item.title)}</a></h2>
+        <p class="row-excerpt">${esc(preview(item.body, 150))}</p>
+        <p class="row-meta"><span>${esc(item.author)}</span><span aria-hidden="true">·</span>${timeTag(item.created_at)}<span aria-hidden="true">·</span><span>${formatCount(item.reply_count, lang)} ${esc(t('replies'))}</span></p>
       </div>
       <dl class="row-stats">
         <div><dt>${esc(t('replies'))}</dt><dd>${formatCount(item.reply_count, lang)}</dd></div>
@@ -222,7 +275,7 @@ function renderList() {
       </dl>
       ${controls(item, 'thread')}
     </article>`;
-  }).join('') || `<article>${esc(t('empty'))}</article>`;
+  }).join('') || `<div class="gate"><p>${esc(category || searchText ? t('noResults') : t('empty'))}</p><div class="toolbar"><button type="button" class="secondary" data-clear>${esc(t('clearFilters'))}</button></div></div>`;
   $('previous').disabled = offset === 0;
   $('next').disabled = listing.threads.length < PAGE_SIZE;
   $('page').textContent = `${t('page')} ${offset / PAGE_SIZE + 1}`;
@@ -231,6 +284,7 @@ function renderList() {
 function renderThread() {
   const thread = listing.thread;
   $('conversation').innerHTML = postHtml(thread, 'thread')
+    + `<p class="meta" style="margin:0 0 6px"><a href="/forum/t/${esc(thread.id)}/" style="color:var(--accent);text-decoration:none">${esc(t('openPage'))} →</a></p>`
     + `<h2 class="replies-heading">${esc(t('replyHeading'))}</h2>`
     + (listing.replies.map(item => postHtml(item, 'reply')).join('') || `<p class="meta">${esc(t('noReplies'))}</p>`);
   const canReply = Boolean(user) && !thread.locked && thread.approved && !manage;
@@ -245,7 +299,10 @@ function renderThread() {
 
 async function loadList() {
   status(t('loading'));
-  const data = await api('offset=' + offset);
+  const params = new URLSearchParams({ offset: String(offset), sort });
+  if (category) params.set('category', category);
+  if (searchText) params.set('q', searchText);
+  const data = await api(params.toString());
   listing = { threads: data.threads || [], thread: null, replies: [] };
   renderList();
   status('');
@@ -364,7 +421,12 @@ async function writeClipboard(value) {
 }
 
 async function copyLink(button) {
-  const url = `${location.origin}${location.pathname}${hashFor(current, button.dataset.kind === 'reply' ? button.dataset.copy : '')}`;
+  // Konu bağlantısı her zaman kalıcı SEO sayfasını gösterir; yanıt bağlantısı
+  // aynı sayfadaki #reply-<id> çapasına iner.
+  const isReply = button.dataset.kind === 'reply';
+  const url = current
+    ? `${location.origin}/forum/t/${current}/${isReply ? `#reply-${button.dataset.copy}` : ''}`
+    : location.href;
   const ok = await writeClipboard(url);
   status(ok ? t('copied') : t('copyFailed'));
   if (ok) {
@@ -459,10 +521,54 @@ $('logout').onclick = () => run(async () => {
   status(t('logout'));
 });
 
+$('forum-search').oninput = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    searchText = $('forum-search').value.trim();
+    offset = 0;
+    renderFilters();
+    run(loadList);
+  }, 320);
+};
 window.addEventListener('popstate', () => applyRoute());
 
 document.addEventListener('click', event => {
+  const sortButton = event.target.closest('[data-sort]');
+  if (sortButton) {
+    sort = sortButton.dataset.sort || 'new';
+    offset = 0;
+    renderFilters();
+    run(loadList);
+    return;
+  }
+  const categoryButton = event.target.closest('[data-category]');
+  if (categoryButton) {
+    category = categoryButton.dataset.category || '';
+    offset = 0;
+    renderFilters();
+    run(loadList);
+    return;
+  }
+  if (event.target.closest('[data-clear]')) {
+    category = '';
+    searchText = '';
+    if ($('forum-search')) $('forum-search').value = '';
+    offset = 0;
+    renderFilters();
+    run(loadList);
+    return;
+  }
   const jump = event.target.closest('[data-jump]');
+  const opener = event.target.closest('[data-open]');
+  if (opener) {
+    // JavaScript açıkken konu sayfa içinde açılır; bağlantı adresi arama
+    // motorları ve "yeni sekmede aç" için kalıcı /forum/t/<id>/ sayfasıdır.
+    event.preventDefault();
+    replyOffset = 0;
+    updateHash(opener.dataset.open);
+    run(() => open(opener.dataset.open));
+    return;
+  }
   if (jump) {
     event.preventDefault();
     updateHash(current, jump.dataset.jump);
@@ -471,11 +577,6 @@ document.addEventListener('click', event => {
   }
   const button = event.target.closest('button');
   if (!button?.dataset) return;
-  if (button.dataset.open) {
-    replyOffset = 0;
-    updateHash(button.dataset.open);
-    run(() => open(button.dataset.open));
-  }
   if (button.dataset.like) run(() => toggleLike(button));
   if (button.dataset.quote) startQuote(button);
   if (button.dataset.copy) run(() => copyLink(button));
@@ -556,6 +657,7 @@ run(async () => {
     applyLanguage();
     renderAuth();
   }
+  loadStats();
   const route = routeFromHash(location.hash, location.search);
   if (route.thread) {
     await open(route.thread, { reply: route.reply });

@@ -29,7 +29,9 @@ export function createAiBlogHandler(options = {}) {
       apiKey: body.apiKey,
       model: body.model,
       type: body.type,
-      forceTranslation: body.forceTranslation === true
+      forceTranslation: body.forceTranslation === true,
+      // Yayın kalite kapısı: ilk taslak kısa/kaynaksız değilse ikinci bir yazım turu istenir.
+      qualityRetry: body.qualityRetry !== false
     };
 
     if (body.mode === 'translate') {
