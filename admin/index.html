@@ -24,7 +24,15 @@ body{min-height:100vh;background:radial-gradient(circle at 15% -10%,rgba(245,166
 .ai-status{position:relative;margin-top:14px;padding:12px 14px 12px 37px;border-radius:12px}.ai-status:before{content:"i";position:absolute;left:13px;top:12px;display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--ai-gold-soft);color:var(--ai-gold);font:900 10px/1 serif}.ai-status.error:before{content:"!";background:rgba(255,82,82,.12);color:#ff7777}.ai-status.success:before{content:"✓";background:rgba(69,212,131,.12);color:var(--ai-green)}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.tab{display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px}.tab.has-content:after,.tab.needs-translation:after{display:none}.tab .tab-dot{width:6px;height:6px;border-radius:50%;background:#555566}.tab.has-content .tab-dot{background:var(--ai-green)}.tab.needs-translation .tab-dot{background:var(--ai-red)}.tab.on .tab-dot{background:#111}
 @media(max-width:760px){.ai-studio-hero{padding:18px}.ai-ready-badge{display:none}.ai-workflow{grid-template-columns:1fr;padding:14px 18px 0}.ai-step{display:none}.ai-step:first-child{display:flex}.ai-main{padding:14px 18px 18px}.ai-source-grid,.ai-source-action{grid-template-columns:1fr}.ai-generate{width:100%}.ai-language-grid{grid-template-columns:1fr 1fr}.ai-actions{grid-template-columns:1fr}.tabs{grid-template-columns:1fr 1fr}}
-</style></head>
+</style><style>
+.ingredient-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ingredient-status{margin:9px 0 0;min-height:16px}
+.ingredient-status.success{color:#58d68d}
+.ingredient-status.error{color:#ff8b8b}
+#new-content-btn[hidden],#editor-mode-note[hidden]{display:none!important}
+@media(max-width:600px){.ingredient-tools{grid-template-columns:1fr}}
+</style>
+</head>
 <body><div class="wrap">
 <section id="login" class="card login"><div class="brand">T • TestoTavan</div><h1>Yönetici girişi</h1><p class="muted">Blog yazıları, tarifler ve Hakkımızda sayfasını yönetmek için kullanıcı adı, şifre ve doğrulama kodunu girin.</p><form onsubmit="login(event)"><div class="field"><label for="username">Kullanıcı adı</label><input id="username" type="text" required autocomplete="username" placeholder="admin"></div><div class="field"><label for="password">Yönetici şifresi</label><input id="password" type="password" required autocomplete="current-password" placeholder="••••••••"></div><div class="field"><label for="captcha_code">Doğrulama kodu</label><div class="captcha-wrap"><input id="captcha_code" type="text" required maxlength="6" autocomplete="off" spellcheck="false" placeholder="6 haneli kod" style="text-transform:uppercase;letter-spacing:2px;font-weight:700"><div id="captcha_display" class="captcha-badge" aria-label="Güvenlik doğrulama kodu">------</div><button id="captcha_refresh" type="button" class="captcha-refresh" onclick="loadCaptcha()" title="Doğrulama kodunu yenile" aria-label="Doğrulama kodunu yenile">↻</button></div></div><button class="btn full">Giriş yap</button></form><p class="muted" style="margin-top:18px"><a href="/" style="color:#f5a623">← Siteye dön</a></p></section>
 <main id="panel" class="hidden"><section class="card"><h2>Topluluk forumu</h2><p class="muted">Konuları ve yanıtları inceleyin, onaylayın, silin veya sohbetleri kilitleyin.</p><a class="btn" href="/forum/?manage=1" style="text-decoration:none">Forum yönetimini aç →</a></section><header class="top"><div><div class="brand">TestoTavan</div><div class="muted">İçerik yönetimi</div></div><a href="/" class="btn ghost" style="text-decoration:none">Siteye dön</a></header>
@@ -43,7 +51,7 @@ body{min-height:100vh;background:radial-gradient(circle at 15% -10%,rgba(245,166
   </form>
   </details>
 </section>
-<section class="card"><div class="intro"><div class="intro-icon">✦</div><div><div class="eyebrow">İçerik stüdyosu</div><h2 style="margin:0 0 5px">Yeni içerik yayınla</h2><p class="muted" style="margin:0">Kısa bilgi, detaylar ve tarif malzemelerini tek yerden düzenleyin.</p></div></div><div class="ai-box" id="ai_box">
+<section class="card"><div class="intro"><div class="intro-icon">✦</div><div><div class="eyebrow">İçerik stüdyosu</div><h2 id="editor-title" style="margin:0 0 5px">Yeni içerik yayınla</h2><p class="muted" style="margin:0">Kısa bilgi, detaylar ve tarif malzemelerini tek yerden düzenleyin.</p></div></div><div class="ai-box" id="ai_box">
   <div class="ai-studio-hero">
     <div class="ai-studio-title"><div class="ai-orb">✦</div><div><div class="eyebrow" style="margin-bottom:2px">AI içerik stüdyosu</div><h3>Tek kaynaktan 4 dilde yayın taslağı</h3><p class="muted">Önce güvenilir Türkçe ana metin hazırlanır; İngilizce, Almanca ve Japonca birbirinden bağımsız çevrilip sayı, paragraf, liste ve malzeme bütünlüğüyle denetlenir.</p></div></div>
     <span class="ai-ready-badge">Kalite kontrollü</span>
@@ -71,13 +79,14 @@ body{min-height:100vh;background:radial-gradient(circle at 15% -10%,rgba(245,166
 <div id="en" class="lang-panel"><fields-set data-lang="en"></fields-set></div>
 <div id="de" class="lang-panel"><fields-set data-lang="de"></fields-set></div>
 <div id="ja" class="lang-panel"><fields-set data-lang="ja"></fields-set></div>
-<button class="btn full" style="margin-top:12px">Herkese açık yayınla</button><p id="publishResult" class="muted" style="margin:10px 0 0;font-size:12px"></p></form></section>
+<button id="publish-btn" type="submit" class="btn full" style="margin-top:12px">Herkese açık yayınla</button><button id="new-content-btn" type="button" class="btn ghost full" style="margin-top:8px" hidden onclick="startNewContent()">＋ Yeni içerik</button><p id="editor-mode-note" class="muted" style="margin:8px 0 0;font-size:12px" hidden>Düzenleme modundasın: <strong>Kaydet</strong> yalnızca bu içeriği günceller. Yeni bir yazı için “＋ Yeni içerik” düğmesini kullan.</p><p id="publishResult" class="muted" style="margin:10px 0 0;font-size:12px"></p></form></section>
 <section class="card"><div class="section-head"><div><div class="eyebrow">Kütüphane</div><h2>Yayınlanan içerikler</h2></div><span class="version">CANLI</span></div><div id="list" class="muted">Yükleniyor...</div></section></main></div>
+<script src="/admin/ingredients.js"></script>
 <script src="/admin/about.js"></script>
 <script>
 const TIME_PLACEHOLDER={tr:'5 dk',en:'5 min',de:'5 Min.',ja:'5分'};
 const INGREDIENT_PLACEHOLDER={tr:'Örn. 150 g tavuk göğsü',en:'E.g. 150 g chicken breast',de:'Z. B. 150 g Hähnchenbrust',ja:'例：鶏むね肉 150g'};
-document.querySelectorAll('fields-set').forEach(x=>{const l=x.dataset.lang;x.outerHTML=`<div class="field"><label for="category-${l}">Kategori</label><select id="category-${l}" ${l==='tr'?'required':''}></select></div><div class="field"><label for="title-${l}">Başlık</label><input id="title-${l}" ${l==='tr'?'required':''}></div><div class="field"><label for="summary-${l}">Kısa bilgi / özet</label><textarea id="summary-${l}" ${l==='tr'?'required':''} placeholder="İçeriği bir veya iki cümleyle anlatın"></textarea></div><div class="field"><label for="body-${l}">İçerik / hazırlanış</label><textarea id="body-${l}" ${l==='tr'?'required':''} placeholder="Detaylı içeriği yazın..."></textarea></div><div class="field"><label for="time-${l}">Okuma / hazırlama süresi</label><input id="time-${l}" ${l==='tr'?'required':''} placeholder="${TIME_PLACEHOLDER[l]}" ${l==='tr'?'oninput="autoFillDurations()"':''}>${l==='tr'?'<p class="muted" style="margin-top:6px">Diğer dillerdeki boş süre alanları buradan otomatik doldurulur (5 dk → 5 min / 5 Min. / 5分).</p>':''}</div><div class="field recipe-only ingredient-field"><div class="ingredient-heading"><label id="ingredients-label-${l}">Malzemeler</label><span class="ingredient-count" id="ingredient-count-${l}">0 malzeme</span></div><p class="muted" style="margin:0">${l==='tr'?'Tarifte kullanılacak her malzemeyi ayrı ekleyin.':'Bu dildeki malzeme çevirilerini ayrı ekleyin.'}</p><div id="ingredients-${l}" class="ingredient-editor" role="list" aria-labelledby="ingredients-label-${l}"></div><button class="ingredient-add" type="button" onclick="addIngredient('${l}')">＋ Malzeme ekle</button>${l!=='tr'?'<p class="muted" style="margin:9px 0 0">Boş bırakırsanız ziyaretçiye Türkçe malzeme listesi gösterilir.</p>':''}</div>`});
+document.querySelectorAll('fields-set').forEach(x=>{const l=x.dataset.lang;x.outerHTML=`<div class="field"><label for="category-${l}">Kategori</label><select id="category-${l}" ${l==='tr'?'required':''}></select></div><div class="field"><label for="title-${l}">Başlık</label><input id="title-${l}" ${l==='tr'?'required':''}></div><div class="field"><label for="summary-${l}">Kısa bilgi / özet</label><textarea id="summary-${l}" ${l==='tr'?'required':''} placeholder="İçeriği bir veya iki cümleyle anlatın"></textarea></div><div class="field"><label for="body-${l}">İçerik / hazırlanış</label><textarea id="body-${l}" ${l==='tr'?'required':''} placeholder="Detaylı içeriği yazın..."></textarea></div><div class="field"><label for="time-${l}">Okuma / hazırlama süresi</label><input id="time-${l}" ${l==='tr'?'required':''} placeholder="${TIME_PLACEHOLDER[l]}" ${l==='tr'?'oninput="autoFillDurations()"':''}>${l==='tr'?'<p class="muted" style="margin-top:6px">Diğer dillerdeki boş süre alanları buradan otomatik doldurulur (5 dk → 5 min / 5 Min. / 5分).</p>':''}</div><div class="field recipe-only ingredient-field"><div class="ingredient-heading"><label id="ingredients-label-${l}">Malzemeler</label><span class="ingredient-count" id="ingredient-count-${l}">0 malzeme</span></div><p class="muted" style="margin:0">${l==='tr'?'Tarifte kullanılacak her malzemeyi ayrı ekleyin.':'Bu dildeki malzeme çevirilerini ayrı ekleyin.'}</p><div id="ingredients-${l}" class="ingredient-editor" role="list" aria-labelledby="ingredients-label-${l}"></div><button class="ingredient-add" type="button" onclick="addIngredient('${l}')">＋ Malzeme ekle</button>${l==='tr'?'<div class="ingredient-tools"><button class="ingredient-add" type="button" onclick="extractIngredientsNow()">⤓ Metinden çıkar</button><button class="ingredient-add" type="button" onclick="translateIngredientsNow()">⇄ Boş dilleri doldur</button></div><p id="ingredient-status-tr" class="muted ingredient-status" role="status" aria-live="polite">Malzemeler içerik metninden otomatik alınır, boş diller Türkçe listeden doldurulur.</p>':'<p class="muted" style="margin:9px 0 0">Boş bırakırsanız ziyaretçiye Türkçe malzeme listesi gösterilir.</p>'}</div>`});
 const LANGS=['tr','en','de','ja'];
 const CATEGORIES={tr:['Hormon Sağlığı','Yüksek Protein','Uyku'],en:['Hormone Health','High Protein','Sleep'],de:['Hormongesundheit','Proteinreich','Schlaf'],ja:['ホルモン健康','高たんぱく','睡眠']};
 let items=[], editingId=null, captchaToken='', lastTranslationQuality={};const $=id=>document.getElementById(id);
@@ -93,14 +102,96 @@ async function showPanel(){window.loadAboutEditor();$('login').classList.add('hi
 function tab(lang,b){document.querySelectorAll('.tab,.lang-panel').forEach(x=>x.classList.remove('on'));b.classList.add('on');b.setAttribute('aria-selected','true');document.querySelectorAll('.tab').forEach(x=>{if(x!==b)x.setAttribute('aria-selected','false')});$(lang).classList.add('on')}
 function ingredientValues(lang){const editor=$(`ingredients-${lang}`);return editor?[...editor.querySelectorAll('input[data-ingredient]')].map(x=>x.value.trim()).filter(Boolean):[]}
 function updateIngredientCount(lang){const count=ingredientValues(lang).length,el=$(`ingredient-count-${lang}`);if(el)el.textContent=`${count} malzeme`}
-function renderIngredientRows(lang,values=ingredientValues(lang)){const editor=$(`ingredients-${lang}`);if(!editor)return;editor.innerHTML='';if(!values.length){const empty=document.createElement('p');empty.className='ingredient-empty';empty.textContent='Henüz malzeme eklenmedi.';editor.append(empty)}else{values.forEach((value,index)=>{const row=document.createElement('div');row.className='ingredient-row';row.setAttribute('role','listitem');const number=document.createElement('span');number.className='ingredient-number';number.textContent=index+1;const input=document.createElement('input');input.type='text';input.maxLength=200;input.dataset.ingredient='';input.placeholder=INGREDIENT_PLACEHOLDER[lang];input.setAttribute('aria-label',`${index+1}. malzeme`);input.value=value;input.addEventListener('input',()=>{updateIngredientCount(lang);markLanguageProgress()});input.addEventListener('keydown',event=>ingredientKeydown(event,lang,index));const remove=document.createElement('button');remove.type='button';remove.className='ingredient-remove';remove.setAttribute('aria-label',`${index+1}. malzemeyi sil`);remove.textContent='×';remove.addEventListener('click',()=>removeIngredient(lang,index));row.append(number,input,remove);editor.append(row)})}updateIngredientCount(lang);markLanguageProgress()}
+function renderIngredientRows(lang,values=ingredientValues(lang)){const editor=$(`ingredients-${lang}`);if(!editor)return;editor.innerHTML='';if(!values.length){const empty=document.createElement('p');empty.className='ingredient-empty';empty.textContent='Henüz malzeme eklenmedi.';editor.append(empty)}else{values.forEach((value,index)=>{const row=document.createElement('div');row.className='ingredient-row';row.setAttribute('role','listitem');const number=document.createElement('span');number.className='ingredient-number';number.textContent=index+1;const input=document.createElement('input');input.type='text';input.maxLength=200;input.dataset.ingredient='';input.placeholder=INGREDIENT_PLACEHOLDER[lang];input.setAttribute('aria-label',`${index+1}. malzeme`);input.value=value;input.addEventListener('input',()=>{updateIngredientCount(lang);markLanguageProgress();if(lang==='tr')scheduleIngredientSync();else{autoIngredientSnapshot.delete(lang);autoIngredientSource.delete(lang)}});input.addEventListener('keydown',event=>ingredientKeydown(event,lang,index));const remove=document.createElement('button');remove.type='button';remove.className='ingredient-remove';remove.setAttribute('aria-label',`${index+1}. malzemeyi sil`);remove.textContent='×';remove.addEventListener('click',()=>removeIngredient(lang,index));row.append(number,input,remove);editor.append(row)})}updateIngredientCount(lang);markLanguageProgress()}
 function setIngredients(lang,values){renderIngredientRows(lang,Array.isArray(values)?values.map(x=>String(x).trim()).filter(Boolean):[])}
 function addIngredient(lang,afterIndex){const values=ingredientValues(lang),index=Number.isInteger(afterIndex)?afterIndex+1:values.length;values.splice(index,0,'');renderIngredientRows(lang,values);requestAnimationFrame(()=>{const fields=$(`ingredients-${lang}`)?.querySelectorAll('input[data-ingredient]');fields?.[index]?.focus()})}
 function removeIngredient(lang,index){const values=ingredientValues(lang);values.splice(index,1);renderIngredientRows(lang,values)}
 function ingredientKeydown(event,lang,index){if(event.key==='Enter'){event.preventDefault();addIngredient(lang,index)}}
+
+/* ---------------- malzeme otomasyonu ----------------
+ * 1) "İçerik / hazırlanış" metninde malzeme listesi varsa Türkçe alan kendiliğinden dolar.
+ * 2) Türkçe liste değişince boş (veya otomatik doldurulmuş) diller çevrilir.
+ * 3) Kullanıcı bir dili elle düzenlerse o dil otomatik yönetimden çıkar.
+ */
+const ING_TARGETS=['en','de','ja'];
+const autoIngredientSnapshot=new Map();
+const autoIngredientSource=new Map();
+let ingredientTimer=null,ingredientBusy=false,bodyTimer=null;
+function ingredientAutoManaged(lang){const snapshot=autoIngredientSnapshot.get(lang);return typeof snapshot==='string'&&snapshot===ingredientValues(lang).join('\n')}
+function setIngredientStatus(text,type='info'){const el=$('ingredient-status-tr');if(!el)return;el.textContent=text||'';el.classList.toggle('error',type==='error');el.classList.toggle('success',type==='success')}
+function extractIngredients(silent=false){
+ const tools=window.MeydanIngredients;
+ if(!tools){if(!silent)toast('Malzeme aracı yüklenemedi');return 0}
+ const body=$('body-tr')?.value.trim()||'';
+ const found=body?tools.extractIngredients(body):[];
+ const before=ingredientValues('tr');
+ const merged=tools.mergeIngredients(before,found);
+ if(merged.length===before.length){if(!silent)toast('Metinde yeni malzeme bulunamadı');return 0}
+ setIngredients('tr',merged);
+ const added=merged.length-before.length;
+ setIngredientStatus(`${added} malzeme içerik metninden alındı.`,'success');
+ if(!silent)toast(`${added} malzeme eklendi`);
+ scheduleIngredientSync();
+ return added
+}
+function extractIngredientsNow(){if($('type').value!=='recipe'){toast('Önce tür olarak “Yemek tarifi” seçin');return}extractIngredients()}
+function scheduleBodyExtraction(){if($('type').value!=='recipe')return;if(ingredientValues('tr').length)return;clearTimeout(bodyTimer);bodyTimer=setTimeout(()=>{if($('type').value==='recipe'&&!ingredientValues('tr').length)extractIngredients(true)},700)}
+function scheduleIngredientSync(){if($('type').value!=='recipe')return;clearTimeout(ingredientTimer);ingredientTimer=setTimeout(()=>{syncIngredientsFromTr()},900)}
+function syncIngredientsFromTr(){
+ if(ingredientBusy||$('type').value!=='recipe')return;
+ const tr=ingredientValues('tr');
+ if(!tr.length){setIngredientStatus('Malzemeler içerik metninden otomatik alınır, boş diller Türkçe listeden doldurulur.');return}
+ const signature=tr.join('\n');
+ // Boş diller ve bu Türkçe listeyle otomatik doldurulmuş diller hedef; elle yazılanlara dokunulmaz.
+ const targets=ING_TARGETS.filter(lang=>{
+  if(!ingredientValues(lang).length)return true;
+  if(!ingredientAutoManaged(lang))return false;
+  return autoIngredientSource.get(lang)!==signature
+ });
+ if(!targets.length)return;
+ ingredientBusy=true;setIngredientStatus('Malzemeler diğer dillere çevriliyor…');
+ return fetch('/api/ai-blog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'ingredients',items:tr,provider:$('ai_provider')?.value||'',apiKey:$('ai_api_key')?.value.trim()||'',model:$('ai_model')?.value.trim()||''})})
+  .then(r=>r.json().catch(()=>({})).then(j=>({r,j})))
+  .then(({r,j})=>{
+   if(!r.ok||!j.ok)throw new Error(j.error||'Malzeme çevirisi yapılamadı');
+   const filled=[];
+   targets.forEach(lang=>{
+    const rows=Array.isArray(j.ingredients?.[lang])?j.ingredients[lang].filter(Boolean):[];
+    if(rows.length!==tr.length)return;
+    if(ingredientValues(lang).length&&!ingredientAutoManaged(lang))return;
+    setIngredients(lang,rows);
+    autoIngredientSnapshot.set(lang,rows.join('\n'));
+    autoIngredientSource.set(lang,signature);
+    filled.push(lang.toUpperCase())
+   });
+   setIngredientStatus(filled.length?`Malzemeler ${filled.join(', ')} için Türkçe listeden dolduruldu.`:'Malzeme çevirisi eksik döndü; “⇄ Boş dilleri doldur” ile tekrar deneyin.',filled.length?'success':'error')
+  })
+  .catch(()=>setIngredientStatus('Otomatik malzeme çevirisi yapılamadı; “Yalnızca eksikleri tamamla” düğmesini kullanabilirsiniz.','error'))
+  .finally(()=>{ingredientBusy=false})
+}
+function translateIngredientsNow(){if($('type').value!=='recipe'){toast('Önce tür olarak “Yemek tarifi” seçin');return}if(!ingredientValues('tr').length){toast('Önce Türkçe malzeme ekleyin');return}return syncIngredientsFromTr()}
+
+/* ---------------- yeni / düzenleme modu ---------------- */
+function setEditorMode(mode){
+ const editing=mode==='edit';
+ const title=$('editor-title'),button=$('publish-btn'),extra=$('new-content-btn'),note=$('editor-mode-note');
+ if(title)title.textContent=editing?'İçeriği düzenle':'Yeni içerik yayınla';
+ if(button)button.textContent=editing?'Kaydet':'Herkese açık yayınla';
+ if(extra)extra.hidden=!editing;
+ if(note)note.hidden=!editing
+}
+function resetEditor(){
+ editingId=null;lastTranslationQuality={};autoIngredientSnapshot.clear();autoIngredientSource.clear();
+ $('form').reset();
+ if($('news_url'))$('news_url').value='';
+ setAiStatus('');showCoverPreview('');LANGS.forEach(l=>setIngredients(l,[]));
+ const result=$('publishResult');if(result)result.innerHTML='';
+ fillCategories();markLanguageProgress();renderTranslationDashboard({});setIngredientStatus('');setEditorMode('new');recipeToggle()
+}
+function startNewContent(){resetEditor();window.scrollTo({top:0,behavior:'smooth'})}
 function markLanguageProgress(){LANGS.forEach(l=>{const b=document.querySelector(`.tab[data-lang="${l}"]`);if(b)b.classList.toggle('has-content',Boolean($(`title-${l}`)?.value.trim()||$(`summary-${l}`)?.value.trim()||$(`body-${l}`)?.value.trim()||ingredientValues(l).length))})}
 document.addEventListener('input',event=>{if(event.target.closest?.('#form'))lastTranslationQuality={};markLanguageProgress();markTranslationQuality()})
-function recipeToggle(){const on=$('type').value==='recipe';document.querySelectorAll('.recipe-only').forEach(x=>x.classList.toggle('hidden',!on));if(on)LANGS.forEach(l=>updateIngredientCount(l))}
+function recipeToggle(){const on=$('type').value==='recipe';document.querySelectorAll('.recipe-only').forEach(x=>x.classList.toggle('hidden',!on));if(on){LANGS.forEach(l=>updateIngredientCount(l));scheduleBodyExtraction();scheduleIngredientSync()}}
 // "20 dk" -> EN "20 min" · DE "20 Min." · JA "20分"
 function localizeDuration(text,lang){const src=String(text||'').trim();const U={en:{min:'min',hour:'h',space:true},de:{min:'Min.',hour:'Std.',space:true},ja:{min:'分',hour:'時間',space:false}};if(!src||!U[lang])return src;const m=src.match(/^(\d+(?:[.,]\d+)?)\s*(dakika|dk|saat|sa)\.?$/i);if(!m)return src;const key=/^(saat|sa)$/i.test(m[2])?'hour':'min';return U[lang].space?`${m[1]} ${U[lang][key]}`:`${m[1]}${U[lang][key]}`}
 function autoFillDurations(){const tr=$('time-tr').value;['en','de','ja'].forEach(l=>{const el=$('time-'+l);if(!el)return;const auto=localizeDuration(tr,l);if(!el.value||el.dataset.auto==='1'){el.value=auto;el.dataset.auto='1'}});}
@@ -128,7 +219,7 @@ function foreignLooksOk(text,lang){const value=String(text||'').trim();if(value.
 function localLanguageComplete(lang){const title=$(`title-${lang}`)?.value||'',summary=$(`summary-${lang}`)?.value||'',body=$(`body-${lang}`)?.value||'';const core=foreignLooksOk(title,lang)&&foreignLooksOk(summary,lang)&&foreignLooksOk(body,lang);if(!core)return false;if($('type')?.value==='recipe'){const sourceCount=ingredientValues('tr').length,target=ingredientValues(lang);if(sourceCount&&target.length!==sourceCount)return false}return true}
 function renderTranslationDashboard(quality=lastTranslationQuality){const sourceReady=Boolean($('title-tr')?.value.trim()&&$('summary-tr')?.value.trim()&&$('body-tr')?.value.trim());const trCard=document.querySelector('[data-lang-quality="tr"]');if(trCard){trCard.dataset.state=sourceReady?'ready':'idle';trCard.querySelector('.ai-language-state').textContent=sourceReady?'Ana metin hazır':'Kaynak bekleniyor'}let ready=0;['en','de','ja'].forEach(lang=>{const card=document.querySelector(`[data-lang-quality="${lang}"]`);const tab=document.querySelector(`.tab[data-lang="${lang}"]`);if(!card)return;const server=quality?.[lang];const hasAny=Boolean($(`title-${lang}`)?.value.trim()||$(`summary-${lang}`)?.value.trim()||$(`body-${lang}`)?.value.trim());const complete=server?server.complete===true:localLanguageComplete(lang);const state=complete?'ready':hasAny?'warning':'idle';card.dataset.state=state;card.querySelector('.ai-language-score').textContent=server&&Number.isFinite(server.score)?`%${server.score}`:'—';card.querySelector('.ai-language-state').textContent=complete?'Kalite kontrolü geçti':hasAny?(server?.issues?.[0]||'Kontrol gerekli'):'Çeviri bekleniyor';tab?.classList.toggle('needs-translation',hasAny&&!complete);if(complete)ready++});const summary=$('ai_quality_summary');if(summary)summary.textContent=sourceReady?`${ready}/3 çeviri yayına hazır`:'Türkçe kaynak bekleniyor'}
 function markTranslationQuality(){renderTranslationDashboard(lastTranslationQuality)}
-function applyGeneratedBlog(item, opts={}){if(!item)return;if(!opts.keepMeta){$('type').value=item.type==='recipe'?'recipe':'blog';recipeToggle();if(item.emoji)$('emoji').value=item.emoji;if(item.cover_url){$('cover_url').value=item.cover_url;showCoverPreview(item.cover_url)}}LANGS.forEach(l=>{const src=l==='tr'?item:(item.translations?.[l]||{});if(src.category)setCategory(l,src.category);if(!opts.keepMeta||src.title)$(`title-${l}`).value=src.title||'';if(!opts.keepMeta||src.summary)$(`summary-${l}`).value=src.summary||'';if(!opts.keepMeta||src.body)$(`body-${l}`).value=src.body||'';const tEl=$(`time-${l}`);if(tEl&&(!opts.keepMeta||src.time)){tEl.value=src.time||'';tEl.dataset.auto=src.time?'':'1'}if(Array.isArray(src.ingredients))setIngredients(l,src.ingredients);else if(!opts.keepMeta)setIngredients(l,[])});recipeToggle();autoFillDurations();markLanguageProgress();markTranslationQuality()}
+function applyGeneratedBlog(item, opts={}){if(!item)return;if(!opts.keepMeta){$('type').value=item.type==='recipe'?'recipe':'blog';recipeToggle();if(item.emoji)$('emoji').value=item.emoji;if(item.cover_url){$('cover_url').value=item.cover_url;showCoverPreview(item.cover_url)}}LANGS.forEach(l=>{const src=l==='tr'?item:(item.translations?.[l]||{});if(src.category)setCategory(l,src.category);if(!opts.keepMeta||src.title)$(`title-${l}`).value=src.title||'';if(!opts.keepMeta||src.summary)$(`summary-${l}`).value=src.summary||'';if(!opts.keepMeta||src.body)$(`body-${l}`).value=src.body||'';const tEl=$(`time-${l}`);if(tEl&&(!opts.keepMeta||src.time)){tEl.value=src.time||'';tEl.dataset.auto=src.time?'':'1'}if(Array.isArray(src.ingredients))setIngredients(l,src.ingredients);else if(!opts.keepMeta)setIngredients(l,[])});recipeToggle();if($('type').value==='recipe'){if(!ingredientValues('tr').length)extractIngredients(true);scheduleIngredientSync()}autoFillDurations();markLanguageProgress();markTranslationQuality()}
 async function generateFromNewsUrl(){
  const urlInput=$('news_url'),btn=$('ai_generate_btn'),url=(urlInput?.value||'').trim();
  if(!url){toast('Lütfen bir haber, makale veya tarif bağlantısı girin');urlInput?.focus();return}
@@ -162,10 +253,31 @@ async function translateOpenFields(force=false){
  finally{setAiBusy(false);btn.textContent=orig}
 }
 async function uploadCover(input){const file=input.files&&input.files[0];input.value='';if(!file)return;if(!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return toast('Sadece JPEG, PNG, WebP veya GIF yüklenebilir');if(file.size>2*1024*1024)return toast('Görsel en fazla 2 MB olabilir');try{const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.onerror=()=>rej(r.error);r.readAsDataURL(file)});const r=await fetch('/api/media',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mime:file.type,data:data.split(',')[1]||''})}),j=await r.json().catch(()=>({}));if(!r.ok)return toast(j.error||'Görsel yüklenemedi');$('cover_url').value=j.url;showCoverPreview(j.url);toast('Kapak görseli yüklendi')}catch(e){toast('Görsel okunamadı')}}
-async function publish(e){e.preventDefault();const base=l=>({category:$(`category-${l}`).value.trim(),title:$(`title-${l}`).value.trim(),summary:$(`summary-${l}`).value.trim(),body:$(`body-${l}`).value.trim(),time:$(`time-${l}`).value.trim(),ingredients:ingredientValues(l)});const tr=base('tr'),data={...tr,type:$('type').value,emoji:$('emoji').value,cover_url:$('cover_url').value.trim(),pinterest:pinWanted(),translations:{en:base('en'),de:base('de'),ja:base('ja')}};if(data.type==='recipe'&&!data.ingredients.length)return toast('Tarifler için en az bir malzeme ekleyin');const r=await fetch('/api/content?id='+encodeURIComponent(editingId||''),{method:editingId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),j=await r.json();if(!r.ok)return toast(j.error||'Yayınlanamadı');const publicUrl=publicUrlFor(j);const link=$('publishResult');if(link){link.innerHTML=publicUrl?`SEO sayfası: <a href="${esc(publicUrl)}" target="_blank" rel="noopener" style="color:#f5a623">${esc(location.origin+publicUrl)}</a> · sitemap ve RSS otomatik güncellenir.`:'Yayın kaydedildi.'}if(editingId){items=items.map(x=>x.id===editingId?j:x);editingId=null;$('form').querySelector('button[type=submit]').textContent='Herkese açık yayınla';toast('İçerik güncellendi')}else{items.unshift(j);toast('İçerik yayınlandı');pinReport(j.pinterest)}$('form').reset();if($('news_url'))$('news_url').value='';setAiStatus('');lastTranslationQuality={};applyPinPreference();LANGS.forEach(l=>setIngredients(l,[]));showCoverPreview('');fillCategories();markLanguageProgress();renderTranslationDashboard({});render()}
+async function publish(e){
+ e.preventDefault();
+ const base=l=>({category:$(`category-${l}`).value.trim(),title:$(`title-${l}`).value.trim(),summary:$(`summary-${l}`).value.trim(),body:$(`body-${l}`).value.trim(),time:$(`time-${l}`).value.trim(),ingredients:ingredientValues(l)});
+ const tr=base('tr'),data={...tr,type:$('type').value,emoji:$('emoji').value,cover_url:$('cover_url').value.trim(),pinterest:pinWanted(),translations:{en:base('en'),de:base('de'),ja:base('ja')}};
+ if(data.type==='recipe'&&!data.ingredients.length)return toast('Tarifler için en az bir malzeme ekleyin');
+ const editing=Boolean(editingId);
+ const r=await fetch('/api/content?id='+encodeURIComponent(editingId||''),{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),j=await r.json();
+ if(!r.ok)return toast(j.error||'Yayınlanamadı');
+ const publicUrl=publicUrlFor(j);
+ // Düzenlemede kalınır: kaydet sonrası ekranda yayınlama düğmesi belirmez.
+ if(editing){items=items.map(x=>x.id===editingId?j:x);toast('Değişiklikler kaydedildi')}
+ else{items.unshift(j);toast('İçerik yayınlandı');pinReport(j.pinterest)}
+ fillCategories();render();
+ if(!editing)resetEditor();
+ showPublishResult(publicUrl,editing);
+ if(editing)setEditorMode('edit')
+}
+function showPublishResult(publicUrl,editing){
+ const link=$('publishResult');if(!link)return;
+ const prefix=editing?'Değişiklikler kaydedildi. ':'Yayınlandı. ';
+ link.innerHTML=prefix+(publicUrl?`SEO sayfası: <a href="${esc(publicUrl)}" target="_blank" rel="noopener" style="color:#f5a623">${esc(location.origin+publicUrl)}</a> · sitemap ve RSS otomatik güncellenir.`:'Kayıt tamamlandı.')
+}
 function publicUrlFor(x){const slug=typeof x?.slug==='string'?x.slug:'';const url=typeof x?.url==='string'?x.url:(slug?`/blog/${encodeURIComponent(slug)}/`:'');return url}
 function render(){$('list').innerHTML=items.length?items.map(x=>{const url=publicUrlFor(x);return `<div class="item"><div><b>${esc(x.title)}</b><div class="muted">${x.type==='recipe'?`Tarif · ${esc(x.category)} · ${(x.ingredients||[]).length} malzeme`:`Blog · ${esc(x.category)}`}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener" style="color:#f5a623">/${esc((x.slug||''))}/</a>`:''}</div></div><div style="display:flex;gap:6px">${url?`<a class="btn ghost" href="${esc(url)}" target="_blank" rel="noopener">Görüntüle</a>`:''}<button class="btn ghost" onclick="editItem('${esc(x.id)}')">Düzenle</button><button class="delete" aria-label="Sil" onclick="removeItem('${esc(x.id)}')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 20 7"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg></button></div></div>`}).join(''):'Henüz içerik yok.'}
-function editItem(id){const x=items.find(i=>i.id===id);if(!x)return;editingId=id;lastTranslationQuality={};$('type').value=x.type;$('emoji').value=x.emoji||'';$('cover_url').value=x.cover_url||'';showCoverPreview(x.cover_url||'');LANGS.forEach(l=>{const src=l==='tr'?x:(x.translations?.[l]||{});setCategory(l,src.category||'');$(`title-${l}`).value=src.title||'';$(`summary-${l}`).value=src.summary||'';$(`body-${l}`).value=src.body||'';$(`time-${l}`).value=src.time||(l==='tr'?(x.time||''):'');setIngredients(l,src.ingredients||(l==='tr'?x.ingredients:[])||[])});recipeToggle();markLanguageProgress();renderTranslationDashboard({});$('form').querySelector('button[type=submit]').textContent='Değişiklikleri kaydet';window.scrollTo({top:0,behavior:'smooth'})}
+function editItem(id){const x=items.find(i=>i.id===id);if(!x)return;editingId=id;lastTranslationQuality={};$('type').value=x.type;$('emoji').value=x.emoji||'';$('cover_url').value=x.cover_url||'';showCoverPreview(x.cover_url||'');LANGS.forEach(l=>{const src=l==='tr'?x:(x.translations?.[l]||{});setCategory(l,src.category||'');$(`title-${l}`).value=src.title||'';$(`summary-${l}`).value=src.summary||'';$(`body-${l}`).value=src.body||'';$(`time-${l}`).value=src.time||(l==='tr'?(x.time||''):'');setIngredients(l,src.ingredients||(l==='tr'?x.ingredients:[])||[])});autoIngredientSnapshot.clear();autoIngredientSource.clear();recipeToggle();markLanguageProgress();renderTranslationDashboard({});setEditorMode('edit');if($('type').value==='recipe')scheduleIngredientSync();window.scrollTo({top:0,behavior:'smooth'})}
 async function removeItem(id){if(!confirm('Silinsin mi?'))return;const r=await fetch('/api/content?id='+encodeURIComponent(id),{method:'DELETE'});if(r.ok){items=items.filter(x=>x.id!==id);fillCategories();render();toast('Silindi')}}
-LANGS.forEach(l=>setIngredients(l,[]));fillCategories();recipeToggle();markLanguageProgress();renderTranslationDashboard({});applyPinPreference();loadAiPrefs();init();
+LANGS.forEach(l=>setIngredients(l,[]));fillCategories();setEditorMode('new');$('body-tr')?.addEventListener('input',scheduleBodyExtraction);recipeToggle();markLanguageProgress();renderTranslationDashboard({});applyPinPreference();loadAiPrefs();init();
 </script></body></html>

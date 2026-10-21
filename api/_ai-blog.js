@@ -15,10 +15,14 @@ import { isSafeCoverUrl } from './_media.js';
 import {
   ensureCompleteTranslations,
   localTranslateFields,
+  localTranslateText,
+  machineTranslateText,
+  networkTranslationAllowed,
   pickLanguageBlock,
   coerceTranslatedFields,
   preferTranslated,
-  repairTranslation
+  repairTranslation,
+  TARGET_LANGS
 } from './_translate.js';
 import { stripSourceReferences, wordCount } from './_seo.js';
 
@@ -1412,6 +1416,156 @@ export async function completeBlogTranslations(rawItem, options = {}) {
     translation: repaired.report,
     translation_quality: repaired.quality,
     item: repaired.item
+  };
+}
+
+/**
+ * Yalnızca malzeme satırlarını çevirir (admin'deki otomatik doldurma için).
+ *
+ * Sıra: AI (anahtar varsa) → makine çevirisi (izin varsa) → yerel sözlük.
+ * Yerel sözlük her zaman bir sonuç döndürdüğü için işlem çevrimdışı da tamamlanır;
+ * miktar ve satır sayısı korunur, sıra değişmez.
+ */
+const INGREDIENT_PLURALS = {
+  en: {
+    egg: 'eggs', tomato: 'tomatoes', potato: 'potatoes', onion: 'onions', lemon: 'lemons',
+    clove: 'cloves', slice: 'slices', cup: 'cups', tablespoon: 'tablespoons', teaspoon: 'teaspoons',
+    banana: 'bananas', apple: 'apples', avocado: 'avocados', walnut: 'walnuts', almond: 'almonds',
+    hazelnut: 'hazelnuts', strawberry: 'strawberries', cucumber: 'cucumbers', pepper: 'peppers',
+    carrot: 'carrots', mushroom: 'mushrooms', date: 'dates'
+  },
+  de: {
+    Ei: 'Eier', Tomate: 'Tomaten', Kartoffel: 'Kartoffeln', Zwiebel: 'Zwiebeln', Zitrone: 'Zitronen',
+    Zehe: 'Zehen', Scheibe: 'Scheiben', Tasse: 'Tassen', Banane: 'Bananen', Apfel: 'Äpfel',
+    Avocado: 'Avocados', Walnuss: 'Walnüsse', Mandel: 'Mandeln', Erdbeere: 'Erdbeeren',
+    Gurke: 'Gurken', Karotte: 'Karotten', Pilz: 'Pilze', Dattel: 'Datteln'
+  }
+};
+
+/**
+ * Yerel sözlük tekili döndürür ("2 egg"). Miktar 1'den büyükse bilinen
+ * malzemeleri çoğula çevirir; Japoncada çoğul yoktur, dokunulmaz.
+ */
+function pluralizeIngredientLine(line, lang) {
+  const table = INGREDIENT_PLURALS[lang];
+  if (!table) return line;
+  const text = String(line || '').trim();
+  const quantity = text.match(/^(\d+(?:[.,]\d+)?)/);
+  if (!quantity) return text;
+  if (Number(quantity[1].replace(',', '.')) <= 1) return text;
+  return text.replace(/([\p{L}]+)(\s*)$/u, (match, word, tail) => (table[word] ? table[word] + tail : match));
+}
+
+function ingredientPrompts(source) {
+  return {
+    systemPrompt: [
+      'TASK: ingredient-translation',
+      'You translate Turkish recipe ingredient lines into English, German and Japanese.',
+      'Return only valid JSON: {"en":["..."],"de":["..."],"ja":["..."]}.',
+      'RULES:',
+      '- Keep the exact number of lines and their original order.',
+      '- Preserve every quantity, unit, number and brand name; translate food words and units naturally.',
+      '- Never add, merge, split or drop an ingredient.',
+      '- No markdown, no comments, no extra keys; every array item must be a complete ingredient phrase.'
+    ].join('\n'),
+    userPrompt: `SOURCE_INGREDIENTS:\n${JSON.stringify(source)}`
+  };
+}
+
+function normalizeIngredientTranslations(data, source) {
+  const blocks = {};
+  for (const lang of TARGET_LANGS) {
+    const block = pickLanguageBlock(data, lang) || (data && typeof data === 'object' ? data[lang] : null);
+    const rows = Array.isArray(block)
+      ? block
+      : Array.isArray(block?.ingredients)
+        ? block.ingredients
+        : Array.isArray(block?.malzemeler)
+          ? block.malzemeler
+          : null;
+    if (!rows || rows.length !== source.length) continue;
+    const cleaned = rows.map(row => clean(row, 200));
+    if (cleaned.some(row => !row)) continue;
+    blocks[lang] = cleaned;
+  }
+  return Object.keys(blocks).length ? blocks : null;
+}
+
+export async function translateIngredientLines(lines, options = {}) {
+  const source = (Array.isArray(lines) ? lines : [])
+    .map(value => clean(value, 200))
+    .filter(Boolean)
+    .slice(0, 60);
+  if (!source.length) return { ok: false, error: 'Çevrilecek malzeme bulunamadı.' };
+
+  const aiConfig = resolveAiProvider(options, options.env || process.env);
+  const prompts = ingredientPrompts(source);
+  let translated = null;
+  let mode = 'local';
+  let warning;
+
+  const requestAi = typeof options.requestAi === 'function'
+    ? options.requestAi
+    : aiConfig
+      ? (systemPrompt, userPrompt) => requestAiJsonWithFallback(aiConfig, { systemPrompt, userPrompt }, {
+        ...options,
+        temperature: 0.1,
+        maxTokens: 2048,
+        timeoutMs: Math.min(options.timeoutMs ?? AI_TIMEOUT_MS, 15000)
+      })
+      : null;
+
+  if (requestAi) {
+    try {
+      const response = await requestAi(prompts.systemPrompt, prompts.userPrompt);
+      const candidate = response?.ok ? normalizeIngredientTranslations(response.data, source) : null;
+      if (candidate) {
+        translated = candidate;
+        mode = 'ai';
+      }
+    } catch (error) {
+      warning = error?.message || 'AI çevirisi yanıt vermedi.';
+      console.warn('[ai-blog] malzeme AI çevirisi:', warning);
+    }
+  }
+
+  if (!translated && networkTranslationAllowed(options, options.env || process.env)) {
+    try {
+      const blocks = {};
+      for (const lang of TARGET_LANGS) {
+        const block = await machineTranslateText(source.join('\n'), lang, options);
+        const rows = String(block || '').split('\n').map(row => row.trim()).filter(Boolean);
+        if (rows.length !== source.length) continue;
+        const cleaned = rows.map(row => clean(row, 200));
+        if (cleaned.some(row => !row)) continue;
+        blocks[lang] = cleaned;
+      }
+      if (Object.keys(blocks).length === TARGET_LANGS.length) {
+        translated = blocks;
+        mode = 'mt';
+      }
+    } catch (error) {
+      warning = error?.message || 'Makine çevirisi yanıt vermedi.';
+      console.warn('[ai-blog] malzeme makine çevirisi:', warning);
+    }
+  }
+
+  if (!translated) {
+    translated = {};
+    for (const lang of TARGET_LANGS) {
+      translated[lang] = source.map(line => clean(pluralizeIngredientLine(localTranslateText(line, lang), lang), 200));
+    }
+    mode = 'local';
+  }
+
+  return {
+    ok: true,
+    mode,
+    provider: aiConfig?.provider || 'builtin',
+    model: aiConfig?.model,
+    warning,
+    count: source.length,
+    ingredients: translated
   };
 }
 

@@ -1,5 +1,5 @@
 import { isAdmin } from './_auth.js';
-import { completeBlogTranslations, createBlogDraftFromUrl, validateNewsUrl } from './_ai-blog.js';
+import { completeBlogTranslations, createBlogDraftFromUrl, translateIngredientLines, validateNewsUrl } from './_ai-blog.js';
 
 export function createAiBlogHandler(options = {}) {
   return async function handler(req, res) {
@@ -33,6 +33,17 @@ export function createAiBlogHandler(options = {}) {
       // Yayın kalite kapısı: ilk taslak kısa/kaynaksız değilse ikinci bir yazım turu istenir.
       qualityRetry: body.qualityRetry !== false
     };
+
+    if (body.mode === 'ingredients') {
+      try {
+        const translated = await translateIngredientLines(body.items || body.ingredients, aiOptions);
+        if (!translated.ok) return res.status(400).json({ error: translated.error });
+        return res.status(200).json(translated);
+      } catch (error) {
+        console.error('[ai-blog] malzeme çevirisi hatası:', error);
+        return res.status(500).json({ error: 'Malzeme çevirisi şu anda yanıt veremiyor.' });
+      }
+    }
 
     if (body.mode === 'translate') {
       try {
