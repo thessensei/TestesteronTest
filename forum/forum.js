@@ -5,6 +5,8 @@ import {
 } from './forum-core.js';
 
 const $ = id => document.getElementById(id);
+// Sekme başlığı: liste görünümünde SEO başlığı korunur, konu açılınca konu adı öne geçer.
+const BASE_TITLE = document.title;
 const requestedManage = new URLSearchParams(location.search).get('manage') === '1';
 const LANG_KEY = 'testotavan_language';
 const VIEW_KEY = 'testotavan_forum_view:';
@@ -38,10 +40,30 @@ const preview = (text, max = 140) => {
   const flat = String(text ?? '').replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1).trimEnd()}…` : flat;
 };
+const stamp = value => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = number => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+const dayStamp = value => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = number => String(number).padStart(2, '0');
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+};
 const timeTag = value => {
   const full = formatDateTime(value, lang);
   return `<time class="meta" datetime="${esc(value)}" title="${esc(full)}">${esc(relativeTime(value, lang))}</time>`;
 };
+
+/* Üst çubuk yüksekliği sabit değil (arama satırı alta inince değişiyor);
+   yapışkan kolon başlığını ve sağ rayı bu ölçüye göre hizala. */
+function syncHeadHeight() {
+  const head = document.querySelector('.site-head');
+  if (!head) return;
+  document.documentElement.style.setProperty('--head-h', `${Math.round(head.getBoundingClientRect().height)}px`);
+}
 
 function applyLanguage() {
   document.documentElement.lang = lang;
@@ -57,6 +79,7 @@ function applyLanguage() {
   $('show-register').textContent = t('register-submit');
   if ($('forum-search')) $('forum-search').placeholder = t('search');
   if (user) $('composer-as').textContent = `${t('postedAs')}: ${user.username}`;
+  if (current && listing.thread) document.title = `${listing.thread.title} · ${t('title')}`;
   renderFilters();
   renderStats();
 }
@@ -80,17 +103,39 @@ function renderStats() {
   $('rail-contributors').innerHTML = (stats.contributors || []).map(item => (
     `<li><span>${esc(item.author)}</span><span class="count">${formatCount(item.posts, lang)} ${esc(t('posts'))}</span></li>`
   )).join('') || `<li class="meta">${esc(t('empty'))}</li>`;
+
+  $('rail-forums').innerHTML = (stats.categories || []).map(item => (
+    `<li><a href="#" data-category="${esc(item.name)}"><span>${esc(catLabel(item.name))}</span><span class="count">${formatCount(item.threads, lang)}</span></a></li>`
+  )).join('') || `<li class="meta">${esc(t('empty'))}</li>`;
+
+  renderRecent();
+}
+
+/** "En Son İçerikler" paneli: DA'daki başlık + tarih listesinin karşılığı. */
+function renderRecent() {
+  const node = $('rail-recent');
+  if (!node) return;
+  const source = (stats.recent && stats.recent.length)
+    ? stats.recent
+    : listing.threads.slice(0, 6);
+  node.innerHTML = source.slice(0, 6).map(item => (
+    `<li><a href="/forum/t/${esc(item.id)}/" data-open="${esc(item.id)}">${esc(item.title)}</a><time datetime="${esc(item.created_at || '')}">${esc(stamp(item.created_at))}</time></li>`
+  )).join('') || `<li class="meta">${esc(t('empty'))}</li>`;
 }
 
 function renderFilters() {
   const counts = new Map((stats.categories || []).map(row => [row.name, row.threads]));
-  const chip = (value, label, count, active) => `<button type="button" class="chip${active ? ' on' : ''}" data-category="${esc(value)}" role="tab" aria-selected="${active ? 'true' : 'false'}">${esc(label)}<span class="count">${formatCount(count, lang)}</span></button>`;
+  const known = counts.size > 0;
+  // İstatistikler gelmeden sayaç gösterme: "0" yanıltıcı olur.
+  const chip = (value, label, count, active) => `<button type="button" class="chip${active ? ' on' : ''}" data-category="${esc(value)}" aria-pressed="${active ? 'true' : 'false'}">${esc(label)}${known ? `<span class="count">${formatCount(count, lang)}</span>` : ''}</button>`;
   const chips = [chip('', t('allCategories'), stats.threads || 0, !category)];
   for (const name of CATEGORIES) chips.push(chip(name, catLabel(name), counts.get(name) || 0, category === name));
   if (category || searchText) chips.push(`<button type="button" class="chip" data-clear>${esc(t('clearFilters'))}</button>`);
   $('category-chips').innerHTML = chips.join('');
-  document.querySelectorAll('#sort-tabs [data-sort]').forEach(button => {
-    button.setAttribute('aria-selected', button.dataset.sort === sort ? 'true' : 'false');
+  document.querySelectorAll('[data-sort]').forEach(button => {
+    const active = button.dataset.sort === sort;
+    if (button.getAttribute('role') === 'tab') button.setAttribute('aria-selected', active ? 'true' : 'false');
+    button.classList.toggle('on', active);
   });
 }
 
@@ -107,6 +152,7 @@ async function loadStats() {
 
 function renderAuth() {
   const signedIn = Boolean(user);
+  $('rail-new-topic').hidden = manage;
   $('auth-user').hidden = !signedIn;
   $('auth-guest').hidden = signedIn;
   $('auth-name').textContent = signedIn ? user.username : '';
@@ -252,37 +298,62 @@ function renderQuoteChip() {
 }
 
 function renderList() {
-  $('threads').innerHTML = listing.threads.map(item => {
+  $('threads').innerHTML = listing.threads.map((item, index) => {
+    const replies = Number(item.reply_count) || 0;
+    const views = Number(item.view_count) || 0;
     const badges = [
-      `<span class="badge">${esc(catLabel(item.category))}</span>`,
       item.pinned ? `<span class="badge pin">${icon('pin')}${esc(t('pinnedBadge'))}</span>` : '',
       item.locked ? `<span class="badge">${esc(t('lockedBadge'))}</span>` : '',
       !item.approved ? `<span class="badge waiting">${esc(t('waiting'))}</span>` : '',
       manage && item.pending_count ? `<span class="badge waiting">${formatCount(item.pending_count, lang)} ${esc(t('pending'))}</span>` : ''
     ].join('');
-    return `<article class="topic-row" data-thread="${esc(item.id)}">
-      <span class="avatar" aria-hidden="true">${esc(initials(item.author))}</span>
-      <div class="row-main">
-        <div class="badges">${badges}</div>
-        <h2><a class="topic" href="/forum/t/${esc(item.id)}/" data-open="${esc(item.id)}">${esc(item.title)}</a></h2>
-        <p class="row-excerpt">${esc(preview(item.body, 150))}</p>
-        <p class="row-meta"><span>${esc(item.author)}</span><span aria-hidden="true">·</span>${timeTag(item.created_at)}<span aria-hidden="true">·</span><span>${formatCount(item.reply_count, lang)} ${esc(t('replies'))}</span></p>
+    // "Son yazan" kolonu: onaylı son yanıtın yazarı ve zamanı (yoksa ilk mesaj).
+    const lastAuthor = item.last_reply_author || '';
+    const lastAt = item.last_reply_at || '';
+    // Yanıt yoksa konuyu açan kişi gösterilir (DA'daki "son mesaj" davranışı).
+    const last = lastAuthor
+      ? `<span class="last-author">${esc(lastAuthor)}</span><time datetime="${esc(lastAt)}">${esc(relativeTime(lastAt, lang))}</time>`
+      : `<span class="last-author" title="${esc(t('noLastReply'))}">${esc(item.author)}<span class="starter">· ${esc(t('topicOwner'))}</span></span><time datetime="${esc(item.created_at)}">${esc(relativeTime(item.created_at, lang))}</time>`;
+    return `<article class="topic-row" data-thread="${esc(item.id)}" role="listitem">
+      <span class="row-index">${offset + index + 1}</span>
+      <div class="row-topic">
+        <span class="avatar" aria-hidden="true">${esc(initials(item.author))}</span>
+        ${badges ? `<span class="row-tags">${badges}</span>` : ''}
+        <h2><a class="topic" href="/forum/t/${esc(item.id)}/" data-open="${esc(item.id)}" title="${esc(preview(item.body, 180))}">${esc(item.title)}</a></h2>
+        <span class="row-author">${esc(item.author)}</span>
       </div>
-      <dl class="row-stats">
-        <div><dt>${esc(t('replies'))}</dt><dd>${formatCount(item.reply_count, lang)}</dd></div>
-        <div><dt>${esc(t('views'))}</dt><dd>${formatCount(item.view_count, lang)}</dd></div>
-        <div><dt>${esc(t('like'))}</dt><dd>${formatCount(item.likes, lang)}</dd></div>
-      </dl>
+      <a class="row-forum" href="#" data-category="${esc(item.category)}" title="${esc(catLabel(item.category))}">${esc(catLabel(item.category))}</a>
+      <span class="row-num${replies ? '' : ' zero'}">${formatCount(replies, lang)}</span>
+      <span class="row-num${views ? '' : ' zero'}">${formatCount(views, lang)}</span>
+      <span class="row-when"><time datetime="${esc(item.created_at)}" title="${esc(stamp(item.created_at))}">${esc(dayStamp(item.created_at))}</time></span>
+      <span class="row-last">${last}</span>
+      <span class="row-mobile-meta">
+        <span>${esc(catLabel(item.category))}</span><span class="sep">·</span>
+        <span>${formatCount(replies, lang)} ${esc(t('colReplies'))}</span><span class="sep">·</span>
+        <span>${formatCount(views, lang)} ${esc(t('colViews'))}</span><span class="sep">·</span>
+        <span>${esc(relativeTime(item.created_at, lang))}</span>
+      </span>
       ${controls(item, 'thread')}
     </article>`;
   }).join('') || `<div class="gate"><p>${esc(category || searchText ? t('noResults') : t('empty'))}</p><div class="toolbar"><button type="button" class="secondary" data-clear>${esc(t('clearFilters'))}</button></div></div>`;
   $('previous').disabled = offset === 0;
   $('next').disabled = listing.threads.length < PAGE_SIZE;
   $('page').textContent = `${t('page')} ${offset / PAGE_SIZE + 1}`;
+  renderRecent();
 }
 
 function renderThread() {
   const thread = listing.thread;
+  // Konu başlığı: DA'daki konu sayfası üst şeridinin karşılığı.
+  $('thread-head').innerHTML = `<div class="thread-kicker">
+      <a class="row-forum" href="#" data-category="${esc(thread.category)}">${esc(catLabel(thread.category))}</a>
+      <span aria-hidden="true">·</span><span>${formatCount(thread.reply_count, lang)} ${esc(t('colReplies'))}</span>
+      <span aria-hidden="true">·</span><span>${formatCount(thread.view_count, lang)} ${esc(t('colViews'))}</span>
+      ${thread.locked ? `<span class="badge">${esc(t('lockedBadge'))}</span>` : ''}
+    </div>
+    <h1>${esc(thread.title)}</h1>
+    <p class="meta">${esc(thread.author)} · ${timeTag(thread.created_at)}</p>`;
+  document.title = `${thread.title} · ${t('title')}`;
   $('conversation').innerHTML = postHtml(thread, 'thread')
     + `<p class="meta" style="margin:0 0 6px"><a href="/forum/t/${esc(thread.id)}/" style="color:var(--accent);text-decoration:none">${esc(t('openPage'))} →</a></p>`
     + `<h2 class="replies-heading">${esc(t('replyHeading'))}</h2>`
@@ -339,6 +410,7 @@ const refreshView = () => (current ? open(current) : loadList());
 function showListing() {
   current = null;
   editing = null;
+  document.title = BASE_TITLE;
   $('detail').hidden = true;
   $('listing').hidden = false;
   return loadList();
@@ -489,6 +561,18 @@ function handleModeration(button) {
 const run = task => Promise.resolve().then(task).catch(error => status(error.message));
 
 $('refresh').onclick = () => run(loadList);
+// Sağ raydaki "Yeni Konu Aç": giriş yoksa kayıt panelini açar, varsa besteciye gider.
+$('rail-new-topic').onclick = event => {
+  event.preventDefault();
+  if (!user) { showAuth('register'); status(t('authRequired')); return; }
+  const reveal = () => {
+    $('new-thread').hidden = manage;
+    $('new-thread').scrollIntoView?.({ behavior: motion(), block: 'center' });
+    $('new-thread').querySelector('input[name=title]')?.focus();
+  };
+  if (current) { updateHash(''); run(async () => { await showListing(); reveal(); }); }
+  else reveal();
+};
 $('previous').onclick = () => { offset = Math.max(0, offset - PAGE_SIZE); run(loadList); };
 $('next').onclick = () => { offset += PAGE_SIZE; run(loadList); };
 $('reply-prev').onclick = () => { replyOffset = Math.max(0, replyOffset - REPLY_PAGE); run(() => open(current)); };
@@ -543,6 +627,7 @@ document.addEventListener('click', event => {
   }
   const categoryButton = event.target.closest('[data-category]');
   if (categoryButton) {
+    event.preventDefault();
     category = categoryButton.dataset.category || '';
     offset = 0;
     renderFilters();
@@ -644,6 +729,8 @@ for (const id of ['new-thread', 'reply-form']) $(id).onsubmit = event => {
 
 run(async () => {
   applyLanguage();
+  syncHeadHeight();
+  window.addEventListener('resize', syncHeadHeight, { passive: true });
   renderQuoteChip();
   try { await refreshUser(); } catch (error) { status(error.message); }
   if (requestedManage) {

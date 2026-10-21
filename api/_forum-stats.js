@@ -1,8 +1,8 @@
 /*
  * /api/forum-stats — Meydan'ın canlı nabzı.
  *
- * Forum sayfasındaki istatistik şeridi, kategori dağılımı, öne çıkan konular ve
- * en aktif yazarlar tek istekte gelir. Sonuç 60 saniye CDN'de tutulur; her sayfa
+ * Forum sayfasındaki istatistik şeridi, kategori dağılımı, öne çıkan konular,
+ * en aktif yazarlar ve "En Son İçerikler" paneli tek istekte gelir. Sonuç 60 saniye CDN'de tutulur; her sayfa
  * yenilemesinde veritabanına yeni sorgu gitmez.
  */
 
@@ -12,7 +12,7 @@ import { prepareForum } from './_forum.js';
 export function emptyStats() {
   return {
     threads: 0, replies: 0, members: 0, views: 0,
-    categories: [], trending: [], contributors: [], latest: null
+    categories: [], trending: [], contributors: [], latest: null, recent: []
   };
 }
 
@@ -27,6 +27,15 @@ export function shapeStats({ totals = {}, categories = [], trending = [], contri
   stats.trending = trending.map(row => ({ id: row.id, title: row.title, views: Number(row.view_count) || 0 }));
   stats.contributors = contributors.map(row => ({ author: row.author, posts: Number(row.posts) || 0 }));
   stats.latest = latest.length ? { id: latest[0].id, title: latest[0].title } : null;
+  // "En Son İçerikler" paneli için son konular (tarih ve yazarıyla birlikte).
+  stats.recent = latest.slice(0, 6).map(row => ({
+    id: row.id,
+    title: row.title,
+    category: row.category || '',
+    author: row.author || '',
+    replies: Number(row.replies) || 0,
+    created_at: row.created_at || ''
+  }));
   return stats;
 }
 
@@ -43,7 +52,9 @@ export async function collectForumStats(sql) {
       SELECT author FROM forum_threads WHERE approved=TRUE
       UNION ALL SELECT author FROM forum_replies WHERE approved=TRUE
     ) SELECT author, COUNT(*)::int AS posts FROM authors GROUP BY author ORDER BY posts DESC LIMIT 5`;
-  const latest = await sql`SELECT id, title FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC LIMIT 1`;
+  const latest = await sql`SELECT t.id, t.title, t.category, t.author, t.created_at,
+    (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=TRUE) AS replies
+    FROM forum_threads t WHERE t.approved=TRUE ORDER BY t.created_at DESC, t.id LIMIT 6`;
   return shapeStats({ totals, categories, trending, contributors, latest });
 }
 
