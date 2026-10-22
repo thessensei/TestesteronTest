@@ -15,6 +15,9 @@ import {
   organizationLd, renderNotFound, renderPage, resolveSiteUrl, sectionBase, websiteLd
 } from './_seo.js';
 import { prepareForum } from './_forum.js';
+import { LANGS, SOURCE_LANG } from './_langs.js';
+
+const LANG_CODES = new Set(LANGS);
 
 const T = {
   tr: {
@@ -44,7 +47,13 @@ const T = {
     noReplies: 'まだ返信はありません。最初の返信を書きましょう。', related: '関連トピック', pinned: '固定',
     author: 'トピック作成者', member: 'コミュニティメンバー', moderation: 'トピックは管理者の承認後に公開されます。個人の健康データを共有しないでください。医学的助言ではありません。',
     share: 'リンクをコピー', copied: 'コピーしました', newReply: '返信', quote: '引用'
-  }
+  },
+  fr: { home: 'Accueil', forum: 'Forum', back: '← Tous les sujets', replies: 'réponses', views: 'vues', likes: 'j’aime', join: 'Rejoindre la discussion', replyCta: 'Écrire une réponse', locked: 'Ce sujet est fermé aux nouvelles réponses.', noReplies: 'Pas encore de réponse. Soyez la première personne à répondre.', related: 'Sujets similaires', pinned: 'Épinglé', author: 'Auteur du sujet', member: 'Membre de la communauté', moderation: 'Les sujets sont publiés après validation par l’administrateur. Ne partagez pas de données de santé personnelles ; ceci n’est pas un avis médical.', share: 'Copier le lien', copied: 'Copié', newReply: 'Répondre', quote: 'Citer' },
+  es: { home: 'Inicio', forum: 'Foro', back: '← Todos los temas', replies: 'respuestas', views: 'visitas', likes: 'me gusta', join: 'Únete a la conversación', replyCta: 'Escribir una respuesta', locked: 'Este tema está cerrado a nuevas respuestas.', noReplies: 'Aún no hay respuestas. Sé el primero en responder.', related: 'Temas similares', pinned: 'Fijado', author: 'Autor del tema', member: 'Miembro de la comunidad', moderation: 'Los temas se publican tras la aprobación del administrador. No compartas datos de salud personales; esto no es consejo médico.', share: 'Copiar enlace', copied: 'Copiado', newReply: 'Responder', quote: 'Citar' },
+  bg: { home: 'Начало', forum: 'Форум', back: '← Всички теми', replies: 'отговора', views: 'прегледа', likes: 'харесвания', join: 'Включете се в разговора', replyCta: 'Напишете отговор', locked: 'Тази тема е затворена за нови отговори.', noReplies: 'Все още няма отговори. Бъдете първи.', related: 'Подобни теми', pinned: 'Закачена', author: 'Автор на темата', member: 'Член на общността', moderation: 'Темите се публикуват след одобрение от администратор. Не споделяйте лични здравни данни; това не е медицински съвет.', share: 'Копирай връзката', copied: 'Копирано', newReply: 'Отговор', quote: 'Цитат' },
+  ru: { home: 'Главная', forum: 'Форум', back: '← Все темы', replies: 'ответов', views: 'просмотров', likes: 'лайков', join: 'Присоединиться к обсуждению', replyCta: 'Написать ответ', locked: 'Тема закрыта для новых ответов.', noReplies: 'Ответов пока нет. Будьте первым.', related: 'Похожие темы', pinned: 'Закреплено', author: 'Автор темы', member: 'Участник сообщества', moderation: 'Темы публикуются после одобрения администратором. Не публикуйте личные медицинские данные; это не медицинский совет.', share: 'Копировать ссылку', copied: 'Скопировано', newReply: 'Ответить', quote: 'Цитировать' },
+  hi: { home: 'होम', forum: 'फ़ोरम', back: '← सभी विषय', replies: 'उत्तर', views: 'व्यूज़', likes: 'पसंद', join: 'चर्चा में शामिल हों', replyCta: 'उत्तर लिखें', locked: 'यह विषय नए उत्तरों के लिए बंद है।', noReplies: 'अभी कोई उत्तर नहीं। पहला उत्तर आप दें।', related: 'समान विषय', pinned: 'पिन किया गया', author: 'विषय लेखक', member: 'समुदाय सदस्य', moderation: 'विषय एडमिन स्वीकृति के बाद प्रकाशित होते हैं। व्यक्तिगत स्वास्थ्य डेटा साझा न करें; यह चिकित्सकीय सलाह नहीं है।', share: 'लिंक कॉपी करें', copied: 'कॉपी हो गया', newReply: 'उत्तर', quote: 'उद्धृत करें' },
+  zh: { home: '首页', forum: '论坛', back: '← 全部主题', replies: '回复', views: '浏览', likes: '点赞', join: '加入讨论', replyCta: '撰写回复', locked: '该主题已关闭新回复。', noReplies: '暂无回复，来写第一条吧。', related: '相似主题', pinned: '置顶', author: '主题作者', member: '社区成员', moderation: '主题经管理员审核后发布。请勿分享个人健康数据；此处内容不构成医疗建议。', share: '复制链接', copied: '已复制', newReply: '回复', quote: '引用' }
 };
 
 const INITIALS = name => {
@@ -60,20 +69,32 @@ function rankLabel(posts, lang) {
     tr: { veteran: 'Kıdemli üye', active: 'Aktif üye', member: 'Üye', new: 'Yeni üye' },
     en: { veteran: 'Veteran', active: 'Active member', member: 'Member', new: 'Newcomer' },
     de: { veteran: 'Veteran', active: 'Aktives Mitglied', member: 'Mitglied', new: 'Neu dabei' },
-    ja: { veteran: 'ベテラン', active: 'アクティブ', member: 'メンバー', new: '新規' }
+    ja: { veteran: 'ベテラン', active: 'アクティブ', member: 'メンバー', new: '新規' },
+    fr: { veteran: 'Membre vétéran', active: 'Membre actif', member: 'Membre', new: 'Nouveau' },
+    es: { veteran: 'Veterano', active: 'Miembro activo', member: 'Miembro', new: 'Nuevo' },
+    bg: { veteran: 'Ветеран', active: 'Активен член', member: 'Член', new: 'Нов' },
+    ru: { veteran: 'Ветеран', active: 'Активный участник', member: 'Участник', new: 'Новичок' },
+    hi: { veteran: 'अनुभवी सदस्य', active: 'सक्रिय सदस्य', member: 'सदस्य', new: 'नए सदस्य' },
+    zh: { veteran: '资深成员', active: '活跃成员', member: '成员', new: '新成员' },
   }[lang] || {})[key] || key;
 }
 
 function normalizeLang(value) {
   const lang = oneLine(value, 4).toLowerCase();
-  return ['tr', 'en', 'de', 'ja'].includes(lang) ? lang : 'tr';
+  return LANG_CODES.has(lang) ? lang : SOURCE_LANG;
 }
 
 const categoryLabel = (value, lang) => ({
   tr: { Genel: 'Genel', Antrenman: 'Antrenman', Beslenme: 'Beslenme', Deneyimler: 'Deneyimler' },
   en: { Genel: 'General', Antrenman: 'Training', Beslenme: 'Nutrition', Deneyimler: 'Experiences' },
   de: { Genel: 'Allgemein', Antrenman: 'Training', Beslenme: 'Ernährung', Deneyimler: 'Erfahrungen' },
-  ja: { Genel: '一般', Antrenman: 'トレーニング', Beslenme: '栄養', Deneyimler: '体験談' }
+  ja: { Genel: '一般', Antrenman: 'トレーニング', Beslenme: '栄養', Deneyimler: '体験談' },
+  fr: { Genel: 'Général', Antrenman: 'Entraînement', Beslenme: 'Nutrition', Deneyimler: 'Expériences' },
+  es: { Genel: 'General', Antrenman: 'Entrenamiento', Beslenme: 'Nutrición', Deneyimler: 'Experiencias' },
+  bg: { Genel: 'Общи', Antrenman: 'Тренировки', Beslenme: 'Хранене', Deneyimler: 'Опит' },
+  ru: { Genel: 'Общее', Antrenman: 'Тренировки', Beslenme: 'Питание', Deneyimler: 'Опыт' },
+  hi: { Genel: 'सामान्य', Antrenman: 'ट्रेनिंग', Beslenme: 'पोषण', Deneyimler: 'अनुभव' },
+  zh: { Genel: '综合', Antrenman: '训练', Beslenme: '营养', Deneyimler: '经验分享' },
 }[lang] || {})[value] || value;
 
 /** Konu sayfasının tüm HTML'i (saf fonksiyon — testler doğrudan çağırır). */

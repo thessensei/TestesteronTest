@@ -46,13 +46,17 @@ We offer natural, safe, and alternative solutions to address the decline in test
     hreflang ve `BlogPosting`/`Recipe`/`FAQPage` JSON-LD. Arşiv `/blog/`, RSS `/blog/rss.xml`.
     Yayın gövdesindeki kaynakça/atıf satırları **hem üretimde hem kayıtta** ayıklanır; yazı kendi başına ayakta durur
   - **Ayrı keşif kanalı:** `/sitemap.xml` yazıları, tarifleri ve onaylı forum konularını tek haritada toplar
-- **Dört dilde içerik (TR/EN/DE/JA)** — admin panelinde başlık, özet, içerik ve kategorinin yanı sıra
+- **On dilde tam arayüz (TR/EN/DE/JA/FR/ES/BG/RU/HI/ZH)** — site kabuğu, blog/forum sayfaları ve
+  yönetim paneli aynı dil listesini `api/_langs.js` üzerinden okur. Kiril (bg/ru), Devanagari (hi) ve
+  CJK (zh/ja) için yazı tipi yedekleri tanımlıdır. Yeni dillerde eksik metin **Türkçeye değil İngilizceye**
+  düşer ve ilgili dil `incomplete` olarak işaretlenir; hiçbir dilde Türkçe metin gösterilmez
+- **On dilde içerik (TR + 9 hedef dil)** — admin panelinde başlık, özet, içerik ve kategorinin yanı sıra
   **süre ve malzeme listesi** de her dil için ayrı girilir; süre alanı boş bırakılırsa Türkçeden otomatik
-  çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分`), malzeme çevirisi yoksa Türkçesi gösterilir
+  çevrilir (`20 dk` → `20 min` / `20 Min.` / `20分` / `20 мин` / `20 分钟`), malzeme çevirisi yoksa İngilizcesi
 - **Admin paneli** (`/admin`) — şifreli giriş, içerik CRUD, görsel yükleme
 - **Düzenleme / yayınlama ayrımı** — bir içeriği düzenlerken formun tek düğmesi **Kaydet**'tir ve “Herkese açık yayınla” ekranda görünmez; kayıttan sonra form düzenleme modunda kalır. **＋ Yeni içerik** düğmesi temiz form açar, yayınlama düğmesi yalnızca o modda görünür
 - **Otomatik malzeme** — yemek tariflerinde “İçerik / hazırlanış” metnindeki malzeme listesi kendiliğinden çıkarılır; Türkçe liste değişince boş EN/DE/JA listeleri otomatik doldurulur. Elle yazılan dile dokunulmaz; `⤓ Metinden çıkar` ve `⇄ Boş dilleri doldur` düğmeleri aynı işi isteğe bağlı çalıştırır
-- **4 Dilli AI İçerik Stüdyosu** — admin paneline girilen haber/makale/tarif bağlantısından önce güvenilir Türkçe ana taslağı çıkarır; EN, DE ve JA çevirilerini tek karma yanıt yerine **üç bağımsız AI turunda** üretir. Her dil; hedef dil, eksiksiz başlık/özet/gövde, sayı ve URL koruması, paragraf/liste yapısı, süre, malzeme sayısı-sırası ve miktarlar açısından kalite kapısından geçer. Başarısız çeviri sorun listesiyle otomatik yeniden denenir; sonuçlar panelde dil başına kalite puanı ve durum kartıyla gösterilir. Gemini, OpenAI, Groq, Claude, Kimi ve DeepSeek desteklenir; AI yoksa yedek makine/yerel çeviri zinciri kullanılır (`ENABLE_MACHINE_TRANSLATION=0` ile ağ çevirisi kapatılabilir)
+- **10 Dilli AI İçerik Stüdyosu** — admin paneline girilen haber/makale/tarif bağlantısından önce güvenilir Türkçe ana taslağı çıkarır; EN, DE ve JA çevirilerini tek karma yanıt yerine **üç bağımsız AI turunda** üretir. Her dil; hedef dil, eksiksiz başlık/özet/gövde, sayı ve URL koruması, paragraf/liste yapısı, süre, malzeme sayısı-sırası ve miktarlar açısından kalite kapısından geçer. Başarısız çeviri sorun listesiyle otomatik yeniden denenir; sonuçlar panelde dil başına kalite puanı ve durum kartıyla gösterilir. Gemini, OpenAI, Groq, Claude, Kimi ve DeepSeek desteklenir; AI yoksa yedek makine/yerel çeviri zinciri kullanılır (`ENABLE_MACHINE_TRANSLATION=0` ile ağ çevirisi kapatılabilir)
 - **Pinterest Rich Pin köprüsü** — blog yayınlandığı anda (veritabanı commit'i sonrası) başlık, özet,
   canlı bağlantı ve kapak görseli Pinterest API v5'e kurumsal JSON gövdesi olarak gönderilir
   (panelden kapatılabilir; ayrıntı: [Pinterest köprüsü](#-pinterest-rich-pin-köprüsü))
@@ -321,6 +325,43 @@ Davranış kuralları:
 > sonucu panele bildirilir. En kötü durumda yayın yanıtı ~6 sn gecikir (2 deneme × 3 sn) ve
 > pin hatası yayını hiçbir koşulda düşürmez.
 
+## 🌍 Diller (10 dil)
+
+Tek doğruluk kaynağı `api/_langs.js`:
+
+| Kod | Etiket | Dil | Locale |
+| --- | --- | --- | --- |
+| `tr` | TR | Türkçe (kaynak) | `tr_TR` |
+| `en` | EN | English | `en_US` |
+| `de` | DE | Deutsch | `de_DE` |
+| `ja` | JA | 日本語 | `ja_JP` |
+| `fr` | FR | Français | `fr_FR` |
+| `es` | ES | Español | `es_ES` |
+| `bg` | BG | Български | `bg_BG` |
+| `ru` | RU | Русский | `ru_RU` |
+| `hi` | HI | हिन्दी | `hi_IN` |
+| `zh` | ZH | 中文 | `zh_CN` |
+
+Kurallar:
+
+- **Hiçbir dilde Türkçe metin gösterilmez.** Seçili dilde çeviri yoksa içerik İngilizceye, o da yoksa
+  kayıt o dilde hiç gösterilmez. Sunucu `ensureCompleteTranslations` çıktısında eksik dilleri
+  `report[lang] = 'incomplete'` olarak işaretler.
+- **SEO**: her çevrili dil için `hreflang`, ayrıca `x-default`; `og:locale`, `<html lang>` ve
+  `sitemap.xml` içindeki `xhtml:link` alternatifleri aynı listeden üretilir.
+- **Yazı tipi**: `bg/ru` (Kiril), `hi` (Devanagari), `zh` (Han) ve `ja` için gövde/forum CSS'inde
+  sistem yazı tipi yedekleri vardır.
+- **Eski içerikler**: panelde **⟳ Eksik dilleri çevir** düğmesi yayındaki tüm yazı/tarifleri tarar,
+  eksik dilleri AI ile tamamlar ve kaydeder. Aynı iş sunucudan:
+
+  ```bash
+  DATABASE_URL=postgres://... AI_PROVIDER=gemini AI_API_KEY=... npm run backfill:languages
+  npm run backfill:languages -- --dry-run   # yazmadan rapor
+  ```
+
+  AI anahtarı yoksa araç durur; İngilizce metni çeviri gibi yazmak için açıkça
+  `--allow-english-fallback` gerekir (bu durumda kayıtlar `incomplete` kalır).
+
 ## 📡 API Overview
 
 | Endpoint | Metod | Açıklama |
@@ -329,7 +370,7 @@ Davranış kuralları:
 | `/api/session` | `GET` | Oturumun doğrulanmış mı olduğunu döner |
 | `/api/stats` | `GET` / `POST` | Sayfa görüntüleme sayacını okur / artırır |
 | `/api/content` | `GET` / `POST` / … | Blog ve tarif içerikleri (yazma işlemleri admin yetkisi ister); `POST` yanıtı `pinterest` alanında pin sonucunu döner |
-| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip 4 dilde (TR/EN/DE/JA) blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir, `mode: "ingredients"` yalnızca malzeme satırlarını çevirir (admin yetkisi ister) |
+| `/api/ai-blog` | `POST` | Haber bağlantısından (URL) veri çekip TR + 9 hedef dilde blog taslağı üretir; `mode: "translate"` ile mevcut Türkçe alanları eksiksiz çevirir, `mode: "ingredients"` yalnızca malzeme satırlarını çevirir (admin yetkisi ister) |
 | `/api/forum` | `GET` / `POST` / `PATCH` / `DELETE` | Topluluk forumu. Okuma herkese açık; konu, yanıt, alıntı, beğeni ve 30 dakikalık düzenleme forum hesabı ister. Moderasyon (onay, kilit, sabitleme, silme) admin oturumu ister. Detay görüntülemesi `?view=1` ile sayılır |
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |

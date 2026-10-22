@@ -1,5 +1,5 @@
 (() => {
-    const languages = ['tr', 'en', 'de', 'ja'];
+    const languages = ['tr', 'en', 'de', 'ja', 'fr', 'es', 'bg', 'ru', 'hi', 'zh'];
     const get = id => document.getElementById(id);
     const form = get('about-editor-form');
     const status = get('about-editor-status');

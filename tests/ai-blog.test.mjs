@@ -31,6 +31,7 @@ import {
   targetLanguageLooksCorrect
 } from '../api/_translate.js';
 import { createAiBlogHandler } from '../api/ai-blog.js';
+import { TARGET_LANGS } from '../api/_langs.js';
 import {
   createSessionCookie,
   safeUsernameMatch,
@@ -488,6 +489,42 @@ test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', as
       title: '生姜茶は朝の習慣に合う',
       summary: '生姜茶は朝の習慣に取り入れると巡りを支えるとされています。',
       body: '朝の生姜茶は巡りを支え、一日をより安定して始めやすくします。専門家は食事と一緒に摂ることを勧めています。\n\nこれは一般的な情報であり、医療アドバイスではありません。'
+    },
+    fr: {
+      category: 'Santé hormonale',
+      title: 'Le thé au gingembre dans la routine du matin',
+      summary: 'Le thé au gingembre peut soutenir la circulation dans le cadre d une routine matinale.',
+      body: 'Le thé au gingembre le matin peut soutenir la circulation et aider à commencer la journée plus stablement. Les experts conseillent de le prendre avec un repas.\n\nCeci est une information générale et non un avis médical.'
+    },
+    es: {
+      category: 'Salud hormonal',
+      title: 'El té de jengibre en la rutina de la mañana',
+      summary: 'El té de jengibre puede apoyar la circulación dentro de una rutina matinal.',
+      body: 'El té de jengibre por la mañana puede apoyar la circulación y ayudar a empezar el día con más estabilidad. Los expertos aconsejan tomarlo con una comida.\n\nEsta es información general y no un consejo médico.'
+    },
+    bg: {
+      category: 'Хормонално здраве',
+      title: 'Чаят от джинджифил в сутрешната рутина',
+      summary: 'Чаят от джинджифил може да подпомогне кръвообращението като част от сутрешната рутина.',
+      body: 'Чаят от джинджифил сутрин може да подпомогне кръвообращението и да помогне денят да започне по-стабилно. Специалистите го препоръчват заедно с хранене.\n\nТова е обща информация, а не медицински съвет.'
+    },
+    ru: {
+      category: 'Здоровье гормонов',
+      title: 'Имбирный чай в утренней рутине',
+      summary: 'Имбирный чай может поддерживать кровообращение в рамках утренней рутины.',
+      body: 'Имбирный чай утром может поддерживать кровообращение и помогать начинать день стабильнее. Специалисты советуют пить его вместе с едой.\n\nЭто общая информация, а не медицинский совет.'
+    },
+    hi: {
+      category: 'हार्मोन स्वास्थ्य',
+      title: 'सुबह की दिनचर्या में अदरक की चाय',
+      summary: 'अदरक की चाय सुबह की दिनचर्या में रक्त संचार को सहारा दे सकती है।',
+      body: 'सुबह अदरक की चाय रक्त संचार को सहारा देती है और दिन को अधिक स्थिरता से शुरू करने में मदद करती है। विशेषज्ञ इसे भोजन के साथ लेने की सलाह देते हैं।\n\nयह सामान्य जानकारी है, चिकित्सकीय सलाह नहीं।'
+    },
+    zh: {
+      category: '激素健康',
+      title: '把姜茶纳入早晨习惯',
+      summary: '作为早晨习惯的一部分，姜茶有助于支持血液循环。',
+      body: '早晨喝姜茶有助于支持血液循环，并让一天更平稳地开始。专家建议与餐食一起饮用。\n\n这是一般信息，不是医疗建议。'
     }
   };
   let translationCalls = 0;
@@ -505,10 +542,8 @@ test('kopyalanmış AI çevirileri ayrı tam çeviri turuyla değiştirilir', as
   });
   assert.equal(result.ok, true);
   assert.equal(result.mode, 'ai');
-  assert.equal(translationCalls, 3, 'her hedef dil doğruluk için bağımsız AI turunda çevrilmeli');
-  assert.equal(result.translation.en, 'ai');
-  assert.equal(result.translation.de, 'ai');
-  assert.equal(result.translation.ja, 'ai');
+  assert.equal(translationCalls, TARGET_LANGS.length, 'her hedef dil doğruluk için bağımsız AI turunda çevrilmeli');
+  for (const lang of TARGET_LANGS) assert.equal(result.translation[lang], 'ai', `${lang} AI turuyla çevrilmeli`);
   assert.equal(result.item.translations.en.title, translated.en.title);
   assert.equal(result.item.translations.de.body, translated.de.body);
   assert.match(result.item.translations.ja.body, /生姜茶/);
@@ -525,7 +560,13 @@ test('zorunlu yeniden çeviri İngilizce/Almanca metni ve tarif malzemelerini AI
   const translated = {
     en: { category: 'High Protein', title: 'Chicken and bulgur bowl', summary: 'A quick meal made with chicken, bulgur and yogurt.', body: 'Cook the bulgur. Cook the chicken and serve it with yogurt.', time: '40 min', ingredients: ['150 g chicken breast'] },
     de: { category: 'Proteinreich', title: 'Bulgur-Bowl mit Hähnchen', summary: 'Ein schnelles Gericht mit Hähnchen, Bulgur und Joghurt.', body: 'Den Bulgur kochen. Das Hähnchen garen und mit Joghurt servieren.', time: '40 Min.', ingredients: ['150 g Hähnchenbrust'] },
-    ja: { category: '高たんぱく', title: '鶏肉とブルグルのボウル', summary: '鶏肉、ブルグル、ヨーグルトを使った簡単な食事です。', body: 'ブルグルをゆでます。鶏肉を調理し、ヨーグルトを添えて出します。', time: '40分', ingredients: ['鶏むね肉 150 g'] }
+    ja: { category: '高たんぱく', title: '鶏肉とブルグルのボウル', summary: '鶏肉、ブルグル、ヨーグルトを使った簡単な食事です。', body: 'ブルグルをゆでます。鶏肉を調理し、ヨーグルトを添えて出します。', time: '40分', ingredients: ['鶏むね肉 150 g'] },
+    fr: { category: 'Riche en protéines', title: 'Bol de poulet et boulgour', summary: 'Un repas rapide au poulet, au boulgour et au yaourt.', body: 'Cuire le boulgour. Cuire le poulet et servir avec du yaourt.', time: '40 min', ingredients: ['150 g de blanc de poulet'] },
+    es: { category: 'Alto en proteínas', title: 'Bol de pollo y bulgur', summary: 'Una comida rápida con pollo, bulgur y yogur.', body: 'Cocer el bulgur. Cocinar el pollo y servir con yogur.', time: '40 min', ingredients: ['150 g de pechuga de pollo'] },
+    bg: { category: 'Високопротеинова', title: 'Купа с пиле и булгур', summary: 'Бързо ястие с пиле, булгур и кисело мляко.', body: 'Сварете булгура. Изпечете пилето и сервирайте с кисело мляко.', time: '40 мин', ingredients: ['150 г пилешки гърди'] },
+    ru: { category: 'Высокобелковая', title: 'Боул с курицей и булгуром', summary: 'Быстрое блюдо с курицей, булгуром и йогуртом.', body: 'Отварите булгур. Приготовьте курицу и подавайте с йогуртом.', time: '40 мин', ingredients: ['150 г куриной грудки'] },
+    hi: { category: 'उच्च प्रोटीन', title: 'चिकन और बल्गुर बाउल', summary: 'चिकन, बल्गुर और दही से बना एक तेज़ भोजन।', body: 'बल्गुर उबालें। चिकन पकाएँ और दही के साथ परोसें।', time: '40 मिनट', ingredients: ['150 ग्राम चिकन ब्रेस्ट'] },
+    zh: { category: '高蛋白', title: '鸡肉与碾麦碗', summary: '用鸡肉、碾麦和酸奶制作的快捷餐食。', body: '煮好碾麦。烹制鸡肉并配酸奶食用。', time: '40 分钟', ingredients: ['鸡胸肉 150 克'] }
   };
   let calls = 0;
   let userPrompt = '';
@@ -538,10 +579,9 @@ test('zorunlu yeniden çeviri İngilizce/Almanca metni ve tarif malzemelerini AI
       return { ok: true, data: translated };
     }
   });
-  assert.equal(calls, 3, 'üç hedef dil birbirinden bağımsız istenmeli');
+  assert.equal(calls, TARGET_LANGS.length, 'her hedef dil birbirinden bağımsız istenmeli');
   assert.match(userPrompt, /150 g tavuk göğsü/);
-  assert.equal(result.report.en, 'ai');
-  assert.equal(result.report.de, 'ai');
+  for (const lang of TARGET_LANGS) assert.equal(result.report[lang], 'ai', `${lang} AI ile çevrilmeli`);
   assert.equal(result.item.translations.en.ingredients[0], '150 g chicken breast');
   assert.equal(result.item.translations.de.title, translated.de.title);
 });
@@ -592,18 +632,45 @@ test('kalite kontrolünden geçmeyen AI çevirisi sorun listesiyle yeniden denen
     body: 'İlk bölümde 120 katılımcı anlatılır.\n\nİkinci bölümde 8 saat uyku değerlendirilir.',
     time: '5 dk', ingredients: [], translations: {}
   };
-  const valid = {
-    en: { category: 'Hormone Health', title: 'Sleep study', summary: 'The study examines 8 hours of sleep.', body: 'The first section describes 120 participants.\n\nThe second section evaluates 8 hours of sleep.', time: '5 min', ingredients: [] },
-    de: { category: 'Hormongesundheit', title: 'Schlafstudie', summary: 'Die Studie untersucht 8 Stunden Schlaf.', body: 'Der erste Abschnitt beschreibt 120 Teilnehmende.\n\nDer zweite Abschnitt bewertet 8 Stunden Schlaf.', time: '5 Min.', ingredients: [] },
-    ja: { category: 'ホルモン健康', title: '睡眠研究', summary: 'この研究では8時間の睡眠を調べます。', body: '最初の節では120人の参加者について説明します。\n\n次の節では8時間の睡眠を評価します。', time: '5分', ingredients: [] }
+  const body = {
+    en: 'The first section describes 120 participants.\n\nThe second section evaluates 8 hours of sleep.',
+    de: 'Der erste Abschnitt beschreibt 120 Teilnehmende.\n\nDer zweite Abschnitt bewertet 8 Stunden Schlaf.',
+    ja: '最初の節では120人の参加者について説明します。\n\n次の節では8時間の睡眠を評価します。',
+    fr: 'La première section décrit 120 participants.\n\nLa seconde section évalue 8 heures de sommeil.',
+    es: 'La primera sección describe 120 participantes.\n\nLa segunda sección evalúa 8 horas de sueño.',
+    bg: 'Първият раздел описва 120 участници.\n\nВторият раздел оценява 8 часа сън.',
+    ru: 'Первый раздел описывает 120 участников.\n\nВторой раздел оценивает 8 часов сна.',
+    hi: 'पहला भाग 120 प्रतिभागियों का वर्णन करता है।\n\nदूसरा भाग 8 घंटे की नींद का मूल्यांकन करता है।',
+    zh: '第一部分介绍 120 名参与者。\n\n第二部分评估 8 小时睡眠。'
   };
-  const attempts = { en: 0, de: 0, ja: 0 };
+  const summary = {
+    en: 'The study examines 8 hours of sleep.', de: 'Die Studie untersucht 8 Stunden Schlaf.',
+    ja: 'この研究では8時間の睡眠を調べます。', fr: 'L étude examine 8 heures de sommeil.',
+    es: 'El estudio examina 8 horas de sueño.', bg: 'Проучването изследва 8 часа сън.',
+    ru: 'Исследование изучает 8 часов сна.', hi: 'अध्ययन 8 घंटे की नींद की जाँच करता है।',
+    zh: '研究考察 8 小时睡眠。'
+  };
+  const titles = {
+    en: 'Sleep study', de: 'Schlafstudie', ja: '睡眠研究', fr: 'Étude sur le sommeil',
+    es: 'Estudio del sueño', bg: 'Изследване на съня', ru: 'Исследование сна',
+    hi: 'नींद अध्ययन', zh: '睡眠研究'
+  };
+  const categories = {
+    en: 'Hormone Health', de: 'Hormongesundheit', ja: 'ホルモン健康', fr: 'Santé hormonale',
+    es: 'Salud hormonal', bg: 'Хормонално здраве', ru: 'Здоровье гормонов',
+    hi: 'हार्मोन स्वास्थ्य', zh: '激素健康'
+  };
+  const valid = Object.fromEntries(TARGET_LANGS.map(lang => [lang, {
+    category: categories[lang], title: titles[lang], summary: summary[lang], body: body[lang],
+    time: '5 min', ingredients: []
+  }]));
+  const attempts = Object.fromEntries(TARGET_LANGS.map(lang => [lang, 0]));
   const seenSystems = [];
   const result = await ensureCompleteTranslations(item, {
     networkTranslate: false,
     requestAi: async (system, prompt) => {
       seenSystems.push(system);
-      const lang = prompt.match(/TARGET_LANGUAGE_CODES: (en|de|ja)/)?.[1];
+      const lang = prompt.match(/TARGET_LANGUAGE_CODES: ([a-z]{2})/)?.[1];
       attempts[lang] += 1;
       if (lang === 'en' && attempts.en === 1) {
         return { ok: true, data: { ...valid.en, body: 'The result is summarized without the original numbers.' } };
@@ -611,8 +678,9 @@ test('kalite kontrolünden geçmeyen AI çevirisi sorun listesiyle yeniden denen
       return { ok: true, data: valid[lang] };
     }
   });
-  assert.deepEqual(attempts, { en: 2, de: 1, ja: 1 });
-  assert.equal(result.report.en, 'ai');
+  const expected = Object.fromEntries(TARGET_LANGS.map(lang => [lang, lang === 'en' ? 2 : 1]));
+  assert.deepEqual(attempts, expected);
+  for (const lang of TARGET_LANGS) assert.equal(result.report[lang], 'ai', `${lang} yayına hazır olmalı`);
   assert.equal(result.quality.en.complete, true);
   assert.equal(result.quality.en.attempts, 2);
   assert.ok(seenSystems.some(system => /PREVIOUS OUTPUT FAILED QUALITY CHECKS/.test(system)));
@@ -727,10 +795,10 @@ test('admin panelinde haber linkinden otomatik blog oluşturma ve doğrulama kod
   assert.match(adminHtml, /id="ai_generate_btn"/, 'AI taslak üretim butonu olmalı');
   for (const provider of ['claude', 'kimi', 'deepseek']) assert.match(adminHtml, new RegExp(`value="${provider}"`), `${provider} sağlayıcısı panelde seçilebilmeli`);
   assert.match(adminHtml, /id="ai_model"/, 'model kimliği geçersizse ayarlanabilmeli');
-  assert.match(adminHtml, /id="ai_retranslate_btn"/, 'EN/DE/JA yeniden çeviri düğmesi olmalı');
+  assert.match(adminHtml, /id="ai_retranslate_btn"/, 'tüm hedef diller için yeniden çeviri düğmesi olmalı');
   assert.match(adminHtml, /id="ai_quality_summary"/, 'dil kalite özeti görünmeli');
   assert.match(adminHtml, /data-lang-quality="en"/, 'İngilizce kalite kartı olmalı');
-  assert.match(adminHtml, /4 dilde taslak üret/, 'ana üretim eylemi anlaşılır olmalı');
+  assert.match(adminHtml, /10 dilde taslak üret/, 'ana üretim eylemi anlaşılır olmalı');
   assert.match(adminHtml, /function renderTranslationDashboard\(/, 'çeviri kalite durumu anlık gösterilmeli');
   assert.match(adminHtml, /function generateFromNewsUrl\(\)/, 'haber çekme işlevi olmalı');
   assert.match(adminHtml, /function applyGeneratedBlog\(/, 'form doldurma işlevi olmalı');

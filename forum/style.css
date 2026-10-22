@@ -38,6 +38,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
+  font-synthesis: none;
   font-size: 14.5px;
   line-height: 1.6;
   min-height: 100vh;
@@ -744,3 +745,10 @@ button.secondary { background: transparent; color: var(--text); border: 1px soli
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+
+/* --- Dil bazlı yazı tipi yedekleri (Kiril, Devanagari, CJK) --- */
+html[lang="bg"], html[lang="ru"] { --sans: Inter, "PT Sans", "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif; }
+html[lang="hi"] { --sans: Inter, "Noto Sans Devanagari", "Nirmala UI", "Mangal", system-ui, sans-serif; }
+html[lang="zh"] { --sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+html[lang="ja"] { --sans: Inter, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; }

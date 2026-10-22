@@ -12,13 +12,14 @@
  */
 
 import {
-  DEFAULT_SITE_URL, SITE_NAME, LANG_LABELS, LANGS,
+  DEFAULT_SITE_URL, SITE_NAME, LANG_LABELS, LANGS, TARGET_LANGS,
   absoluteUrl, blogPostPath, breadcrumbLd, escapeHtml, escapeAttr, extractFaq, extractHeadings, extractRecipeSteps,
   formatDate, formatNumber, metaDescription, oneLine, organizationLd, readingLabel,
   readingMinutes, renderNotFound, renderPage, renderRichText, resolveSiteUrl, safeCover,
   sectionBase, seoTitle, stripSourceReferences, websiteLd, wordCount
 } from './_seo.js';
 import { connectDb, findContentBySlug, listContent, prepareContent } from './_content-db.js';
+import { localizeDuration } from './_content-shape.js';
 
 const T = {
   tr: {
@@ -72,6 +73,192 @@ const T = {
     forumCtaTitle: 'この話題について話しませんか？', forumCtaBody: 'TestoTavanフォーラムで経験を共有しましょう。',
     emptyTitle: 'まだ記事がありません', emptyBody: '最初の記事がここに表示されます。',
     author: 'TestoTavan 編集部', published: '公開'
+  },
+  fr: {
+    eyebrow: 'LE JOURNAL TESTOTAVAN',
+    title: 'Un guide lisible sur les hormones, le sommeil et la force.',
+    intro: 'Des articles qui traduisent la recherche clinique en habitudes quotidiennes, et des recettes riches en protéines.',
+    latest: 'Derniers articles',
+    all: 'Tout',
+    recipes: 'Recettes',
+    articles: 'Articles',
+    posts: 'articles',
+    readMore: 'Lire l’article',
+    minRead: 'min de lecture',
+    updated: 'Mis à jour',
+    home: 'Accueil',
+    blog: 'Blog',
+    share: 'Partager',
+    copy: 'Copier le lien',
+    copied: 'Copié',
+    related: 'Articles liés',
+    toc: 'Sommaire',
+    ingredients: 'Ingrédients',
+    ctaTitle: 'Vois ton propre bilan',
+    ctaBody: 'Fais un test de symptômes en deux minutes ; les résultats restent sur ton appareil.',
+    ctaButton: 'Démarrer le test',
+    forumButton: 'Rejoindre la communauté',
+    forumCtaTitle: 'Envie d’en parler ?',
+    forumCtaBody: 'Partage ton expérience dans le forum TestoTavan et obtiens des réponses de la communauté.',
+    emptyTitle: 'Aucun article publié',
+    emptyBody: 'Le premier article apparaîtra ici.',
+    author: 'Équipe éditoriale TestoTavan',
+    published: 'Publié'
+  },
+  es: {
+    eyebrow: 'EL DIARIO TESTOTAVAN',
+    title: 'Una guía legible sobre hormonas, sueño y fuerza.',
+    intro: 'Artículos que traducen la investigación clínica en hábitos diarios, además de recetas ricas en proteína.',
+    latest: 'Últimos artículos',
+    all: 'Todo',
+    recipes: 'Recetas',
+    articles: 'Artículos',
+    posts: 'artículos',
+    readMore: 'Leer artículo',
+    minRead: 'min de lectura',
+    updated: 'Actualizado',
+    home: 'Inicio',
+    blog: 'Blog',
+    share: 'Compartir',
+    copy: 'Copiar enlace',
+    copied: 'Copiado',
+    related: 'Artículos relacionados',
+    toc: 'Índice',
+    ingredients: 'Ingredientes',
+    ctaTitle: 'Mira tu propio panorama',
+    ctaBody: 'Haz una revisión de síntomas en dos minutos; los resultados se quedan en tu dispositivo.',
+    ctaButton: 'Empezar la revisión',
+    forumButton: 'Únete a la comunidad',
+    forumCtaTitle: '¿Quieres hablarlo?',
+    forumCtaBody: 'Comparte tu experiencia en el foro de TestoTavan y recibe respuestas de la comunidad.',
+    emptyTitle: 'Aún no hay artículos publicados',
+    emptyBody: 'El primer artículo aparecerá aquí.',
+    author: 'Equipo editorial de TestoTavan',
+    published: 'Publicado'
+  },
+  bg: {
+    eyebrow: 'СПИСАНИЕ TESTOTAVAN',
+    title: 'Разбираемо ръководство за хормони, сън и сила.',
+    intro: 'Статии, които превръщат клиничните изследвания в ежедневни навици, плюс рецепти с високо съдържание на протеин.',
+    latest: 'Последни статии',
+    all: 'Всички',
+    recipes: 'Рецепти',
+    articles: 'Статии',
+    posts: 'статии',
+    readMore: 'Прочети статията',
+    minRead: 'мин четене',
+    updated: 'Обновено',
+    home: 'Начало',
+    blog: 'Блог',
+    share: 'Сподели',
+    copy: 'Копирай връзката',
+    copied: 'Копирано',
+    related: 'Свързани статии',
+    toc: 'Съдържание',
+    ingredients: 'Съставки',
+    ctaTitle: 'Виж собствената си картина',
+    ctaBody: 'Направи двуминутен преглед на симптомите; резултатите остават на устройството ти.',
+    ctaButton: 'Стартирай прегледа',
+    forumButton: 'Присъедини се към общността',
+    forumCtaTitle: 'Искаш ли да обсъдим?',
+    forumCtaBody: 'Сподели опита си във форума TestoTavan и получи отговори от общността.',
+    emptyTitle: 'Все още няма публикувани статии',
+    emptyBody: 'Първата статия ще се появи тук.',
+    author: 'Редакционен екип на TestoTavan',
+    published: 'Публикувано'
+  },
+  ru: {
+    eyebrow: 'ЖУРНАЛ TESTOTAVAN',
+    title: 'Доступный гид по гормонам, сну и силе.',
+    intro: 'Статьи, превращающие клинические исследования в ежедневные привычки, и рецепты с высоким содержанием белка.',
+    latest: 'Последние статьи',
+    all: 'Все',
+    recipes: 'Рецепты',
+    articles: 'Статьи',
+    posts: 'статей',
+    readMore: 'Читать статью',
+    minRead: 'мин чтения',
+    updated: 'Обновлено',
+    home: 'Главная',
+    blog: 'Блог',
+    share: 'Поделиться',
+    copy: 'Копировать ссылку',
+    copied: 'Скопировано',
+    related: 'Похожие статьи',
+    toc: 'Содержание',
+    ingredients: 'Ингредиенты',
+    ctaTitle: 'Узнай свою картину',
+    ctaBody: 'Пройди двухминутную проверку симптомов; результаты остаются на твоём устройстве.',
+    ctaButton: 'Начать проверку',
+    forumButton: 'Присоединиться к сообществу',
+    forumCtaTitle: 'Хочешь обсудить?',
+    forumCtaBody: 'Поделись опытом на форуме TestoTavan и получи ответы сообщества.',
+    emptyTitle: 'Пока нет опубликованных статей',
+    emptyBody: 'Первая статья появится здесь.',
+    author: 'Редакция TestoTavan',
+    published: 'Опубликовано'
+  },
+  hi: {
+    eyebrow: 'TESTOTAVAN जर्नल',
+    title: 'हार्मोन, नींद और ताकत पर एक सुपाठ्य मार्गदर्शिका।',
+    intro: 'नैदानिक शोध को दैनिक आदतों में बदलने वाले लेख, और उच्च प्रोटीन वाली रेसिपी।',
+    latest: 'नवीनतम लेख',
+    all: 'सभी',
+    recipes: 'रेसिपी',
+    articles: 'लेख',
+    posts: 'लेख',
+    readMore: 'लेख पढ़ें',
+    minRead: 'मिनट पढ़ें',
+    updated: 'अपडेट किया गया',
+    home: 'होम',
+    blog: 'ब्लॉग',
+    share: 'साझा करें',
+    copy: 'लिंक कॉपी करें',
+    copied: 'कॉपी हो गया',
+    related: 'संबंधित लेख',
+    toc: 'विषय-सूची',
+    ingredients: 'सामग्री',
+    ctaTitle: 'अपनी स्थिति देखें',
+    ctaBody: 'दो मिनट में लक्षण जाँचें; परिणाम आपके डिवाइस पर ही रहते हैं।',
+    ctaButton: 'जाँच शुरू करें',
+    forumButton: 'समुदाय से जुड़ें',
+    forumCtaTitle: 'इस पर बात करना चाहेंगे?',
+    forumCtaBody: 'TestoTavan फ़ोरम पर अपना अनुभव साझा करें और समुदाय से उत्तर पाएँ।',
+    emptyTitle: 'अभी कोई लेख प्रकाशित नहीं',
+    emptyBody: 'पहला लेख यहाँ दिखेगा।',
+    author: 'TestoTavan संपादकीय टीम',
+    published: 'प्रकाशित'
+  },
+  zh: {
+    eyebrow: 'TESTOTAVAN 期刊',
+    title: '关于激素、睡眠与力量的通俗指南。',
+    intro: '把临床研究转化为日常习惯的文章，以及高蛋白食谱。',
+    latest: '最新文章',
+    all: '全部',
+    recipes: '食谱',
+    articles: '文章',
+    posts: '篇',
+    readMore: '阅读文章',
+    minRead: '分钟阅读',
+    updated: '更新于',
+    home: '首页',
+    blog: '博客',
+    share: '分享',
+    copy: '复制链接',
+    copied: '已复制',
+    related: '相关文章',
+    toc: '目录',
+    ingredients: '食材',
+    ctaTitle: '看看你的情况',
+    ctaBody: '用两分钟做个症状自查；结果只保留在你的设备上。',
+    ctaButton: '开始自查',
+    forumButton: '加入社区',
+    forumCtaTitle: '想聊聊吗？',
+    forumCtaBody: '在 TestoTavan 论坛分享你的经验，并获得社区的回答。',
+    emptyTitle: '暂无已发布文章',
+    emptyBody: '第一篇文章将在这里显示。',
+    author: 'TestoTavan 编辑团队',
+    published: '发布于'
   }
 };
 
@@ -84,22 +271,27 @@ function normalizeLang(value) {
 export function localizedContent(item, lang) {
   if (!item) return null;
   if (lang === 'tr') return item;
+  // Eksik çeviri İngilizceye düşer; Türkçe metin başka dilde gösterilmez.
   const t = item.translations?.[lang] || {};
-  const ingredients = Array.isArray(t.ingredients) && t.ingredients.length ? t.ingredients : item.ingredients;
+  const en = item.translations?.en || {};
+  const pick = key => t[key] || en[key] || '';
+  const ingredients = Array.isArray(t.ingredients) && t.ingredients.length
+    ? t.ingredients
+    : (Array.isArray(en.ingredients) && en.ingredients.length ? en.ingredients : []);
   return {
     ...item,
-    category: t.category || item.category,
-    title: t.title || item.title,
-    summary: t.summary || item.summary,
-    body: t.body || item.body,
-    time: t.time || item.time,
+    category: pick('category'),
+    title: pick('title'),
+    summary: pick('summary'),
+    body: pick('body'),
+    time: t.time || en.time || localizeDuration(item.time, lang),
     ingredients
   };
 }
 
 function availableLangs(item) {
   const langs = ['tr'];
-  for (const lang of ['en', 'de', 'ja']) {
+  for (const lang of TARGET_LANGS) {
     if (oneLine(item?.translations?.[lang]?.title, 100) && oneLine(item?.translations?.[lang]?.body, 400)) langs.push(lang);
   }
   return langs;
@@ -205,7 +397,8 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
 
 const SHARE = (url, title, lang) => {
   const enc = encodeURIComponent;
-  const label = { tr: { x: 'X', wa: 'WhatsApp', li: 'LinkedIn', cp: 'Bağlantıyı kopyala' }, en: { x: 'X', wa: 'WhatsApp', li: 'LinkedIn', cp: 'Copy link' }, de: { x: 'X', wa: 'WhatsApp', li: 'LinkedIn', cp: 'Link kopieren' }, ja: { x: 'X', wa: 'WhatsApp', li: 'LinkedIn', cp: 'リンクをコピー' } }[lang];
+  // Marka adları tüm dillerde aynıdır; yalnızca "bağlantıyı kopyala" etiketi çevrilir.
+  const label = { x: 'X', wa: 'WhatsApp', li: 'LinkedIn', cp: (T[lang] || T.en).copy };
   return `<div class="share"><span>${escapeHtml(T[lang].share)}</span>
     <a href="https://x.com/intent/tweet?text=${enc(title)}&amp;url=${enc(url)}" rel="nofollow noopener" target="_blank">${label.x}</a>
     <a href="https://api.whatsapp.com/send?text=${enc(`${title} ${url}`)}" rel="nofollow noopener" target="_blank">${label.wa}</a>

@@ -1295,7 +1295,7 @@ const SPONSORS = {
         {
             badge: 'Sponsor',
             title: 'Sponsorlu içerik',
-            text: 'Blog yazınız dört dilde bu alanda listelenir.',
+            text: 'Blog yazınız tüm dillerde bu alanda listelenir.',
             cta: 'Detaylar',
             href: CONTACT_HREF
         }

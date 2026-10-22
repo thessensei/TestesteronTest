@@ -17,9 +17,11 @@
 
 export const SITE_NAME = 'TestoTavan';
 export const DEFAULT_SITE_URL = 'https://testosteron-test.vercel.app';
-export const LANGS = ['tr', 'en', 'de', 'ja'];
-export const LANG_LABELS = { tr: 'TR', en: 'EN', de: 'DE', ja: 'JA' };
-export const HTML_LANG = { tr: 'tr', en: 'en', de: 'de', ja: 'ja' };
+// Dil listesi tek kaynaktan gelir (api/_langs.js); burada yeniden dışa aktarılır.
+export { LANGS, TARGET_LANGS, LANG_LABELS, LANG_LOCALES } from './_langs.js';
+import { LANGS, LANG_LOCALES as LOCALES, TARGET_LANGS } from './_langs.js';
+export const HTML_LANG = Object.fromEntries(LANGS.map(code => [code, code]));
+export const OG_LOCALES = LOCALES;
 
 /* ------------------------------------------------------------------ metin */
 
@@ -112,7 +114,12 @@ export function readingMinutes(text = '') {
 
 export function readingLabel(minutes, lang = 'tr') {
   const m = Math.max(1, Number(minutes) || 1);
-  return ({ tr: `${m} dk okuma`, en: `${m} min read`, de: `${m} Min. Lesezeit`, ja: `${m}分で読めます` })[lang] || `${m} dk okuma`;
+  const label = ({
+    tr: `${m} dk okuma`, en: `${m} min read`, de: `${m} Min. Lesezeit`, ja: `${m}分で読めます`,
+    fr: `${m} min de lecture`, es: `${m} min de lectura`, bg: `${m} мин четене`,
+    ru: `${m} мин чтения`, hi: `${m} मिनट पढ़ें`, zh: `${m} 分钟阅读`
+  })[lang];
+  return label || (lang === 'tr' ? `${m} dk okuma` : `${m} min read`);
 }
 
 /** Gövdedeki "## Başlık" satırlarını içindekiler için toplar. */
@@ -543,7 +550,11 @@ function navItems(siteUrl, section, lang) {
   const home = tr ? 'Ana Sayfa' : 'Home';
   const blog = 'Blog';
   const forum = tr ? 'Forum' : 'Forum';
-  const analyzer = tr ? 'Test Analizi' : lang === 'de' ? 'Test-Analyse' : lang === 'ja' ? 'テスト分析' : 'Test Analysis';
+  const analyzer = ({
+    tr: 'Test Analizi', en: 'Test Analysis', de: 'Test-Analyse', ja: 'テスト分析',
+    fr: 'Analyse du test', es: 'Análisis de la prueba', bg: 'Анализ на теста',
+    ru: 'Анализ теста', hi: 'टेस्ट विश्लेषण', zh: '测试分析'
+  })[lang] || 'Test Analysis';
   return [
     { href: `${siteUrl}/`, label: home, key: 'home' },
     { href: `${siteUrl}/blog/`, label: blog, key: 'blog' },
@@ -585,7 +596,7 @@ ${altLinks}
 <link rel="apple-touch-icon" href="${siteUrl}/assets/logo.png">
 <meta property="og:type" content="${escapeAttr(ogType)}">
 <meta property="og:site_name" content="${SITE_NAME}">
-<meta property="og:locale" content="${{ tr: 'tr_TR', en: 'en_US', de: 'de_DE', ja: 'ja_JP' }[lang] || 'tr_TR'}">
+<meta property="og:locale" content="${escapeAttr(LOCALES[lang] || 'tr_TR')}">
 <meta property="og:url" content="${escapeAttr(canonical)}">
 <meta property="og:title" content="${escapeAttr(title)}">
 <meta property="og:description" content="${escapeAttr(description)}">
@@ -668,7 +679,7 @@ export function formatDate(value, lang = 'tr') {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   try {
-    return date.toLocaleDateString({ tr: 'tr-TR', en: 'en-GB', de: 'de-DE', ja: 'ja-JP' }[lang] || 'tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString((LOCALES[lang] || 'tr_TR').replace('_', '-'), { day: 'numeric', month: 'long', year: 'numeric' });
   } catch {
     return date.toISOString().slice(0, 10);
   }
@@ -676,5 +687,5 @@ export function formatDate(value, lang = 'tr') {
 
 export function formatNumber(value, lang = 'tr') {
   const number = Number(value) || 0;
-  try { return number.toLocaleString({ tr: 'tr-TR', en: 'en-GB', de: 'de-DE', ja: 'ja-JP' }[lang] || 'tr-TR'); } catch { return String(number); }
+  try { return number.toLocaleString((LOCALES[lang] || 'tr_TR').replace('_', '-')); } catch { return String(number); }
 }

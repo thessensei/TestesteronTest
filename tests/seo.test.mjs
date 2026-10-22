@@ -101,8 +101,8 @@ test('vercel.json blog, rss, sitemap ve forum konu adreslerini fonksiyonlara ba�
 test('ana sayfada index izni, canonical, sosyal önizleme ve geçerli JSON-LD bulunur', () => {
   const html = read('src/index.html');
   assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large">/);
-  assert.ok(html.includes(`<link rel="canonical" href="${productionOrigin}/">`));
-  assert.ok(html.includes(`<meta property="og:url" content="${productionOrigin}/">`));
+  assert.ok(html.includes(`<link id="canonicalLink" rel="canonical" href="${productionOrigin}/">`));
+  assert.ok(html.includes(`<meta id="ogUrl" property="og:url" content="${productionOrigin}/">`));
   assert.match(html, /<meta name="description" content="[^"]+">/);
   assert.match(html, /Testosteron Seviyesi İçin Ön Değerlendirme/);
   assert.match(html, /Bu araç tıbbi tanı koymaz/);

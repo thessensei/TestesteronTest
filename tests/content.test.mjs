@@ -105,19 +105,19 @@ test('panelden girilen süre ve malzeme çevirisi ziyaretçiye gösterilir', () 
     assert.deepEqual(tr.ingredients, ['150 g tavuk göğsü']);
 });
 
-test('çeviri girilmemişse süre otomatik çevrilir, malzeme Türkçeye düşer', () => {
+test('çeviri girilmemişse süre otomatik çevrilir, malzeme İngilizceye düşer', () => {
     const { api, store } = loadContentModule();
     const item = {
         id: 'y', type: 'recipe', category: 'Uyku', title: 'Tarif', time: '35 dk',
         summary: 'özet', body: 'gövde', ingredients: ['1 su bardağı bulgur'],
-        translations: { de: { title: 'Rezept' } }
+        translations: { en: { title: 'Recipe', ingredients: ['1 cup bulgur'] }, de: { title: 'Rezept' } }
     };
 
     store.set('testotavan_language', 'de');
     const de = api.localizedContent(item);
     assert.equal(de.title, 'Rezept');
     assert.equal(de.time, '35 Min.', 'boş bırakılan süre otomatik çevrilmeli');
-    assert.deepEqual(de.ingredients, ['1 su bardağı bulgur'], 'malzeme çevirisi yoksa Türkçesi gösterilir');
+    assert.deepEqual(de.ingredients, ['1 cup bulgur'], 'malzeme çevirisi yoksa İngilizcesi gösterilir (Türkçe sızmaz)');
 });
 
 test('API yüklenmeden koda gömülü içerik gösterilmez', () => {
@@ -157,7 +157,7 @@ test('panel tarifinin süresi ve malzemeleri seçilen dilde gelir', async () => 
         json: async () => [{
             id: 'content-recipe', type: 'recipe', title: 'Panel tarifi', time: '20 dk',
             ingredients: ['150 g tavuk göğsü'],
-            translations: { ja: { ingredients: ['鶏むね肉 150g'] } }
+            translations: { en: { title: 'Panel recipe' }, ja: { ingredients: ['鶏むね肉 150g'] } }
         }]
     }));
     await api.loadSharedContent();
@@ -221,7 +221,8 @@ test('admin panelinde her dil için süre ve malzeme alanı var', () => {
 test('admin paneli süre ve malzemeyi çeviri bloğuyla gönderir', () => {
     assert.match(adminHtml, /time:\s*\$\(`time-\$\{l\}`\)\.value\.trim\(\)/);
     assert.match(adminHtml, /ingredients:\s*ingredientValues\(l\)/);
-    assert.match(adminHtml, /translations:\{en:base\('en'\),de:base\('de'\),ja:base\('ja'\)\}/);
+    assert.match(adminHtml, /translations:\s*Object\.fromEntries\(TARGET_LANGS_ADMIN\.map\(l=>\[l,base\(l\)\]\)\)/, 'çeviri bloğu tüm hedef dilleri göndermeli');
+    assert.match(adminHtml, /const TARGET_LANGS_ADMIN=LANGS\.filter\(l=>l!=='tr'\)/, 'hedef diller tek yerden türetilmeli');
     assert.match(adminHtml, /function autoFillDurations\(\)/, 'TR süresinden otomatik çeviri önerisi olmalı');
 });
 

@@ -11,13 +11,26 @@
  */
 
 import { clean, localizeDuration } from './_content-shape.js';
+import { LOCAL_DICTIONARY_LANGS, LANG_NAMES, TARGET_LANGS } from './_langs.js';
 
-export const TARGET_LANGS = ['en', 'de', 'ja'];
+export { TARGET_LANGS, LOCAL_DICTIONARY_LANGS };
+
+/** Yerel sözlüğü olmayan, işaret/alfabe tabanlı denetlenen diller. */
+const NEW_LOCALIZED_LANGS = ['fr', 'es', 'bg', 'ru', 'hi', 'zh'];
 
 const KNOWN_CATEGORIES = {
-  'Hormon Sağlığı': { en: 'Hormone Health', de: 'Hormongesundheit', ja: 'ホルモン健康' },
-  'Yüksek Protein': { en: 'High Protein', de: 'Proteinreich', ja: '高たんぱく' },
-  Uyku: { en: 'Sleep', de: 'Schlaf', ja: '睡眠' }
+  'Hormon Sağlığı': {
+    en: 'Hormone Health', de: 'Hormongesundheit', ja: 'ホルモン健康', fr: 'Santé hormonale',
+    es: 'Salud hormonal', bg: 'Хормонално здраве', ru: 'Здоровье гормонов', hi: 'हार्मोन स्वास्थ्य', zh: '激素健康'
+  },
+  'Yüksek Protein': {
+    en: 'High Protein', de: 'Proteinreich', ja: '高たんぱく', fr: 'Riche en protéines',
+    es: 'Alto en proteínas', bg: 'Високопротеинова', ru: 'Высокобелковая', hi: 'उच्च प्रोटीन', zh: '高蛋白'
+  },
+  Uyku: {
+    en: 'Sleep', de: 'Schlaf', ja: '睡眠', fr: 'Sommeil',
+    es: 'Sueño', bg: 'Сън', ru: 'Сон', hi: 'नींद', zh: '睡眠'
+  }
 };
 
 const TR_HARD = /[çğışÇĞİŞ]/g;
@@ -340,8 +353,33 @@ function turkishFunctionRatio(value) {
 
 const LANGUAGE_MARKERS = {
   en: new Set(['the', 'and', 'with', 'for', 'from', 'that', 'this', 'these', 'those', 'into', 'are', 'is', 'was', 'were', 'of', 'in', 'on', 'not', 'your', 'can', 'should']),
-  de: new Set(['der', 'die', 'das', 'den', 'dem', 'des', 'und', 'mit', 'für', 'von', 'aus', 'dass', 'dies', 'diese', 'sind', 'ist', 'war', 'werden', 'nicht', 'ein', 'eine', 'einer', 'im', 'auf', 'kann', 'sollte'])
+  de: new Set(['der', 'die', 'das', 'den', 'dem', 'des', 'und', 'mit', 'für', 'von', 'aus', 'dass', 'dies', 'diese', 'sind', 'ist', 'war', 'werden', 'nicht', 'ein', 'eine', 'einer', 'im', 'auf', 'kann', 'sollte']),
+  fr: new Set(['le', 'la', 'les', 'des', 'une', 'un', 'et', 'pour', 'avec', 'est', 'sont', 'dans', 'sur', 'pas', 'votre', 'peut', 'qui', 'que', 'du', 'au', 'aux', 'ce', 'cette']),
+  es: new Set(['el', 'la', 'los', 'las', 'de', 'que', 'y', 'para', 'con', 'es', 'son', 'en', 'no', 'su', 'puede', 'del', 'una', 'un', 'por', 'este', 'esta', 'como'])
 };
+
+/**
+ * Alfabe tabanlı diller için kontrol: Kiril (bg/ru), Devanagari (hi), Han (zh).
+ * İngilizce metin bu dillerde "çevrilmiş" sayılmamalı.
+ */
+const SCRIPT_RULES = {
+  bg: { test: /[\u0400-\u04FF]/, min: 0.25, reject: /[\u0900-\u097F\u3040-\u30FF\u4E00-\u9FFF]/ },
+  ru: { test: /[\u0400-\u04FF]/, min: 0.25, reject: /[\u0900-\u097F\u3040-\u30FF\u4E00-\u9FFF]/ },
+  hi: { test: /[\u0900-\u097F]/, min: 0.25, reject: /[\u0400-\u04FF\u3040-\u30FF\u4E00-\u9FFF]/ },
+  zh: { test: /[\u4E00-\u9FFF]/, min: 0.2, reject: /[\u3040-\u30FF\u0400-\u04FF\u0900-\u097F]/ }
+};
+
+function scriptLooksCorrect(text, lang) {
+  const rule = SCRIPT_RULES[lang];
+  if (!rule) return true;
+  const letters = text.match(/[\p{L}]/gu) || [];
+  if (!letters.length) return false;
+  // Latin harfleriyle yazılmış İngilizce/Fransızca metin Kiril/Devanagari/Han sayılmaz.
+  const matching = (text.match(new RegExp(rule.test.source, 'g')) || []).length;
+  if (matching / letters.length < rule.min) return false;
+  if (rule.reject.test(text)) return false;
+  return true;
+}
 
 function languageMarkerScore(value, lang) {
   const markers = LANGUAGE_MARKERS[lang];
@@ -354,12 +392,28 @@ export function targetLanguageLooksCorrect(value, lang) {
   const text = stripUncheckedLines(String(value || '')).trim();
   if (!text) return false;
   if (lang === 'ja') return japaneseEnough(text);
-  if (/[\u3040-\u30ff\u4e00-\u9fff]/.test(text)) return false;
-  if (!LANGUAGE_MARKERS[lang] || text.length < 45) return true;
+  // Japonca kana veya Han karakterleri yalnızca ja/zh için geçerli.
+  if (lang !== 'zh' && /[\u3040-\u30ff\u4e00-\u9fff]/.test(text)) return false;
+  // Kiril / Devanagari / Han dilleri alfabe denetiminden geçmeli; İngilizce
+  // metin bu dillerde geçerli sayılmaz.
+  if (!scriptLooksCorrect(text, lang)) return false;
+  const markers = LANGUAGE_MARKERS[lang];
+  if (!markers) return true;
+  if (text.length < 45) return true;
+  // Roman dilleri (fr/es) birbirinin sözcüklerini paylaşır ("la", "de", "que").
+  // Bu yüzden yalnızca İngilizce/Almanca metnin sızmasını yakalarız; fr/es
+  // ayrımını AI'ya bırakırız. İngilizce metin fr/es alanına düşerse burada durur.
+  const guardLangs = ['en', 'de'];
+  const guardScore = Math.max(...guardLangs.map(code => languageMarkerScore(text, code)));
   const targetScore = languageMarkerScore(text, lang);
-  const otherLang = lang === 'en' ? 'de' : 'en';
-  const otherScore = languageMarkerScore(text, otherLang);
-  return !(otherScore >= 3 && otherScore > targetScore * 1.5);
+  // Kısa başlıklar/sloganlar tek işlev sözcüğü taşıyabilir; uzun metinlerde
+  // iki işaret bekleriz.
+  const needed = text.length >= 120 ? 2 : 1;
+  if (guardLangs.includes(lang)) {
+    const otherGuard = guardLangs.filter(code => code !== lang).map(code => languageMarkerScore(text, code));
+    return targetScore >= needed && targetScore >= Math.max(...otherGuard);
+  }
+  return !(guardScore >= 2 && guardScore > targetScore + 1);
 }
 
 /**
@@ -378,7 +432,9 @@ export function fieldLooksTranslated(translated, sourceField, lang) {
   const hard = checked.match(TR_HARD) || [];
   if (hard.length && checked.length < 500) return false;
   if (hard.length > checked.length * 0.008) return false;
-  if (turkishFunctionRatio(checked) > 0.12) return false;
+  // Türkçe işlev sözcükleri ("de", "en", "da") Roman dillerinde de sık geçer.
+  // Yeni dillerde bu ölçüt yerine hedef dil işaretleri/alfabe denetimi kullanılır.
+  if (!NEW_LOCALIZED_LANGS.includes(lang) && turkishFunctionRatio(checked) > 0.12) return false;
   if (!targetLanguageLooksCorrect(checked, lang)) return false;
   return true;
 }
@@ -587,14 +643,20 @@ function replaceInsensitive(text, source, target) {
 function translateSourceLine(line, lang) {
   const match = String(line).match(/^Kaynak\s*[:：]\s*(.*)$/i);
   if (!match) return '';
-  const label = lang === 'de' ? 'Quelle' : lang === 'ja' ? '出典' : 'Source';
+  const label = ({
+    de: 'Quelle', ja: '出典', fr: 'Source', es: 'Fuente', bg: 'Източник',
+    ru: 'Источник', hi: 'स्रोत', zh: '来源'
+  })[lang] || 'Source';
   return `${label}: ${match[1]}`;
 }
 
 /** Tek satır veya paragrafı yerel sözlükle çevirir. Birebir kayıt varsa onu kullanır. */
 export function localTranslateText(text, lang) {
   const raw = String(text ?? '');
+  // Yerel sözlük yalnızca tr→en/de/ja yönünde çalışır. Diğer diller için boş
+  // döneriz: Türkçe metni hedef dil sanıp yayına vermektense İngilizceye düşülür.
   if (!raw.trim() || !TARGET_LANGS.includes(lang)) return raw.trim();
+  if (!LOCAL_DICTIONARY_LANGS.includes(lang)) return '';
   const lines = raw.split('\n');
   return lines.map(line => {
     const prefix = line.match(/^(\s*\d+\.\s+)(.*)$/);
@@ -832,7 +894,13 @@ export async function machineTranslateFields(source, lang, options = {}) {
 const LANG_ALIASES = {
   en: ['en', 'english', 'ingilizce'],
   de: ['de', 'ger', 'deu', 'german', 'deutsch', 'almanca'],
-  ja: ['ja', 'jp', 'japanese', 'japonca', '日本語']
+  ja: ['ja', 'jp', 'japanese', 'japonca', '日本語'],
+  fr: ['fr', 'fra', 'fre', 'french', 'français', 'francais', 'fransızca'],
+  es: ['es', 'spa', 'spanish', 'español', 'espanol', 'ispanyolca'],
+  bg: ['bg', 'bul', 'bulgarian', 'български', 'bulgarca'],
+  ru: ['ru', 'rus', 'russian', 'русский', 'rusça'],
+  hi: ['hi', 'hin', 'hindi', 'हिन्दी', 'हिंदी'],
+  zh: ['zh', 'zho', 'chi', 'chinese', '中文', '汉语', 'çince']
 };
 
 export function pickLanguageBlock(bag, lang) {
@@ -857,8 +925,8 @@ export function coerceTranslatedFields(block) {
 }
 
 export function translationSystemPrompt(langs, context = {}) {
-  const names = { en: 'English', de: 'German', ja: 'Japanese' };
-  const targetNames = langs.map(lang => names[lang]).join(', ');
+  const names = LANG_NAMES;
+  const targetNames = langs.map(lang => names[lang] || lang).join(', ');
   const retryIssues = Array.isArray(context.issues) && context.issues.length
     ? `\nPREVIOUS OUTPUT FAILED QUALITY CHECKS: ${context.issues.join('; ')}. Correct every listed problem.`
     : '';
@@ -877,11 +945,11 @@ export function translationSystemPrompt(langs, context = {}) {
     '- Keep title within 100 characters and summary within 240 characters without losing facts; body must stay within 20,000 characters.',
     '- Keep the meaning and medical caution level exact. Do not strengthen evidence, invent benefits, diagnoses, dosages or treatment advice.',
     '- Never output source citations, bibliography lines, "Kaynak:" labels or raw URLs; the translated body must stay self-contained.',
-    '- category must be exactly: en "Hormone Health" | "High Protein" | "Sleep"; de "Hormongesundheit" | "Proteinreich" | "Schlaf"; ja "ホルモン健康" | "高たんぱく" | "睡眠".',
+    `- category must be exactly: ${TARGET_LANGS.map(code => `${code} ${KNOWN_CATEGORIES['Hormon Sağlığı'][code]} | ${KNOWN_CATEGORIES['Yüksek Protein'][code]} | ${KNOWN_CATEGORIES.Uyku[code]}`).join('; ')}.`,
     '- Before answering, silently verify sentence coverage, numbers, paragraph/list structure and ingredient count.',
     langs.length === 1
       ? '{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]}'
-      : '{"en":{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]},"de":{...},"ja":{...}}',
+      : `{${TARGET_LANGS.map(code => `"${code}":{"title":"...","summary":"...","body":"...","category":"...","time":"...","ingredients":["..."]}`).join(',')}}`,
     retryIssues
   ].filter(Boolean).join('\n');
 }
@@ -925,7 +993,7 @@ export async function ensureCompleteTranslations(item, options = {}) {
   const translations = {};
   const report = {};
   const quality = {};
-  const attempts = { en: 0, de: 0, ja: 0 };
+  const attempts = Object.fromEntries(TARGET_LANGS.map(lang => [lang, 0]));
   const forceTranslation = options.forceTranslation === true;
 
   for (const lang of TARGET_LANGS) {
@@ -1005,6 +1073,19 @@ export async function ensureCompleteTranslations(item, options = {}) {
     // geçen çeviriyi silmeyiz; kullanıcıya bozuk/boş alan döndürmekten kaçınırız.
     if (quality[lang].complete) {
       report[lang] = 'ready';
+      continue;
+    }
+    // Yeni dillerde (fr/es/bg/ru/hi/zh) yerel sözlük yok. Boş ya da Türkçe
+    // içerik göstermek yerine İngilizce yedeğe düşeriz; rapor 'incomplete'
+    // kalır, böylece arayüz bu dili "çeviri bekliyor" olarak işaretler.
+    if (!LOCAL_DICTIONARY_LANGS.includes(lang)) {
+      const english = localTranslateFields(source, 'en');
+      translations[lang] = {
+        ...english,
+        category: categoryFor(source.category, lang) || english.category
+      };
+      quality[lang] = assessTranslationQuality(translations[lang], source, lang);
+      report[lang] = 'incomplete';
       continue;
     }
     const local = localTranslateFields(source, lang);

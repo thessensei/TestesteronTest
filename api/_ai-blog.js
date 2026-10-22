@@ -25,6 +25,7 @@ import {
   TARGET_LANGS
 } from './_translate.js';
 import { stripSourceReferences, wordCount } from './_seo.js';
+import { LANG_NAMES } from './_langs.js';
 
 export const NEWS_FETCH_TIMEOUT_MS = 10000;
 export const AI_TIMEOUT_MS = 25000;
@@ -63,6 +64,12 @@ export const CATEGORY_MAP = {
     en: 'Hormone Health',
     de: 'Hormongesundheit',
     ja: 'ホルモン健康',
+    fr: 'Santé hormonale',
+    es: 'Salud hormonal',
+    bg: 'Хормонално здраве',
+    ru: 'Здоровье гормонов',
+    hi: 'हार्मोन स्वास्थ्य',
+    zh: '激素健康',
     emoji: '🧬'
   },
   protein: {
@@ -70,6 +77,12 @@ export const CATEGORY_MAP = {
     en: 'High Protein',
     de: 'Proteinreich',
     ja: '高たんぱく',
+    fr: 'Riche en protéines',
+    es: 'Alto en proteínas',
+    bg: 'Високопротеинова',
+    ru: 'Высокобелковая',
+    hi: 'उच्च प्रोटीन',
+    zh: '高蛋白',
     emoji: '🥗'
   },
   sleep: {
@@ -77,6 +90,12 @@ export const CATEGORY_MAP = {
     en: 'Sleep',
     de: 'Schlaf',
     ja: '睡眠',
+    fr: 'Sommeil',
+    es: 'Sueño',
+    bg: 'Сън',
+    ru: 'Сон',
+    hi: 'नींद',
+    zh: '睡眠',
     emoji: '🌙'
   }
 };
@@ -677,6 +696,12 @@ const FALLBACK_SECTIONS = {
   }
 };
 
+// Yerleşik (sözlük tabanlı) bölümler yalnızca yerel sözlüğü olan diller içindir.
+// Diğer dillerde İngilizce iskelet kullanılır; yayın aşamasında ensureCompleteTranslations
+// bu dilleri "incomplete" olarak işaretler ve Türkçe metin asla sızmaz.
+const FALLBACK_SECTIONS_LANGS = new Set(Object.keys(FALLBACK_SECTIONS));
+const fallbackSectionsLang = lang => (FALLBACK_SECTIONS_LANGS.has(lang) ? lang : 'en');
+
 const FAQ_HEADING = {
   tr: 'Sık Sorulan Sorular', en: 'Frequently Asked Questions', de: 'Häufige Fragen', ja: 'よくある質問'
 };
@@ -693,10 +718,11 @@ const FAQ_QUESTIONS = {
  * soru işaretiyle bitmez; böylece /blog/<slug>/ sayfası FAQPage JSON-LD üretir.
  */
 function fallbackFaq(lang, answers) {
-  const questions = FAQ_QUESTIONS[lang];
+  const resolved = fallbackSectionsLang(lang);
+  const questions = FAQ_QUESTIONS[resolved];
   const cleaned = answers.map(value => String(value || '').replace(/\s+/g, ' ').replace(/^[-*•]\s+/, '').trim());
   const pairs = cleaned.slice(0, 3).map((answer, index) => [questions[index], answer]);
-  return `## ${FAQ_HEADING[lang]}\n${pairs.map(([question, answer]) => `${question}\n${answer}`).join('\n\n')}`;
+  return `## ${FAQ_HEADING[resolved]}\n${pairs.map(([question, answer]) => `${question}\n${answer}`).join('\n\n')}`;
 }
 
 function firstHighlight(body) {
@@ -711,7 +737,7 @@ function lastBullet(section) {
 
 /**
  * AI yanıtı olmadan veya AI servisine ulaşılamadığında devreye giren
- * yerleşik akıllı blog oluşturucu (4 dil: TR, EN, DE, JA).
+ * yerleşik akıllı blog oluşturucu (TR + yerel sözlüğü olan EN, DE, JA).
  */
 export function buildFallbackBlogPost(article) {
   const cat = classifyArticleCategory(article);
@@ -870,14 +896,14 @@ export function normalizeGeneratedRecipe(raw, article) {
 
 function collectedTranslations(raw) {
   const bag = { ...(raw?.translations && typeof raw.translations === 'object' ? raw.translations : {}) };
-  for (const lang of ['en', 'de', 'ja']) {
+  for (const lang of TARGET_LANGS) {
     if (!pickLanguageBlock(bag, lang)) {
       const top = pickLanguageBlock(raw, lang);
       if (top) bag[lang] = top;
     }
   }
   const normalized = {};
-  for (const lang of ['en', 'de', 'ja']) {
+  for (const lang of TARGET_LANGS) {
     const block = coerceTranslatedFields(pickLanguageBlock(bag, lang)) || {};
     normalized[lang] = block;
   }
@@ -902,11 +928,11 @@ export function normalizeGeneratedBlog(raw, article) {
   const source = { category, title, summary, body, time };
 
   const cleanedTrans = cleanTranslations(collectedTranslations(raw));
-  const defaultCats = { en: cat.en, de: cat.de, ja: cat.ja };
+  const defaultCats = Object.fromEntries(TARGET_LANGS.map(lang => [lang, cat[lang] || cat.en]));
 
-  for (const lang of ['en', 'de', 'ja']) {
+  for (const lang of TARGET_LANGS) {
     const t = cleanedTrans[lang];
-    const fb = fallback.translations[lang];
+    const fb = fallback.translations[lang] || fallback.translations.en;
     t.category = t.category || defaultCats[lang];
     t.title = clean(stripSourceReferences(preferTranslated(t.title, fb.title, title, lang)), 100);
     t.summary = clean(stripSourceReferences(preferTranslated(t.summary, fb.summary, summary, lang)), 240);
@@ -1460,8 +1486,8 @@ function ingredientPrompts(source) {
   return {
     systemPrompt: [
       'TASK: ingredient-translation',
-      'You translate Turkish recipe ingredient lines into English, German and Japanese.',
-      'Return only valid JSON: {"en":["..."],"de":["..."],"ja":["..."]}.',
+      `You translate Turkish recipe ingredient lines into these languages: ${TARGET_LANGS.map(code => LANG_NAMES[code] || code).join(', ')}.`,
+      `Return only valid JSON with one array per language: ${JSON.stringify(Object.fromEntries(TARGET_LANGS.map(code => [code, ['...']])))}.`,
       'RULES:',
       '- Keep the exact number of lines and their original order.',
       '- Preserve every quantity, unit, number and brand name; translate food words and units naturally.',
