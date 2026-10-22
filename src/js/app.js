@@ -328,6 +328,9 @@ function renderEstimate(est) {
     }).join('');
 
     panel.innerHTML = `
+        ${reportPrintHeader('physical')}
+        ${reportPrintActions('physical')}
+
         <section class="estimate-card" style="--status:${est.status.color}">
             <header class="estimate-head">
                 <div>
@@ -373,6 +376,8 @@ function renderEstimate(est) {
             <button class="btn-ghost" onclick="backToSymptoms()">${IC('i-user')} &nbsp;Tahmin girdilerini değiştir</button>
             <p class="trust-line">${IC('i-clock')} Sonuç 5 dakikada · ${IC('i-check')} kayıt gerekmez · tek tıkla iptal</p>
         </div>
+
+        ${reportPrintFooter()}
     `;
 
     panel.classList.add('show');
@@ -964,6 +969,9 @@ function renderBloodReport(result) {
     const microAlerts = V().evaluateMicronutrientAlerts ? V().evaluateMicronutrientAlerts(result.values) : [];
 
     panel.innerHTML = `
+        ${reportPrintHeader('blood')}
+        ${reportPrintActions('blood')}
+
         <section class="score-card">
             <header class="score-head">
                 <div>
@@ -1088,6 +1096,8 @@ function renderBloodReport(result) {
         <button class="btn-ghost" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top:14px">
             ${IC('i-arrow-up')} &nbsp;Başa dön
         </button>
+
+        ${reportPrintFooter()}
     `;
 
     panel.classList.add('show');
@@ -1207,6 +1217,121 @@ function renderSupplementCard(supplements, title, subtitle) {
             </div>`;
         }).join('')}
     </section>`;
+}
+
+// ========================================
+// RAPOR YAZDIRMA / PDF (yalnızca tarayıcıda)
+// ========================================
+// Rapor, kullanıcı hekimine götürebilsin diye yazdırılabilir olmalı. Tüm
+// işlem tarayıcıda kalır: sunucuya istek atılmaz, dosya üretilmez — tarayıcının
+// kendi yazdırma penceresi ("PDF olarak kaydet" dâhil) kullanılır.
+const PRINT_PANELS = { physical: 'physicalResult', blood: 'bloodResult' };
+const PRINT_TITLES = {
+    physical: 'Semptom Tabanlı Ön Değerlendirme Raporu',
+    blood: 'Kan Testi Değerlendirme Raporu'
+};
+let printTitleBackup = '';
+let printCleanupTimer = 0;
+
+function printStamp() {
+    const locale = String(document.documentElement.lang || 'tr').replace(/_/g, '-');
+    const now = new Date();
+    try {
+        return now.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
+    } catch (e) {
+        return now.toISOString().slice(0, 10);
+    }
+}
+
+// Yalnızca kâğıtta görünen başlık: rapor türü, tarih ve veri kaynağı notu.
+function reportPrintHeader(kind) {
+    const key = PRINT_TITLES[kind] ? kind : 'blood';
+    return `
+        <header class="print-only print-head">
+            <p class="print-brand">TestoTavan · testosteron-test.vercel.app</p>
+            <h1 class="print-title">${T(PRINT_TITLES[key])}</h1>
+            <p class="print-meta">${printStamp()} · ${T('Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.')}</p>
+        </header>`;
+}
+
+function reportPrintFooter() {
+    return `
+        <footer class="print-only print-foot">
+            <b>${T('Tıbbi Sorumluluk Reddi')}:</b>
+            ${T('Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.')}
+            <br>TestoTavan · testosteron-test.vercel.app · ${printStamp()}
+        </footer>`;
+}
+
+function reportPrintActions(kind) {
+    const key = PRINT_PANELS[kind] ? kind : 'blood';
+    return `
+        <div class="report-actions">
+            <button type="button" class="btn-secondary" onclick="printReport('${key}')">
+                ${IC('i-doc')} &nbsp;${T('Raporu yazdır / PDF kaydet')}
+            </button>
+            <p class="report-hint">${T('A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.')}</p>
+        </div>`;
+}
+
+function markPrintTarget(page) {
+    document.querySelectorAll('.page.is-print-target').forEach(el => el.classList.remove('is-print-target'));
+    if (page) page.classList.add('is-print-target');
+}
+
+// Yazdırma bittiğinde ekran görünümünü ve sekme başlığını eski hâline döndürür.
+function cleanupPrintState() {
+    document.body.classList.remove('print-report');
+    document.querySelectorAll('.page.is-print-target').forEach(el => el.classList.remove('is-print-target'));
+    if (printCleanupTimer) {
+        clearTimeout(printCleanupTimer);
+        printCleanupTimer = 0;
+    }
+    if (printTitleBackup) {
+        document.title = printTitleBackup;
+        printTitleBackup = '';
+    }
+}
+
+// Ctrl+P ile yazdıran kullanıcı da temiz bir rapor alsın: sonuç varsa yalnızca
+// o panel yazdırılır, yoksa sayfa olağan hâliyle yazdırılır.
+function prepareNativePrint() {
+    if (document.body.classList.contains('print-report')) return;
+    const active = document.querySelector('main > .page.active');
+    const panel = active ? active.querySelector('.result-panel.show') : null;
+    if (!panel || !panel.textContent.trim()) return;
+    document.body.classList.add('print-report');
+    markPrintTarget(active);
+}
+
+function printReport(kind) {
+    const key = PRINT_PANELS[kind] ? kind : 'blood';
+    const panel = document.getElementById(PRINT_PANELS[key]);
+    if (!panel || !panel.classList.contains('show') || !panel.textContent.trim()) {
+        showToast(IC('i-warning') + ' ' + T('Yazdırmak için önce raporu oluşturun.'), 'red');
+        return false;
+    }
+    if (typeof window.print !== 'function') {
+        showToast(IC('i-warning') + ' ' + T('Bu tarayıcı yazdırmayı desteklemiyor.'), 'red');
+        return false;
+    }
+
+    prepareNativePrint();
+    markPrintTarget(panel.closest('.page'));
+    document.body.classList.add('print-report');
+    printTitleBackup = document.title;
+    const lang = String(document.documentElement.lang || 'tr').toLowerCase();
+    document.title = `TestoTavan-Rapor-${lang}-${new Date().toISOString().slice(0, 10)}`;
+
+    window.print();
+    // afterprint çoğu tarayıcıda tetiklenir; tetiklenmezse durum 30 sn sonra toparlanır.
+    printCleanupTimer = setTimeout(cleanupPrintState, 30000);
+    return true;
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('beforeprint', prepareNativePrint);
+    window.addEventListener('afterprint', cleanupPrintState);
 }
 
 // ========================================

@@ -18,7 +18,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-187%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-278%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
@@ -41,6 +41,11 @@ We offer natural, safe, and alternative solutions to address the decline in test
 - **KVKK açık rızası** — sağlık verisi için ayrı, boş başlangıçlı onay kutusu
 - **Numune koşulları ve lojistik** — sabah 07:00–10:00, açlık, biotin kesme; nerede/kaça/kaç günde bilgisi
 - **Anlık sonuç raporu** ve doğal destek önerileri
+- **Yazdırılabilir rapor (A4 / PDF)** — iki raporun başında **Raporu yazdır / PDF kaydet** düğmesi var.
+  Yazdırmada yalnızca sonuç paneli kâğıda basılır: menü, sponsor sütunları, formlar, adım göstergesi ve
+  çerez katmanı gizlenir; koyu tema kâğıt dostu açık temaya döner, kartlar sayfa ortasından bölünmez.
+  Kâğıda tarih, rapor türü, “veriler yalnızca tarayıcıda işlendi” notu ve tıbbi sorumluluk reddi eklenir.
+  Aynı düzen tarayıcının kendi `Ctrl/⌘+P` yazdırmasında da uygulanır; dosya üretilmez, veri cihazdan çıkmaz
 - **Blog & Tarifler** — admin panelinden yönetilen içerikler (blog yazıları ve tarifler; kategori, malzeme listesi, kapak görseli)
   - **Her yazı kendi kalıcı sayfasında:** `/blog/<slug>/` — sunucu tarafında üretilen HTML, canonical,
     hreflang ve `BlogPosting`/`Recipe`/`FAQPage` JSON-LD. Arşiv `/blog/`, RSS `/blog/rss.xml`.
