@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { LANGUAGES, LANGS, TARGET_LANGS, LANG_LABELS, LANG_LOCALES, SOURCE_LANG } from '../api/_langs.js';
 import { ABOUT_LANGUAGES } from '../api/_about-shape.js';
 import { renderBlogPost, localizedContent } from '../api/_blog-page.js';
+import { renderForumThread } from '../api/_forum-page.js';
 import { buildSitemap } from '../api/_sitemap.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -166,6 +167,23 @@ test('blog sayfası her çevrili dil için hreflang, og:locale ve html lang üre
   const hindi = renderBlogPost({ item: translatedItem, siteUrl: 'https://testotavan.com', lang: 'hi' });
   assert.match(hindi, /class="chip"/, 'dil değiştirici çipleri olmalı');
   assert.equal((hindi.match(/hreflang="/g) || []).length >= 11, true, 'hreflang listesi eksik');
+});
+
+test('dil değiştirince iç bağlantılar da aynı dili taşır', () => {
+  const html = renderBlogPost({ item: translatedItem, siteUrl: 'https://testotavan.com', lang: 'ru' });
+  assert.ok(html.includes('href="https://testotavan.com/blog/uyku-ve-testosteron/?lang=ru"'), 'yazı bağlantısı dil taşımalı');
+  assert.ok(html.includes('href="https://testotavan.com/?lang=ru"'), 'ana sayfa bağlantısı dil taşımalı');
+  assert.ok(html.includes('href="https://testotavan.com/blog/?lang=ru"'), 'blog bağlantısı dil taşımalı');
+
+  const thread = {
+    id: 'abc123', author: 'Ada', title: 'Başlık', category: 'Beslenme', body: 'Gövde.',
+    created_at: '2026-10-01T09:00:00Z', view_count: 12, likes: 4, pinned: false, locked: false, approved: true
+  };
+  const forumHtml = renderForumThread({ thread, replies: [], siteUrl: 'https://testotavan.com', env: {}, lang: 'hi' });
+  assert.match(forumHtml, /<html lang="hi"/, 'forum sayfası Hintçe olmalı');
+  assert.ok(forumHtml.includes('href="https://testotavan.com/?lang=hi"'), 'forum ana sayfa bağlantısı dil taşımalı');
+  assert.ok(forumHtml.includes('href="https://testotavan.com/forum/?lang=hi"'), 'forum hub bağlantısı dil taşımalı');
+  assert.ok(forumHtml.includes('href="https://testotavan.com/forum/?lang=hi#thread=abc123"'), 'yanıt bağlantısı dil taşımalı');
 });
 
 test('blog sayfası eksik çeviride İngilizceye düşer, Türkçe göstermez', () => {

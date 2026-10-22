@@ -555,11 +555,12 @@ function navItems(siteUrl, section, lang) {
     fr: 'Analyse du test', es: 'Análisis de la prueba', bg: 'Анализ на теста',
     ru: 'Анализ теста', hi: 'टेस्ट विश्लेषण', zh: '测试分析'
   })[lang] || 'Test Analysis';
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
   return [
-    { href: `${siteUrl}/`, label: home, key: 'home' },
-    { href: `${siteUrl}/blog/`, label: blog, key: 'blog' },
-    { href: `${siteUrl}/forum/`, label: forum, key: 'forum' },
-    { href: `${siteUrl}/#physicalPage`, label: analyzer, key: 'analyze' }
+    { href: `${siteUrl}/${langQuery}`, label: home, key: 'home' },
+    { href: `${siteUrl}/blog/${langQuery}`, label: blog, key: 'blog' },
+    { href: `${siteUrl}/forum/${langQuery}`, label: forum, key: 'forum' },
+    { href: `${siteUrl}/${langQuery}#physicalPage`, label: analyzer, key: 'analyze' }
   ].map(item => ({ ...item, current: item.key === section }));
 }
 

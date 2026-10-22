@@ -297,19 +297,26 @@ function availableLangs(item) {
   return langs;
 }
 
-function postHref(slug, blog) {
-  return blog.standalone ? `/${encodeURIComponent(slug)}/` : blogPostPath(slug);
+/** Dil parametresini koruyan iç bağlantı: TR dışındaki her dilde `?lang=` taşınır. */
+function withLang(href, lang) {
+  if (!lang || lang === 'tr') return href;
+  return `${href}${href.includes('?') ? '&' : '?'}lang=${lang}`;
 }
 
-function hubHref(blog) {
-  return blog.standalone ? '/' : '/blog/';
+function postHref(slug, blog, lang = 'tr') {
+  const path = blog.standalone ? `/${encodeURIComponent(slug)}/` : blogPostPath(slug);
+  return withLang(path, lang);
+}
+
+function hubHref(blog, lang = 'tr') {
+  return withLang(blog.standalone ? '/' : '/blog/', lang);
 }
 
 function cardHtml(item, blog, lang) {
   const cover = safeCover(item.cover_url, blog.base);
   const t = T[lang];
   const isRecipe = item.type === 'recipe';
-  return `<a class="post-card" href="${escapeAttr(postHref(item.slug, blog))}">
+  return `<a class="post-card" href="${escapeAttr(postHref(item.slug, blog, lang))}">
   <div class="cover${cover ? '' : ' emoji'}"${cover ? ` style="background-image:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.5)),url('${escapeAttr(cover)}')"` : ''}>${cover ? '' : escapeHtml(item.emoji || '📄')}</div>
   <div class="card-body">
     <div><span class="badge${isRecipe ? ' recipe' : ''}">${escapeHtml(isRecipe ? t.recipes : t.articles)}</span></div>
@@ -334,8 +341,8 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     : t.intro;
   const feature = filtered[0];
   const rest = filtered.slice(1);
-  const categoriesChips = [`<a class="chip" href="${escapeAttr(hubHref(blog))}"${category ? '' : ' aria-current="page"'}>${escapeHtml(t.all)} · ${formatNumber(items.length, lang)}</a>`]
-    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(hubHref(blog))}?kategori=${encodeURIComponent(name)}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(name)} · ${formatNumber(items.filter(item => item.category === name).length, lang)}</a>`))
+  const categoriesChips = [`<a class="chip" href="${escapeAttr(hubHref(blog, lang))}"${category ? '' : ' aria-current="page"'}>${escapeHtml(t.all)} · ${formatNumber(items.length, lang)}</a>`]
+    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(withLang(`${hubHref(blog)}?kategori=${encodeURIComponent(name)}`, lang))}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(name)} · ${formatNumber(items.filter(item => item.category === name).length, lang)}</a>`))
     .join('');
 
   const body = `<div class="wrap">
@@ -352,7 +359,7 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
 
   <nav class="chips" aria-label="${escapeAttr(lang === 'tr' ? 'Kategoriler' : 'Categories')}">${categoriesChips}</nav>
 
-  ${feature ? `<a class="feature" href="${escapeAttr(postHref(feature.slug, blog))}">
+  ${feature ? `<a class="feature" href="${escapeAttr(postHref(feature.slug, blog, lang))}">
     <div class="${safeCover(feature.cover_url, blog.base) ? 'cover' : 'cover emoji'}"${safeCover(feature.cover_url, blog.base) ? ` style="background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.5)),url('${escapeAttr(safeCover(feature.cover_url, blog.base))}')"` : ''}>${safeCover(feature.cover_url, blog.base) ? '' : escapeHtml(feature.emoji || '📄')}</div>
     <div class="feature-body">
       <div><span class="badge${feature.type === 'recipe' ? ' recipe' : ''}">${escapeHtml(feature.type === 'recipe' ? t.recipes : t.articles)}</span></div>
@@ -434,7 +441,7 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     : '';
 
   const relatedHtml = related.length
-    ? `<div class="section-head"><h2>${escapeHtml(t.related)}</h2><a class="chip" href="${escapeAttr(hubHref(blog))}">${escapeHtml(t.blog)} →</a></div><div class="cards">${related.map(entry => cardHtml(entry, blog, lang)).join('')}</div>`
+    ? `<div class="section-head"><h2>${escapeHtml(t.related)}</h2><a class="chip" href="${escapeAttr(hubHref(blog, lang))}">${escapeHtml(t.blog)} →</a></div><div class="cards">${related.map(entry => cardHtml(entry, blog, lang)).join('')}</div>`
     : '';
 
   const langSwitch = langs.length > 1
@@ -491,8 +498,8 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
 
   const body = `<div class="wrap narrow">
   <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="${siteUrl}/">${escapeHtml(t.home)}</a><span aria-hidden="true">/</span>
-    <a href="${escapeAttr(hubHref(blog))}">${escapeHtml(t.blog)}</a><span aria-hidden="true">/</span>
+    <a href="${escapeAttr(withLang(`${siteUrl}/`, lang))}">${escapeHtml(t.home)}</a><span aria-hidden="true">/</span>
+    <a href="${escapeAttr(hubHref(blog, lang))}">${escapeHtml(t.blog)}</a><span aria-hidden="true">/</span>
     <span>${escapeHtml(view.category)}</span>
   </nav>
   <article>
