@@ -1,5 +1,5 @@
 import {
-  CATEGORIES, CATEGORY_KEYS, EDIT_WINDOW_MS, PAGE_SIZE, REPLY_PAGE,
+  CATEGORIES, CATEGORY_KEYS, EDIT_WINDOW_MS, LANGUAGES, PAGE_SIZE, REPLY_PAGE,
   escapeHtml as esc, formatCount, formatDateTime, hashFor, initials, normalizeLang,
   rankKey, relativeTime, routeFromHash, translator, withinEditWindow
 } from './forum-core.js';
@@ -22,8 +22,15 @@ const store = {
   get(key) { try { return sessionStorage.getItem(key); } catch { return null; } },
   set(key, value) { try { sessionStorage.setItem(key, value); } catch { /* depolama kapalı olabilir */ } }
 };
+// Paylaşılan ?lang=xx bağlantısı kayıtlı tercihten önceliklidir.
+const urlLang = (() => {
+  try {
+    const raw = String(new URLSearchParams(location.search).get('lang') || '').trim().toLowerCase().split(/[-_]/)[0];
+    return LANGUAGES.includes(raw) ? raw : null;
+  } catch { return null; }
+})();
 let lang = 'tr';
-try { lang = normalizeLang(localStorage.getItem(LANG_KEY) || 'tr'); } catch { /* depolama kapalı olabilir */ }
+try { lang = normalizeLang(urlLang || localStorage.getItem(LANG_KEY) || 'tr'); } catch { lang = urlLang || 'tr'; }
 let t = translator(lang);
 let manage = false, offset = 0, replyOffset = 0, current = null, user = null, authMode = null;
 let listing = { threads: [], thread: null, replies: [] };
@@ -590,6 +597,11 @@ $('forum-lang').onchange = () => {
   lang = normalizeLang($('forum-lang').value);
   t = translator(lang);
   try { localStorage.setItem(LANG_KEY, lang); } catch { /* depolama kapalı olabilir */ }
+  try {
+    const url = new URL(location.href);
+    if (lang === 'tr') url.searchParams.delete('lang'); else url.searchParams.set('lang', lang);
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  } catch { /* geçmiş API'si kapalı olabilir */ }
   applyLanguage();
   editing = null;
   run(refreshView);

@@ -3,7 +3,10 @@
  * Bağımlılığı yoktur; hem serverless fonksiyonlar hem Node testleri kullanır.
  */
 
-export const LANGS = ['en', 'de', 'ja'];
+// Hedef diller tek kaynaktan (api/_langs.js): tr dışındaki 9 dil.
+export { TARGET_LANGS as LANGS } from './_langs.js';
+import { TARGET_LANGS } from './_langs.js';
+const LANGS = TARGET_LANGS;
 
 export const clean = (value, max) => String(value ?? '').trim().slice(0, max);
 
@@ -40,7 +43,13 @@ export function cleanTranslations(value) {
 const DURATION_UNITS = {
   en: { min: 'min', hour: 'h', space: true },
   de: { min: 'Min.', hour: 'Std.', space: true },
-  ja: { min: '分', hour: '時間', space: false }
+  ja: { min: '分', hour: '時間', space: false },
+  fr: { min: 'min', hour: 'h', space: true },
+  es: { min: 'min', hour: 'h', space: true },
+  bg: { min: 'мин', hour: 'ч', space: true },
+  ru: { min: 'мин', hour: 'ч', space: true },
+  hi: { min: 'मिनट', hour: 'घंटा', space: true },
+  zh: { min: '分钟', hour: '小时', space: true }
 };
 
 export function localizeDuration(text, lang) {

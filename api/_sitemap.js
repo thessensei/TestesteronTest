@@ -9,6 +9,7 @@
  */
 
 import { blogPostPath, DEFAULT_SITE_URL, forumThreadPath, resolveSiteUrl, sectionBase } from './_seo.js';
+import { TARGET_LANGS } from './_langs.js';
 import { connectDb, listContent, prepareContent } from './_content-db.js';
 
 const xmlEscape = value => String(value ?? '')
@@ -26,7 +27,7 @@ const isoDay = value => {
 /** Bir yazının yayınlanmış çeviri dilleri. */
 function translatedLangs(item) {
   const langs = ['tr'];
-  for (const lang of ['en', 'de', 'ja']) {
+  for (const lang of TARGET_LANGS) {
     if (String(item?.translations?.[lang]?.title || '').trim() && String(item?.translations?.[lang]?.body || '').trim()) langs.push(lang);
   }
   return langs;

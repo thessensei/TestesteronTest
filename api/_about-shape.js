@@ -1,5 +1,7 @@
 // Hakkımızda editörünün izin verilen alanları ve ilk açılış değerleri.
-export const ABOUT_LANGUAGES = ['tr', 'en', 'de', 'ja'];
+import { SOURCE_LANG, TARGET_LANGS } from './_langs.js';
+
+export const ABOUT_LANGUAGES = [SOURCE_LANG, ...TARGET_LANGS];
 export const ABOUT_FIELDS = [
   {
     "key": "title",

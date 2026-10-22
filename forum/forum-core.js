@@ -3,14 +3,18 @@
  * Sözlük, biçimlendirme ve yönlendirme yardımcıları burada tutulur;
  * forum/forum.js bunları kullanır, testler ise doğrudan import eder.
  */
-export const LANGUAGES = ['tr', 'en', 'de', 'ja'];
+// Dil listesi sunucudaki api/_langs.js ile aynı olmalı (tests/languages.test.mjs doğrular).
+export const LANGUAGES = ['tr', 'en', 'de', 'ja', 'fr', 'es', 'bg', 'ru', 'hi', 'zh'];
 export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler'];
 export const CATEGORY_KEYS = { Genel: 'cat-general', Antrenman: 'cat-training', Beslenme: 'cat-nutrition', Deneyimler: 'cat-stories' };
 export const PAGE_SIZE = 30;
 export const REPLY_PAGE = 50;
 // Sunucudaki api/_forum.js ile aynı olmalı; testler iki değeri karşılaştırır.
 export const EDIT_WINDOW_MS = 30 * 60 * 1000;
-const LOCALES = { tr: 'tr-TR', en: 'en-GB', de: 'de-DE', ja: 'ja-JP' };
+const LOCALES = {
+  tr: 'tr-TR', en: 'en-GB', de: 'de-DE', ja: 'ja-JP', fr: 'fr-FR',
+  es: 'es-ES', bg: 'bg-BG', ru: 'ru-RU', hi: 'hi-IN', zh: 'zh-CN'
+};
 
 export const UI = {
   tr: {
@@ -204,6 +208,144 @@ export const UI = {
     boardForums: 'フォーラム', tabNew: '新着メッセージ', tabHot: '注目トピック',
     colTopic: 'トピック', colForum: 'フォーラム', colReplies: '返信', colViews: '閲覧', colPosted: '投稿日', colLast: '最新の返信',
     newTopic: 'トピックを作成', latestContent: '最新の投稿', noLastReply: '返信なし'
+  },
+  fr: {
+    site: '← Retour au site', eyebrow: 'APPRENDRE ENSEMBLE, PARTAGER CE QUI MARCHE', title: 'La progression commence par une conversation.', intro: 'Échangez avec la communauté sur l entraînement, la nutrition et les habitudes quotidiennes.', aside: 'Votre compte est visible au lieu d un pseudonyme. Ne partagez pas de données de santé personnelles. Les publications ici ne sont pas un avis médical. Soyez respectueux ; les sujets et réponses sont publiés après validation.', 'login-title': 'Continuez avec votre compte',
+    'login-help': 'La session reste ouverte 14 jours. Votre nom d utilisateur apparaît sur vos publications.', 'register-title': 'Créer un compte gratuit', 'register-help': 'Choisissez un nom d utilisateur de 3 à 20 caractères et un mot de passe d au moins 8 caractères contenant des lettres et des chiffres.', username: 'Nom d utilisateur', password: 'Mot de passe', confirm: 'Confirmer le mot de passe',
+    'login-submit': 'Se connecter', 'register-submit': 'S inscrire', logout: 'Se déconnecter', topics: 'Sujets', refresh: 'Actualiser', prev: '← Précédent',
+    next: 'Suivant →', 'gate-title': 'Un compte est nécessaire pour participer', 'gate-body': 'Créer un sujet et répondre est gratuit. Connectez-vous ou inscrivez-vous d abord.', 'new-title': 'Démarrer une nouvelle discussion', category: 'Catégorie', titleField: 'Titre du sujet',
+    message: 'Message', 'send-topic': 'Envoyer pour validation →', back: '← Tous les sujets', 'reply-prev': '← Réponses précédentes', 'reply-next': 'Réponses suivantes →', 'reply-gate': 'Connectez-vous ou inscrivez-vous pour répondre.',
+    'reply-title': 'Rejoindre la discussion', reply: 'Réponse', 'send-reply': 'Envoyer la réponse pour validation →', page: 'Page', empty: 'Aucun sujet pour le moment. Lancez la première discussion !', replies: 'réponses',
+    pending: 'réponse en attente de validation', loading: 'Chargement des sujets…', opening: 'Chargement de la discussion…', closed: 'Ce sujet est fermé aux nouvelles réponses.', lockedBadge: 'Verrouillé', postedAs: 'Vous publiez avec',
+    welcome: 'Bienvenue', authRequired: 'Connectez-vous pour publier.', mismatch: 'Les mots de passe ne correspondent pas.', manage: 'Gestion du forum', approve: 'Approuver', unlock: 'Déverrouiller',
+    lock: 'Verrouiller', delete: 'Supprimer', 'cat-general': 'Général', 'cat-training': 'Entraînement', 'cat-nutrition': 'Nutrition', 'cat-stories': 'Expériences',
+    waiting: 'En attente de validation', deleteTopic: 'Supprimer définitivement le sujet et toutes ses réponses ?', deleteReply: 'Supprimer définitivement la réponse ?', done: 'Opération terminée.', noReplies: 'Aucune réponse pour le moment.', replyHeading: 'Réponses',
+    views: 'vues', pinnedBadge: 'Épinglé', pin: 'Épingler', unpin: 'Désépingler', like: 'J aime', liked: 'Vous aimez',
+    likeFirst: 'Connectez-vous pour aimer.', quote: 'Citer', quotedPost: 'Message cité', cancelQuote: 'Retirer la citation', cancel: 'Annuler', save: 'Enregistrer',
+    edit: 'Modifier', edited: 'modifié', editHint: 'Vous pouvez modifier dans les 30 premières minutes.', editExpired: 'Le délai de modification est écoulé.', copyLink: 'Copier le lien', copied: 'Lien copié.',
+    copyFailed: 'Impossible de copier le lien.', posts: 'messages', you: 'vous', topicOwner: 'Auteur du sujet', jumpQuote: 'Aller à la citation', 'rank-new': 'Nouveau membre',
+    'rank-member': 'Membre', 'rank-active': 'Membre actif', 'rank-veteran': 'Membre confirmé', anchorMissing: 'Le message du lien n apparaît pas sur cette page.', heroEyebrow: 'PLACE TESTOTAVAN', search: 'Rechercher un sujet…',
+    searchLabel: 'Rechercher', sortNew: 'Récents', sortTop: 'Populaires', sortActive: 'Plus de réponses', sortUnanswered: 'Sans réponse', statsThreads: 'Sujets',
+    statsReplies: 'Réponses', statsMembers: 'Membres', statsViews: 'Vues', railPulse: 'Pouls de la communauté', railAuthors: 'Auteurs en vedette', railGuidelines: 'Règles de la place',
+    guideline1: 'Soyez respectueux ; visez l idée, pas la personne.', guideline2: 'Ne partagez pas de données de santé personnelles ni d ordonnances.', guideline3: 'Ajoutez un lien si vous citez une source ; ne promettez pas de guérison.', guideline4: 'Les sujets sont publiés après validation par un administrateur.', allCategories: 'Tout', noResults: 'Aucun sujet avec ces filtres.',
+    clearFilters: 'Effacer les filtres', sharePage: 'Partager la page du sujet', openPage: 'Page permanente', latestTopic: 'Dernier sujet', boardForums: 'Forums', tabNew: 'Nouveaux messages',
+    tabHot: 'Sujets chauds', colTopic: 'Sujet', colForum: 'Forum', colReplies: 'Réponses', colViews: 'Vues', colPosted: 'Publié',
+    colLast: 'Dernière réponse', newTopic: 'Créer un sujet', latestContent: 'Derniers contenus', noLastReply: 'Sans réponse'
+  },
+  es: {
+    site: '← Volver al sitio', eyebrow: 'APRENDER JUNTOS, COMPARTIR LO QUE FUNCIONA', title: 'El progreso empieza con una conversación.', intro: 'Habla con la comunidad sobre entrenamiento, nutrición y hábitos diarios.', aside: 'Tu cuenta es visible en lugar de un alias. No compartas datos personales de salud. Lo publicado aquí no es consejo médico. Sé respetuoso; los temas y respuestas se publican tras la aprobación.', 'login-title': 'Continúa con tu cuenta',
+    'login-help': 'La sesión permanece abierta 14 días. Tu nombre de usuario aparece en tus publicaciones.', 'register-title': 'Crear una cuenta gratuita', 'register-help': 'Elige un nombre de usuario de 3 a 20 caracteres y una contraseña de al menos 8 caracteres con letras y números.', username: 'Nombre de usuario', password: 'Contraseña', confirm: 'Repetir contraseña',
+    'login-submit': 'Iniciar sesión', 'register-submit': 'Registrarse', logout: 'Salir', topics: 'Temas', refresh: 'Actualizar', prev: '← Anterior',
+    next: 'Siguiente →', 'gate-title': 'Necesitas una cuenta para participar', 'gate-body': 'Abrir un tema y responder es gratis. Inicia sesión o regístrate primero.', 'new-title': 'Iniciar una nueva conversación', category: 'Categoría', titleField: 'Título del tema',
+    message: 'Mensaje', 'send-topic': 'Enviar para revisión →', back: '← Todos los temas', 'reply-prev': '← Respuestas anteriores', 'reply-next': 'Respuestas siguientes →', 'reply-gate': 'Inicia sesión o regístrate para responder.',
+    'reply-title': 'Únete a la conversación', reply: 'Respuesta', 'send-reply': 'Enviar respuesta para revisión →', page: 'Página', empty: 'Aún no hay temas. ¡Inicia la primera conversación!', replies: 'respuestas',
+    pending: 'respuesta pendiente de aprobación', loading: 'Cargando temas…', opening: 'Cargando conversación…', closed: 'Este tema está cerrado a nuevas respuestas.', lockedBadge: 'Bloqueado', postedAs: 'Publicas con',
+    welcome: 'Bienvenido', authRequired: 'Inicia sesión para publicar.', mismatch: 'Las contraseñas no coinciden.', manage: 'Gestión del foro', approve: 'Aprobar', unlock: 'Desbloquear',
+    lock: 'Bloquear', delete: 'Eliminar', 'cat-general': 'General', 'cat-training': 'Entrenamiento', 'cat-nutrition': 'Nutrición', 'cat-stories': 'Experiencias',
+    waiting: 'Pendiente de aprobación', deleteTopic: '¿Eliminar definitivamente el tema y todas sus respuestas?', deleteReply: '¿Eliminar definitivamente la respuesta?', done: 'Operación completada.', noReplies: 'Aún no hay respuestas.', replyHeading: 'Respuestas',
+    views: 'visualizaciones', pinnedBadge: 'Fijado', pin: 'Fijar', unpin: 'Quitar fijación', like: 'Me gusta', liked: 'Te gusta',
+    likeFirst: 'Inicia sesión para dar me gusta.', quote: 'Citar', quotedPost: 'Mensaje citado', cancelQuote: 'Quitar cita', cancel: 'Cancelar', save: 'Guardar',
+    edit: 'Editar', edited: 'editado', editHint: 'Puedes editar en los primeros 30 minutos.', editExpired: 'El plazo de edición ha terminado.', copyLink: 'Copiar enlace', copied: 'Enlace copiado.',
+    copyFailed: 'No se pudo copiar el enlace.', posts: 'mensajes', you: 'tú', topicOwner: 'Autor del tema', jumpQuote: 'Ir a la cita', 'rank-new': 'Miembro nuevo',
+    'rank-member': 'Miembro', 'rank-active': 'Miembro activo', 'rank-veteran': 'Miembro veterano', anchorMissing: 'El mensaje del enlace no aparece en esta página.', heroEyebrow: 'PLAZA TESTOTAVAN', search: 'Buscar un tema…',
+    searchLabel: 'Buscar', sortNew: 'Recientes', sortTop: 'Populares', sortActive: 'Más respuestas', sortUnanswered: 'Sin respuesta', statsThreads: 'Temas',
+    statsReplies: 'Respuestas', statsMembers: 'Miembros', statsViews: 'Vistas', railPulse: 'Pulso de la comunidad', railAuthors: 'Autores destacados', railGuidelines: 'Reglas de la plaza',
+    guideline1: 'Sé respetuoso; céntrate en la idea, no en la persona.', guideline2: 'No compartas datos personales de salud ni recetas médicas.', guideline3: 'Añade el enlace si citas una fuente; no prometas curas.', guideline4: 'Los temas se publican tras la aprobación del administrador.', allCategories: 'Todo', noResults: 'Ningún tema coincide con estos filtros.',
+    clearFilters: 'Limpiar filtros', sharePage: 'Compartir la página del tema', openPage: 'Página permanente', latestTopic: 'Último tema', boardForums: 'Foros', tabNew: 'Mensajes nuevos',
+    tabHot: 'Temas calientes', colTopic: 'Tema', colForum: 'Foro', colReplies: 'Respuestas', colViews: 'Vistas', colPosted: 'Publicado',
+    colLast: 'Última respuesta', newTopic: 'Crear tema', latestContent: 'Últimos contenidos', noLastReply: 'Sin respuesta'
+  },
+  bg: {
+    site: '← Обратно към сайта', eyebrow: 'УЧИМ ЗАЕДНО, СПОДЕЛЯМЕ ОПИТ', title: 'Развитието започва с разговор.', intro: 'Говори с общността за тренировки, хранене и ежедневни навици.', aside: 'Вместо псевдоним се вижда профилът ти. Не споделяй лични здравни данни. Публикациите тук не са медицински съвет. Бъди уважителен; темите и отговорите се публикуват след одобрение.', 'login-title': 'Продължи с профила си',
+    'login-help': 'Сесията остава активна 14 дни. Потребителското име се вижда в публикациите.', 'register-title': 'Създай безплатен профил', 'register-help': 'Избери потребителско име от 3 до 20 знака и парола поне 8 знака с букви и цифри.', username: 'Потребителско име', password: 'Парола', confirm: 'Повтори паролата',
+    'login-submit': 'Вход', 'register-submit': 'Регистрация', logout: 'Изход', topics: 'Теми', refresh: 'Обнови', prev: '← Предишна',
+    next: 'Следваща →', 'gate-title': 'За участие е нужен профил', 'gate-body': 'Отварянето на тема и отговорите са безплатни. Първо влез или се регистрирай.', 'new-title': 'Започни нов разговор', category: 'Категория', titleField: 'Заглавие на темата',
+    message: 'Съобщение', 'send-topic': 'Изпрати за одобрение →', back: '← Всички теми', 'reply-prev': '← Предишни отговори', 'reply-next': 'Следващи отговори →', 'reply-gate': 'Влез или се регистрирай, за да отговориш.',
+    'reply-title': 'Присъедини се към разговора', reply: 'Отговор', 'send-reply': 'Изпрати отговора за одобрение →', page: 'Страница', empty: 'Все още няма теми. Започни първия разговор!', replies: 'отговора',
+    pending: 'отговор чака одобрение', loading: 'Зареждане на теми…', opening: 'Зареждане на разговора…', closed: 'Тази тема е затворена за нови отговори.', lockedBadge: 'Заключена', postedAs: 'Пишеш като',
+    welcome: 'Добре дошъл', authRequired: 'Влез, за да публикуваш.', mismatch: 'Паролите не съвпадат.', manage: 'Управление на форума', approve: 'Одобри', unlock: 'Отключи',
+    lock: 'Заключи', delete: 'Изтрий', 'cat-general': 'Общи', 'cat-training': 'Тренировки', 'cat-nutrition': 'Хранене', 'cat-stories': 'Опит',
+    waiting: 'Чака одобрение', deleteTopic: 'Да се изтрие ли темата с всички отговори завинаги?', deleteReply: 'Да се изтрие ли отговорът завинаги?', done: 'Операцията е завършена.', noReplies: 'Все още няма отговори.', replyHeading: 'Отговори',
+    views: 'преглеждания', pinnedBadge: 'Закачена', pin: 'Закачи', unpin: 'Откачи', like: 'Харесва ми', liked: 'Харесва ти',
+    likeFirst: 'Влез, за да харесаш.', quote: 'Цитирай', quotedPost: 'Цитирано съобщение', cancelQuote: 'Премахни цитата', cancel: 'Отказ', save: 'Запази',
+    edit: 'Редактирай', edited: 'редактирано', editHint: 'Можеш да редактираш в първите 30 минути.', editExpired: 'Времето за редакция изтече.', copyLink: 'Копирай връзката', copied: 'Връзката е копирана.',
+    copyFailed: 'Връзката не можа да се копира.', posts: 'съобщения', you: 'ти', topicOwner: 'Автор на темата', jumpQuote: 'Към цитата', 'rank-new': 'Нов член',
+    'rank-member': 'Член', 'rank-active': 'Активен член', 'rank-veteran': 'Старши член', anchorMissing: 'Съобщението от връзката не е на тази страница.', heroEyebrow: 'ПЛОЩАД TESTOTAVAN', search: 'Търси тема…',
+    searchLabel: 'Търси', sortNew: 'Нови', sortTop: 'Популярни', sortActive: 'Най-отговаряни', sortUnanswered: 'Без отговор', statsThreads: 'Теми',
+    statsReplies: 'Отговори', statsMembers: 'Членове', statsViews: 'Преглеждания', railPulse: 'Пулс на общността', railAuthors: 'Изявени автори', railGuidelines: 'Правила на площада',
+    guideline1: 'Бъди уважителен; насочи се към идеята, не към човека.', guideline2: 'Не споделяй лични здравни данни и рецепти.', guideline3: 'Добави връзка, ако цитираш източник; не обещавай лечение.', guideline4: 'Темите се публикуват след одобрение от администратор.', allCategories: 'Всички', noResults: 'Няма теми с тези филтри.',
+    clearFilters: 'Изчисти филтрите', sharePage: 'Сподели страницата на темата', openPage: 'Постоянна страница', latestTopic: 'Последна тема', boardForums: 'Форуми', tabNew: 'Нови съобщения',
+    tabHot: 'Горещи теми', colTopic: 'Тема', colForum: 'Форум', colReplies: 'Отговори', colViews: 'Прегледи', colPosted: 'Публикувано',
+    colLast: 'Последен отговор', newTopic: 'Нова тема', latestContent: 'Последни публикации', noLastReply: 'Без отговор'
+  },
+  ru: {
+    site: '← Вернуться на сайт', eyebrow: 'УЧИМСЯ ВМЕСТЕ, ДЕЛИМСЯ ОПЫТОМ', title: 'Прогресс начинается с разговора.', intro: 'Общайтесь с сообществом о тренировках, питании и ежедневных привычках.', aside: 'Вместо псевдонима виден ваш аккаунт. Не публикуйте личные медицинские данные. Материалы здесь не являются медицинским советом. Будьте уважительны; темы и ответы публикуются после проверки.', 'login-title': 'Продолжить с аккаунтом',
+    'login-help': 'Сессия остаётся активной 14 дней. Имя пользователя видно в публикациях.', 'register-title': 'Создать бесплатный аккаунт', 'register-help': 'Выберите имя пользователя от 3 до 20 символов и пароль не короче 8 символов с буквами и цифрами.', username: 'Имя пользователя', password: 'Пароль', confirm: 'Повторите пароль',
+    'login-submit': 'Войти', 'register-submit': 'Зарегистрироваться', logout: 'Выйти', topics: 'Темы', refresh: 'Обновить', prev: '← Назад',
+    next: 'Вперёд →', 'gate-title': 'Для участия нужен аккаунт', 'gate-body': 'Создать тему и ответить можно бесплатно. Сначала войдите или зарегистрируйтесь.', 'new-title': 'Начать новое обсуждение', category: 'Категория', titleField: 'Заголовок темы',
+    message: 'Сообщение', 'send-topic': 'Отправить на проверку →', back: '← Все темы', 'reply-prev': '← Предыдущие ответы', 'reply-next': 'Следующие ответы →', 'reply-gate': 'Войдите или зарегистрируйтесь, чтобы ответить.',
+    'reply-title': 'Присоединиться к обсуждению', reply: 'Ответ', 'send-reply': 'Отправить ответ на проверку →', page: 'Страница', empty: 'Тем пока нет. Начните первое обсуждение!', replies: 'ответов',
+    pending: 'ответ ожидает проверки', loading: 'Загрузка тем…', opening: 'Загрузка обсуждения…', closed: 'Эта тема закрыта для новых ответов.', lockedBadge: 'Закрыто', postedAs: 'Вы пишете как',
+    welcome: 'Добро пожаловать', authRequired: 'Войдите, чтобы писать.', mismatch: 'Пароли не совпадают.', manage: 'Управление форумом', approve: 'Одобрить', unlock: 'Открыть',
+    lock: 'Закрыть', delete: 'Удалить', 'cat-general': 'Общее', 'cat-training': 'Тренировки', 'cat-nutrition': 'Питание', 'cat-stories': 'Опыт',
+    waiting: 'Ожидает проверки', deleteTopic: 'Удалить тему и все ответы навсегда?', deleteReply: 'Удалить ответ навсегда?', done: 'Готово.', noReplies: 'Ответов пока нет.', replyHeading: 'Ответы',
+    views: 'просмотров', pinnedBadge: 'Закреплено', pin: 'Закрепить', unpin: 'Открепить', like: 'Нравится', liked: 'Вам нравится',
+    likeFirst: 'Войдите, чтобы поставить отметку.', quote: 'Цитировать', quotedPost: 'Цитируемое сообщение', cancelQuote: 'Убрать цитату', cancel: 'Отмена', save: 'Сохранить',
+    edit: 'Изменить', edited: 'изменено', editHint: 'Можно изменить в первые 30 минут.', editExpired: 'Время редактирования истекло.', copyLink: 'Скопировать ссылку', copied: 'Ссылка скопирована.',
+    copyFailed: 'Не удалось скопировать ссылку.', posts: 'сообщений', you: 'вы', topicOwner: 'Автор темы', jumpQuote: 'Перейти к цитате', 'rank-new': 'Новый участник',
+    'rank-member': 'Участник', 'rank-active': 'Активный участник', 'rank-veteran': 'Старший участник', anchorMissing: 'Сообщение из ссылки не отображается на этой странице.', heroEyebrow: 'ПЛОЩАДЬ TESTOTAVAN', search: 'Найти тему…',
+    searchLabel: 'Поиск', sortNew: 'Новые', sortTop: 'Популярные', sortActive: 'Больше ответов', sortUnanswered: 'Без ответа', statsThreads: 'Темы',
+    statsReplies: 'Ответы', statsMembers: 'Участники', statsViews: 'Просмотры', railPulse: 'Пульс сообщества', railAuthors: 'Активные авторы', railGuidelines: 'Правила площади',
+    guideline1: 'Будьте уважительны; обсуждайте идею, а не человека.', guideline2: 'Не публикуйте личные медицинские данные и рецепты.', guideline3: 'Добавляйте ссылку на источник; не обещайте лечение.', guideline4: 'Темы публикуются после проверки администратором.', allCategories: 'Все', noResults: 'По этим фильтрам тем не найдено.',
+    clearFilters: 'Сбросить фильтры', sharePage: 'Поделиться страницей темы', openPage: 'Постоянная страница', latestTopic: 'Последняя тема', boardForums: 'Форумы', tabNew: 'Новые сообщения',
+    tabHot: 'Горячие темы', colTopic: 'Тема', colForum: 'Форум', colReplies: 'Ответы', colViews: 'Просмотры', colPosted: 'Опубликовано',
+    colLast: 'Последний ответ', newTopic: 'Создать тему', latestContent: 'Последние материалы', noLastReply: 'Без ответа'
+  },
+  hi: {
+    site: '← साइट पर वापस', eyebrow: 'साथ सीखें, अनुभव साझा करें', title: 'प्रगति एक बातचीत से शुरू होती है।', intro: 'प्रशिक्षण, पोषण और रोज़ की आदतों पर समुदाय से बात करें।', aside: 'उपनाम की जगह आपका खाता दिखता है। व्यक्तिगत स्वास्थ्य डेटा साझा न करें। यहाँ की पोस्ट चिकित्सकीय सलाह नहीं हैं। विनम्र रहें; विषय और उत्तर व्यवस्थापक स्वीकृति के बाद प्रकाशित होते हैं।', 'login-title': 'अपने खाते से जारी रखें',
+    'login-help': 'सत्र 14 दिन खुला रहता है। आपका उपयोगकर्ता नाम पोस्ट में दिखता है।', 'register-title': 'मुफ़्त खाता बनाएँ', 'register-help': '3–20 अक्षरों का उपयोगकर्ता नाम और कम से कम 8 अक्षरों का पासवर्ड चुनें जिसमें अक्षर और अंक हों।', username: 'उपयोगकर्ता नाम', password: 'पासवर्ड', confirm: 'पासवर्ड दोहराएँ',
+    'login-submit': 'लॉग इन करें', 'register-submit': 'साइन अप करें', logout: 'लॉग आउट', topics: 'विषय', refresh: 'रिफ़्रेश', prev: '← पिछला',
+    next: 'अगला →', 'gate-title': 'भाग लेने के लिए खाता आवश्यक है', 'gate-body': 'विषय शुरू करना और उत्तर देना मुफ़्त है। पहले लॉग इन या साइन अप करें।', 'new-title': 'नई बातचीत शुरू करें', category: 'श्रेणी', titleField: 'विषय का शीर्षक',
+    message: 'संदेश', 'send-topic': 'स्वीकृति के लिए भेजें →', back: '← सभी विषय', 'reply-prev': '← पिछले उत्तर', 'reply-next': 'अगले उत्तर →', 'reply-gate': 'उत्तर देने के लिए लॉग इन या साइन अप करें।',
+    'reply-title': 'बातचीत में शामिल हों', reply: 'उत्तर', 'send-reply': 'उत्तर स्वीकृति के लिए भेजें →', page: 'पृष्ठ', empty: 'अभी कोई विषय नहीं। पहली बातचीत आप शुरू करें!', replies: 'उत्तर',
+    pending: 'उत्तर स्वीकृति की प्रतीक्षा में', loading: 'विषय लोड हो रहे हैं…', opening: 'बातचीत लोड हो रही है…', closed: 'यह विषय नए उत्तरों के लिए बंद है।', lockedBadge: 'बंद', postedAs: 'आप इस खाते से लिख रहे हैं',
+    welcome: 'स्वागत है', authRequired: 'लिखने के लिए लॉग इन करें।', mismatch: 'पासवर्ड मेल नहीं खाते।', manage: 'फ़ोरम प्रबंधन', approve: 'स्वीकृत करें', unlock: 'अनलॉक करें',
+    lock: 'लॉक करें', delete: 'हटाएँ', 'cat-general': 'सामान्य', 'cat-training': 'प्रशिक्षण', 'cat-nutrition': 'पोषण', 'cat-stories': 'अनुभव',
+    waiting: 'स्वीकृति की प्रतीक्षा', deleteTopic: 'विषय और उसके सभी उत्तर हमेशा के लिए हटाएँ?', deleteReply: 'उत्तर हमेशा के लिए हटाएँ?', done: 'कार्य पूरा हुआ।', noReplies: 'अभी कोई उत्तर नहीं।', replyHeading: 'उत्तर',
+    views: 'बार देखा गया', pinnedBadge: 'पिन किया', pin: 'पिन करें', unpin: 'पिन हटाएँ', like: 'पसंद', liked: 'आपको पसंद है',
+    likeFirst: 'पसंद करने के लिए लॉग इन करें।', quote: 'उद्धृत करें', quotedPost: 'उद्धृत संदेश', cancelQuote: 'उद्धरण हटाएँ', cancel: 'रद्द करें', save: 'सहेजें',
+    edit: 'संपादित करें', edited: 'संपादित', editHint: 'पहले 30 मिनट में संपादित कर सकते हैं।', editExpired: 'संपादन का समय समाप्त हो गया।', copyLink: 'लिंक कॉपी करें', copied: 'लिंक कॉपी हो गया।',
+    copyFailed: 'लिंक कॉपी नहीं हो सका।', posts: 'संदेश', you: 'आप', topicOwner: 'विषय के लेखक', jumpQuote: 'उद्धरण पर जाएँ', 'rank-new': 'नया सदस्य',
+    'rank-member': 'सदस्य', 'rank-active': 'सक्रिय सदस्य', 'rank-veteran': 'वरिष्ठ सदस्य', anchorMissing: 'लिंक का संदेश इस पृष्ठ पर नहीं दिखता।', heroEyebrow: 'TESTOTAVAN चौक', search: 'विषय खोजें…',
+    searchLabel: 'खोजें', sortNew: 'नए', sortTop: 'लोकप्रिय', sortActive: 'सर्वाधिक उत्तर', sortUnanswered: 'बिना उत्तर', statsThreads: 'विषय',
+    statsReplies: 'उत्तर', statsMembers: 'सदस्य', statsViews: 'दृश्य', railPulse: 'समुदाय की धड़कन', railAuthors: 'प्रमुख लेखक', railGuidelines: 'चौक के नियम',
+    guideline1: 'विनम्र रहें; व्यक्ति नहीं, विचार पर ध्यान दें।', guideline2: 'व्यक्तिगत स्वास्थ्य डेटा और पर्चे साझा न करें।', guideline3: 'स्रोत दें तो लिंक जोड़ें; इलाज का वादा न करें।', guideline4: 'विषय व्यवस्थापक स्वीकृति के बाद प्रकाशित होते हैं।', allCategories: 'सभी', noResults: 'इन फ़िल्टर से कोई विषय नहीं मिला।',
+    clearFilters: 'फ़िल्टर साफ़ करें', sharePage: 'विषय पृष्ठ साझा करें', openPage: 'स्थायी पृष्ठ', latestTopic: 'नवीनतम विषय', boardForums: 'फ़ोरम', tabNew: 'नए संदेश',
+    tabHot: 'लोकप्रिय विषय', colTopic: 'विषय', colForum: 'फ़ोरम', colReplies: 'उत्तर', colViews: 'दृश्य', colPosted: 'प्रकाशित',
+    colLast: 'अंतिम उत्तर', newTopic: 'नया विषय', latestContent: 'नवीनतम सामग्री', noLastReply: 'कोई उत्तर नहीं'
+  },
+  zh: {
+    site: '← 返回网站', eyebrow: '一起学习，分享经验', title: '进步从一次对话开始。', intro: '与社区交流训练、营养和日常习惯。', aside: '这里显示你的账号而不是匿名昵称。请勿分享个人健康数据。此处内容不是医疗建议。请保持尊重；主题和回复经管理员审核后发布。', 'login-title': '使用账号继续',
+    'login-help': '登录状态保持 14 天。你的用户名会显示在发布内容中。', 'register-title': '创建免费账号', 'register-help': '用户名 3–20 个字符，密码至少 8 个字符并包含字母和数字。', username: '用户名', password: '密码', confirm: '确认密码',
+    'login-submit': '登录', 'register-submit': '注册', logout: '退出', topics: '主题', refresh: '刷新', prev: '← 上一页',
+    next: '下一页 →', 'gate-title': '参与讨论需要账号', 'gate-body': '创建主题和回复均免费。请先登录或注册。', 'new-title': '开始新的讨论', category: '分类', titleField: '主题标题',
+    message: '内容', 'send-topic': '提交审核 →', back: '← 全部主题', 'reply-prev': '← 之前的回复', 'reply-next': '之后的回复 →', 'reply-gate': '登录或注册后即可回复。',
+    'reply-title': '加入讨论', reply: '回复', 'send-reply': '提交回复审核 →', page: '第', empty: '还没有主题。来发起第一个讨论吧！', replies: '条回复',
+    pending: '条回复待审核', loading: '正在加载主题…', opening: '正在加载讨论…', closed: '该主题已关闭新回复。', lockedBadge: '已锁定', postedAs: '当前发布账号',
+    welcome: '欢迎', authRequired: '登录后即可发布。', mismatch: '两次密码不一致。', manage: '论坛管理', approve: '通过', unlock: '解锁',
+    lock: '锁定', delete: '删除', 'cat-general': '综合', 'cat-training': '训练', 'cat-nutrition': '营养', 'cat-stories': '经验',
+    waiting: '待审核', deleteTopic: '永久删除该主题及其全部回复？', deleteReply: '永久删除该回复？', done: '操作已完成。', noReplies: '暂无回复。', replyHeading: '回复',
+    views: '次浏览', pinnedBadge: '置顶', pin: '置顶', unpin: '取消置顶', like: '点赞', liked: '已点赞',
+    likeFirst: '登录后可点赞。', quote: '引用', quotedPost: '引用的内容', cancelQuote: '取消引用', cancel: '取消', save: '保存',
+    edit: '编辑', edited: '已编辑', editHint: '可在发布后 30 分钟内编辑。', editExpired: '编辑时间已结束。', copyLink: '复制链接', copied: '链接已复制。',
+    copyFailed: '无法复制链接。', posts: '条内容', you: '你', topicOwner: '主题作者', jumpQuote: '跳转到引用', 'rank-new': '新成员',
+    'rank-member': '成员', 'rank-active': '活跃成员', 'rank-veteran': '资深成员', anchorMissing: '链接中的内容不在本页。', heroEyebrow: 'TESTOTAVAN 广场', search: '搜索主题…',
+    searchLabel: '搜索', sortNew: '最新', sortTop: '热门', sortActive: '回复最多', sortUnanswered: '未回复', statsThreads: '主题',
+    statsReplies: '回复', statsMembers: '成员', statsViews: '浏览', railPulse: '社区脉搏', railAuthors: '活跃作者', railGuidelines: '广场规则',
+    guideline1: '保持尊重；就事论事，不针对个人。', guideline2: '请勿分享个人健康数据和处方。', guideline3: '引用来源时请附链接；不要承诺疗效。', guideline4: '主题经管理员审核后发布。', allCategories: '全部', noResults: '没有符合筛选条件的主题。',
+    clearFilters: '清除筛选', sharePage: '分享主题页面', openPage: '永久页面', latestTopic: '最新主题', boardForums: '版块', tabNew: '新消息',
+    tabHot: '热门主题', colTopic: '主题', colForum: '版块', colReplies: '回复', colViews: '浏览', colPosted: '发布',
+    colLast: '最后回复', newTopic: '发布主题', latestContent: '最新内容', noLastReply: '暂无回复'
   }
 };
 
@@ -211,7 +353,13 @@ const RELATIVE = {
   tr: { justNow: 'az önce', minutes: n => `${n} dk önce`, hours: n => `${n} sa önce`, days: n => `${n} gün önce`, weeks: n => `${n} hafta önce` },
   en: { justNow: 'just now', minutes: n => `${n} min ago`, hours: n => `${n} h ago`, days: n => `${n} d ago`, weeks: n => `${n} w ago` },
   de: { justNow: 'gerade eben', minutes: n => `vor ${n} Min.`, hours: n => `vor ${n} Std.`, days: n => `vor ${n} Tg.`, weeks: n => `vor ${n} Wo.` },
-  ja: { justNow: 'たった今', minutes: n => `${n}分前`, hours: n => `${n}時間前`, days: n => `${n}日前`, weeks: n => `${n}週間前` }
+  ja: { justNow: 'たった今', minutes: n => `${n}分前`, hours: n => `${n}時間前`, days: n => `${n}日前`, weeks: n => `${n}週間前` },
+  fr: { justNow: 'à l instant', minutes: n => `il y a ${n} min`, hours: n => `il y a ${n} h`, days: n => `il y a ${n} j`, weeks: n => `il y a ${n} sem.` },
+  es: { justNow: 'ahora mismo', minutes: n => `hace ${n} min`, hours: n => `hace ${n} h`, days: n => `hace ${n} d`, weeks: n => `hace ${n} sem.` },
+  bg: { justNow: 'току-що', minutes: n => `преди ${n} мин`, hours: n => `преди ${n} ч`, days: n => `преди ${n} дни`, weeks: n => `преди ${n} седм.` },
+  ru: { justNow: 'только что', minutes: n => `${n} мин назад`, hours: n => `${n} ч назад`, days: n => `${n} дн. назад`, weeks: n => `${n} нед. назад` },
+  hi: { justNow: 'अभी', minutes: n => `${n} मिनट पहले`, hours: n => `${n} घंटे पहले`, days: n => `${n} दिन पहले`, weeks: n => `${n} हफ़्ते पहले` },
+  zh: { justNow: '刚刚', minutes: n => `${n} 分钟前`, hours: n => `${n} 小时前`, days: n => `${n} 天前`, weeks: n => `${n} 周前` }
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

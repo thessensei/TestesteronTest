@@ -54,14 +54,14 @@ test('istemci çekirdeği ile API aynı pencere ve sayfa boyutlarını kullanır
   assert.equal(EDIT_WINDOW_MS, API_EDIT_WINDOW_MS);
   assert.equal(PAGE_SIZE, 30);
   assert.equal(REPLY_PAGE, 50);
-  assert.deepEqual(LANGUAGES, ['tr', 'en', 'de', 'ja']);
+  assert.deepEqual(LANGUAGES, ['tr', 'en', 'de', 'ja', 'fr', 'es', 'bg', 'ru', 'hi', 'zh']);
   assert.equal(translator('xx')('site'), UI.tr.site);
   assert.equal(translator('en')('site'), UI.en.site);
   assert.equal(translator('tr')('bilinmeyen-anahtar'), 'bilinmeyen-anahtar');
   assert.ok(UI.en['quote'] && UI.de['edit'] && UI.ja['views']);
 });
 
-test('dört dil tam ve boşluksuz sözlüğe sahip', () => {
+test('on dil tam ve boşluksuz sözlüğe sahip', () => {
   const keys = Object.keys(UI.tr).sort();
   assert.ok(keys.length > 60, 'sözlük beklenenden küçük');
   for (const lang of LANGUAGES) {
