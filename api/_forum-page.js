@@ -103,8 +103,9 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
   const forum = sectionBase('forum', siteUrl, env);
   const path = forum.standalone ? `/t/${encodeURIComponent(thread.id)}/` : forumThreadPath(thread.id);
   const canonical = forum.standalone ? absoluteUrl(`/t/${encodeURIComponent(thread.id)}/`, forum.base) : absoluteUrl(forumThreadPath(thread.id), siteUrl);
-  const hubHref = forum.standalone ? `${forum.base}/` : `${siteUrl}/forum/`;
-  const joinHref = `${siteUrl}/forum/#thread=${encodeURIComponent(thread.id)}`;
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
+  const hubHref = `${forum.standalone ? `${forum.base}/` : `${siteUrl}/forum/`}${langQuery}`;
+  const joinHref = `${siteUrl}/forum/${langQuery}#thread=${encodeURIComponent(thread.id)}`;
   const description = metaDescription(thread.body, thread.body, 158);
   const posts = (name) => Number(authorPosts.get?.(name) || 0);
 
@@ -127,7 +128,7 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
   const relatedHtml = related.length
     ? `<div class="section-head"><h2>${escapeHtml(t.related)}</h2></div>
     <div class="topic-list">${related.map(entry => {
-      const href = forum.standalone ? `/t/${encodeURIComponent(entry.id)}/` : forumThreadPath(entry.id);
+      const href = `${forum.standalone ? `/t/${encodeURIComponent(entry.id)}/` : forumThreadPath(entry.id)}${langQuery}`;
       return `<a class="topic-card" href="${escapeAttr(href)}">
         <span class="avatar" aria-hidden="true">${escapeHtml(INITIALS(entry.author))}</span>
         <div><h2>${escapeHtml(entry.title)}</h2><p class="excerpt">${escapeHtml(metaDescription(entry.body, entry.body, 140) || '')}</p>
@@ -139,7 +140,7 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
 
   const body = `<div class="wrap narrow">
   <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="${siteUrl}/">${escapeHtml(t.home)}</a><span aria-hidden="true">/</span>
+    <a href="${siteUrl}/${langQuery}">${escapeHtml(t.home)}</a><span aria-hidden="true">/</span>
     <a href="${escapeAttr(hubHref)}">${escapeHtml(t.forum)}</a><span aria-hidden="true">/</span>
     <span>${escapeHtml(categoryLabel(thread.category, lang))}</span>
   </nav>
