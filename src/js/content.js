@@ -217,17 +217,41 @@ const i18n = {
   'Testosteron Seviyesi İçin Ön Değerlendirme':'Preliminary Testosterone Level Assessment','Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Get an estimate based on your symptoms or review your blood test results. This tool does not provide a medical diagnosis.','Hangi Yöntemi Seçmeliyim?':'Which Method Should I Choose?','İki farklı analiz türü':'Two analysis methods','Fiziksel Analiz':'Physical Analysis','Kan Testi Analizi':'Blood Test Analysis','Semptom bazlı öneri':'Symptom-based recommendations','Bilimsel veri bazlı reçete':'Evidence-based plan','Temel Bilgiler':'Basic Information','Fiziksel verileriniz':'Your physical data','Yaş':'Age','Boy (cm)':'Height (cm)','Kilo (kg)':'Weight (kg)','Aktivite Seviyesi':'Activity Level','Hareketsiz':'Sedentary','Haftada 1-2 gün':'1–2 days a week','Haftada 3-5 gün':'3–5 days a week','Haftada 6-7 gün':'6–7 days a week','ANALİZ BAŞLAT':'START ANALYSIS','KAN ANALİZİ BAŞLAT':'START BLOOD ANALYSIS','Hormon Paneli':'Hormone Panel','Sadece bildiğiniz değerleri girin':'Enter only the values you know','Vitamin & Mineral':'Vitamins & Minerals','Eksiklik tespiti':'Deficiency screening','Neden Doğal Yollar?':'Why Natural Methods?','Bilimsel yaklaşım':'Scientific approach',
   'Blog & Tarifler':'Blog & Recipes','Panel':'Dashboard','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'Practical knowledge for a stronger life.','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'Evidence-informed health articles and practical recipes for your goals.','Tümü':'All','Blog Yazıları':'Articles','Yemek Tarifleri':'Recipes','Yemek Tarifi':'Recipe','İçerik Paneli':'Content Dashboard','Yerel yönetim':'Local management','Toplam':'Total','Yazı':'Article','Tarif':'Recipe','Yeni içerik ekle':'Add new content','Blog yazısı veya yemek tarifi yayınlayın':'Publish an article or recipe','İçerik türü':'Content type','Blog yazısı':'Article','Kategori':'Category','Başlık':'Title','Emoji':'Emoji','Okuma / hazırlama':'Reading / prep time','Kısa açıklama':'Short description','Malzemeler':'Ingredients','İçerik / hazırlanış':'Content / directions','YAYINLA':'PUBLISH','Yayınlanan içerikler':'Published content','Hazırlanışı':'Directions','Bu yazının sayfası':'Open the full page',
   'Misyonumuz':'Our Mission','Ne yapıyoruz?':'What do we do?','Bilimsel Kaynaklar':'Scientific Sources','Araştırma & Referanslar':'Research & References','Ekip':'Team','Geliştirici':'Developer','Kurucu & Geliştirici':'Founder & Developer','Tıbbi Sorumluluk Reddi':'Medical Disclaimer','Lütfen dikkatle okuyun':'Please read carefully','Gizlilik & Veri Güvenliği':'Privacy & Data Security','%100 güvenli':'100% secure','Önemli Uyarılar':'Important Warnings','BAŞA DÖN':'BACK TO TOP','Malzemeler':'Ingredients','Hazırlanışı':'Preparation'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Symptom-Based Preliminary Assessment Report',
+  'Kan Testi Değerlendirme Raporu':'Blood Test Assessment Report',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Data was processed only in this browser and was never sent to a server.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'This report is for information only; it does not replace a medical assessment, diagnosis or prescription. Share the results with a doctor.',
+  'Raporu yazdır / PDF kaydet':'Print report / save as PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · choose “Save as PDF” in the print dialog. Your data never leaves your device.',
+  'Yazdırmak için önce raporu oluşturun.':'Create the report first to print it.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'This browser does not support printing.'},
  de: {
   'Ana Sayfa':'Startseite','Fiziksel':'Körper','Kan Testi':'Bluttest','Blog':'Blog','Hakkımızda':'Über uns','Testosteron Seviyesi İçin Ön Değerlendirme':'Vorläufige Einschätzung des Testosteronspiegels','Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Erhalten Sie anhand Ihrer Symptome eine grobe Einschätzung oder prüfen Sie Ihre Blutwerte. Dieses Tool stellt keine medizinische Diagnose.','Hangi Yöntemi Seçmeliyim?':'Welche Methode soll ich wählen?','İki farklı analiz türü':'Zwei Analysemethoden','Fiziksel Analiz':'Körperanalyse','Kan Testi Analizi':'Bluttestanalyse','Semptom bazlı öneri':'Symptombasierte Empfehlungen','Bilimsel veri bazlı reçete':'Wissenschaftlich fundierter Plan','Temel Bilgiler':'Grunddaten','Fiziksel verileriniz':'Ihre Körperdaten','Yaş':'Alter','Boy (cm)':'Größe (cm)','Kilo (kg)':'Gewicht (kg)','Aktivite Seviyesi':'Aktivitätsniveau','Hareketsiz':'Inaktiv','Haftada 1-2 gün':'1–2 Tage pro Woche','Haftada 3-5 gün':'3–5 Tage pro Woche','Haftada 6-7 gün':'6–7 Tage pro Woche','ANALİZ BAŞLAT':'ANALYSE STARTEN','KAN ANALİZİ BAŞLAT':'BLUTANALYSE STARTEN','Hormon Paneli':'Hormonprofil','Sadece bildiğiniz değerleri girin':'Nur bekannte Werte eingeben','Vitamin & Mineral':'Vitamine & Mineralstoffe','Eksiklik tespiti':'Mangel-Screening','Neden Doğal Yollar?':'Warum natürliche Methoden?','Bilimsel yaklaşım':'Wissenschaftlicher Ansatz',
   'Blog & Tarifler':'Blog & Rezepte','Panel':'Dashboard','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'Praktisches Wissen für ein stärkeres Leben.','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'Wissenschaftliche Gesundheitsartikel und praktische Rezepte für Ihre Ziele.','Tümü':'Alle','Blog Yazıları':'Artikel','Yemek Tarifleri':'Rezepte','Yemek Tarifi':'Rezept','İçerik Paneli':'Inhaltsverwaltung','Yerel yönetim':'Lokale Verwaltung','Toplam':'Gesamt','Yazı':'Artikel','Tarif':'Rezept','Yeni içerik ekle':'Neuen Inhalt hinzufügen','Blog yazısı veya yemek tarifi yayınlayın':'Artikel oder Rezept veröffentlichen','İçerik türü':'Inhaltstyp','Blog yazısı':'Artikel','Kategori':'Kategorie','Başlık':'Titel','Emoji':'Emoji','Okuma / hazırlama':'Lese-/Zubereitungszeit','Kısa açıklama':'Kurzbeschreibung','Malzemeler':'Zutaten','İçerik / hazırlanış':'Inhalt / Zubereitung','YAYINLA':'VERÖFFENTLICHEN','Yayınlanan içerikler':'Veröffentlichte Inhalte','Hazırlanışı':'Zubereitung','Bu yazının sayfası':'Zur vollständigen Seite',
   'Misyonumuz':'Unsere Mission','Ne yapıyoruz?':'Was tun wir?','Bilimsel Kaynaklar':'Wissenschaftliche Quellen','Araştırma & Referanslar':'Forschung & Referenzen','Ekip':'Team','Geliştirici':'Entwickler','Kurucu & Geliştirici':'Gründer & Entwickler','Tıbbi Sorumluluk Reddi':'Medizinischer Haftungsausschluss','Lütfen dikkatle okuyun':'Bitte sorgfältig lesen','Gizlilik & Veri Güvenliği':'Datenschutz & Datensicherheit','%100 güvenli':'100 % sicher','Önemli Uyarılar':'Wichtige Hinweise','BAŞA DÖN':'NACH OBEN','Malzemeler':'Zutaten','Hazırlanışı':'Zubereitung'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Vorläufiger Bericht auf Basis der Symptome',
+  'Kan Testi Değerlendirme Raporu':'Auswertungsbericht zum Bluttest',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Die Daten wurden ausschließlich in diesem Browser verarbeitet und nicht an einen Server gesendet.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'Dieser Bericht dient nur der Information; er ersetzt keine ärztliche Beurteilung, Diagnose oder Verordnung. Teilen Sie die Ergebnisse mit einer Ärztin oder einem Arzt.',
+  'Raporu yazdır / PDF kaydet':'Bericht drucken / als PDF speichern',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · wählen Sie im Druckdialog „Als PDF speichern“. Ihre Daten verlassen das Gerät nicht.',
+  'Yazdırmak için önce raporu oluşturun.':'Erstellen Sie zuerst den Bericht, um ihn zu drucken.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'Dieser Browser unterstützt das Drucken nicht.'},
  ja: {
   'Ana Sayfa':'ホーム','Fiziksel':'身体分析','Kan Testi':'血液検査','Blog':'ブログ','Hakkımızda':'概要','Testosteron Seviyesi İçin Ön Değerlendirme':'テストステロン値の事前評価','Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'症状に基づく目安を確認するか、血液検査結果を入力してください。このツールは医学的診断を行いません。','Hangi Yöntemi Seçmeliyim?':'どの方法を選びますか？','İki farklı analiz türü':'2種類の分析方法','Fiziksel Analiz':'身体分析','Kan Testi Analizi':'血液検査分析','Semptom bazlı öneri':'症状に基づく提案','Bilimsel veri bazlı reçete':'科学的根拠に基づくプラン','Temel Bilgiler':'基本情報','Fiziksel verileriniz':'身体データ','Yaş':'年齢','Boy (cm)':'身長 (cm)','Kilo (kg)':'体重 (kg)','Aktivite Seviyesi':'活動レベル','Hareketsiz':'運動なし','Haftada 1-2 gün':'週1〜2日','Haftada 3-5 gün':'週3〜5日','Haftada 6-7 gün':'週6〜7日','ANALİZ BAŞLAT':'分析を開始','KAN ANALİZİ BAŞLAT':'血液分析を開始','Hormon Paneli':'ホルモンパネル','Sadece bildiğiniz değerleri girin':'分かる数値だけ入力してください','Vitamin & Mineral':'ビタミン・ミネラル','Eksiklik tespiti':'不足の確認','Neden Doğal Yollar?':'なぜ自然な方法？','Bilimsel yaklaşım':'科学的アプローチ',
   'Blog & Tarifler':'ブログ・レシピ','Panel':'管理画面','Daha güçlü bir yaşam için uygulanabilir bilgiler.':'より健やかな生活のための実践的な知識。','Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.':'科学的な健康記事と目標に合った実用的なレシピ。','Tümü':'すべて','Blog Yazıları':'記事','Yemek Tarifleri':'レシピ','Yemek Tarifi':'レシピ','İçerik Paneli':'コンテンツ管理','Yerel yönetim':'ローカル管理','Toplam':'合計','Yazı':'記事','Tarif':'レシピ','Yeni içerik ekle':'新しいコンテンツ','Blog yazısı veya yemek tarifi yayınlayın':'記事またはレシピを公開','İçerik türü':'コンテンツ種類','Blog yazısı':'記事','Kategori':'カテゴリー','Başlık':'タイトル','Emoji':'絵文字','Okuma / hazırlama':'読了・調理時間','Kısa açıklama':'短い説明','Malzemeler':'材料','İçerik / hazırlanış':'本文・作り方','YAYINLA':'公開する','Yayınlanan içerikler':'公開済みコンテンツ','Hazırlanışı':'作り方','Bu yazının sayfası':'記事ページを開く',
   'Misyonumuz':'私たちの使命','Ne yapıyoruz?':'活動内容','Bilimsel Kaynaklar':'科学的資料','Araştırma & Referanslar':'研究・参考文献','Ekip':'チーム','Geliştirici':'開発者','Kurucu & Geliştirici':'創設者・開発者','Tıbbi Sorumluluk Reddi':'医療免責事項','Lütfen dikkatle okuyun':'よくお読みください','Gizlilik & Veri Güvenliği':'プライバシー・データ保護','%100 güvenli':'100%安全','Önemli Uyarılar':'重要な注意事項','BAŞA DÖN':'ページ上部へ','Malzemeler':'材料','Hazırlanışı':'作り方'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'症状に基づく事前評価レポート',
+  'Kan Testi Değerlendirme Raporu':'血液検査評価レポート',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'データはこのブラウザ内でのみ処理され、サーバーには送信されていません。',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'このレポートは情報提供のみを目的としており、医師による評価、診断、処方の代わりにはなりません。結果は医師と共有してください。',
+  'Raporu yazdır / PDF kaydet':'レポートを印刷 / PDFで保存',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · 印刷ダイアログで「PDFに保存」を選択できます。データが端末の外に出ることはありません。',
+  'Yazdırmak için önce raporu oluşturun.':'印刷するには、先にレポートを作成してください。',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'このブラウザは印刷に対応していません。'},
  fr: {
   'Ana Sayfa':'Accueil', 'Fiziksel':'Physique', 'Kan Testi':'Analyse sanguine', 'Blog':'Blog',
   'Hakkımızda':'À propos', 'Testosteron Seviyesi İçin Ön Değerlendirme':'Évaluation préliminaire du taux de testostérone', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Obtenez une estimation selon vos symptômes ou analysez vos résultats sanguins. Cet outil ne pose pas de diagnostic médical.', 'Hangi Yöntemi Seçmeliyim?':'Quelle méthode choisir ?',
@@ -247,7 +271,15 @@ const i18n = {
   'Ne yapıyoruz?':'Que faisons-nous ?', 'Bilimsel Kaynaklar':'Sources scientifiques', 'Araştırma & Referanslar':'Recherche et références', 'Ekip':'Équipe',
   'Geliştirici':'Développeur', 'Kurucu & Geliştirici':'Fondateur et développeur', 'Tıbbi Sorumluluk Reddi':'Avertissement médical', 'Lütfen dikkatle okuyun':'À lire attentivement',
   'Gizlilik & Veri Güvenliği':'Confidentialité et sécurité des données', '%100 güvenli':'100 % sécurisé', 'Önemli Uyarılar':'Avertissements importants', 'BAŞA DÖN':'RETOUR EN HAUT'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Rapport préliminaire fondé sur les symptômes',
+  'Kan Testi Değerlendirme Raporu':'Rapport d\'évaluation des analyses de sang',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Les données ont été traitées uniquement dans ce navigateur et n\'ont jamais été envoyées à un serveur.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'Ce rapport est informatif ; il ne remplace ni l\'évaluation médicale, ni le diagnostic, ni l\'ordonnance. Partagez les résultats avec un médecin.',
+  'Raporu yazdır / PDF kaydet':'Imprimer le rapport / enregistrer en PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · choisissez « Enregistrer au format PDF » dans la fenêtre d\'impression. Vos données ne quittent pas votre appareil.',
+  'Yazdırmak için önce raporu oluşturun.':'Créez d\'abord le rapport pour l\'imprimer.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'Ce navigateur ne prend pas en charge l\'impression.'},
  es: {
   'Ana Sayfa':'Inicio', 'Fiziksel':'Físico', 'Kan Testi':'Análisis de sangre', 'Blog':'Blog',
   'Hakkımızda':'Sobre nosotros', 'Testosteron Seviyesi İçin Ön Değerlendirme':'Evaluación preliminar del nivel de testosterona', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Obtén una estimación según tus síntomas o revisa tus resultados de sangre. Esta herramienta no emite un diagnóstico médico.', 'Hangi Yöntemi Seçmeliyim?':'¿Qué método elegir?',
@@ -267,7 +299,15 @@ const i18n = {
   'Ne yapıyoruz?':'¿Qué hacemos?', 'Bilimsel Kaynaklar':'Fuentes científicas', 'Araştırma & Referanslar':'Investigación y referencias', 'Ekip':'Equipo',
   'Geliştirici':'Desarrollador', 'Kurucu & Geliştirici':'Fundador y desarrollador', 'Tıbbi Sorumluluk Reddi':'Aviso médico', 'Lütfen dikkatle okuyun':'Lee con atención',
   'Gizlilik & Veri Güvenliği':'Privacidad y seguridad de datos', '%100 güvenli':'100 % seguro', 'Önemli Uyarılar':'Avisos importantes', 'BAŞA DÖN':'VOLVER ARRIBA'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Informe preliminar basado en los síntomas',
+  'Kan Testi Değerlendirme Raporu':'Informe de evaluación del análisis de sangre',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Los datos se procesaron solo en este navegador y nunca se enviaron a un servidor.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'Este informe es solo informativo; no sustituye la valoración médica, el diagnóstico ni la receta. Comparta los resultados con un médico.',
+  'Raporu yazdır / PDF kaydet':'Imprimir informe / guardar como PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · elija «Guardar como PDF» en el cuadro de impresión. Sus datos no salen del dispositivo.',
+  'Yazdırmak için önce raporu oluşturun.':'Cree primero el informe para poder imprimirlo.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'Este navegador no admite la impresión.'},
  bg: {
   'Ana Sayfa':'Начало', 'Fiziksel':'Физически', 'Kan Testi':'Кръвен тест', 'Blog':'Блог',
   'Hakkımızda':'За нас', 'Testosteron Seviyesi İçin Ön Değerlendirme':'Предварителна оценка на нивото на тестостерон', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Получете приблизителна оценка по симптомите си или прегледайте кръвните си резултати. Този инструмент не поставя медицинска диагноза.', 'Hangi Yöntemi Seçmeliyim?':'Кой метод да избера?',
@@ -287,7 +327,15 @@ const i18n = {
   'Ne yapıyoruz?':'Какво правим?', 'Bilimsel Kaynaklar':'Научни източници', 'Araştırma & Referanslar':'Изследвания и препратки', 'Ekip':'Екип',
   'Geliştirici':'Разработчик', 'Kurucu & Geliştirici':'Основател и разработчик', 'Tıbbi Sorumluluk Reddi':'Отказ от медицинска отговорност', 'Lütfen dikkatle okuyun':'Прочетете внимателно',
   'Gizlilik & Veri Güvenliği':'Поверителност и сигурност на данните', '%100 güvenli':'100% сигурно', 'Önemli Uyarılar':'Важни предупреждения', 'BAŞA DÖN':'НАГОРЕ'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Предварителен доклад въз основа на симптомите',
+  'Kan Testi Değerlendirme Raporu':'Доклад от оценка на кръвния тест',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Данните са обработени само в този браузър и не са изпращани към сървър.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'Този доклад е само с информационна цел; не замества лекарска оценка, диагноза или рецепта. Споделете резултатите с лекар.',
+  'Raporu yazdır / PDF kaydet':'Печат на доклада / запазване като PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · изберете „Запазване като PDF“ в прозореца за печат. Данните не напускат устройството ви.',
+  'Yazdırmak için önce raporu oluşturun.':'Първо създайте доклада, за да го отпечатате.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'Този браузър не поддържа печат.'},
  ru: {
   'Ana Sayfa':'Главная', 'Fiziksel':'Физический', 'Kan Testi':'Анализ крови', 'Blog':'Блог',
   'Hakkımızda':'О нас', 'Testosteron Seviyesi İçin Ön Değerlendirme':'Предварительная оценка уровня тестостерона', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'Получите ориентировочную оценку по симптомам или изучите результаты анализа крови. Инструмент не ставит медицинский диагноз.', 'Hangi Yöntemi Seçmeliyim?':'Какой метод выбрать?',
@@ -307,7 +355,15 @@ const i18n = {
   'Ne yapıyoruz?':'Что мы делаем?', 'Bilimsel Kaynaklar':'Научные источники', 'Araştırma & Referanslar':'Исследования и ссылки', 'Ekip':'Команда',
   'Geliştirici':'Разработчик', 'Kurucu & Geliştirici':'Основатель и разработчик', 'Tıbbi Sorumluluk Reddi':'Медицинская оговорка', 'Lütfen dikkatle okuyun':'Прочитайте внимательно',
   'Gizlilik & Veri Güvenliği':'Конфиденциальность и безопасность данных', '%100 güvenli':'100% безопасно', 'Önemli Uyarılar':'Важные предупреждения', 'BAŞA DÖN':'НАВЕРХ'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'Предварительный отчёт на основе симптомов',
+  'Kan Testi Değerlendirme Raporu':'Отчёт оценки анализа крови',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'Данные обработаны только в этом браузере и не отправлялись на сервер.',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'Этот отчёт носит информационный характер; он не заменяет врачебную оценку, диагноз или рецепт. Поделитесь результатами с врачом.',
+  'Raporu yazdır / PDF kaydet':'Печать отчёта / сохранить в PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · выберите «Сохранить в PDF» в окне печати. Ваши данные не покидают устройство.',
+  'Yazdırmak için önce raporu oluşturun.':'Сначала создайте отчёт, чтобы распечатать его.',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'Этот браузер не поддерживает печать.'},
  hi: {
   'Ana Sayfa':'होम', 'Fiziksel':'शारीरिक', 'Kan Testi':'रक्त परीक्षण', 'Blog':'ब्लॉग',
   'Hakkımızda':'हमारे बारे में', 'Testosteron Seviyesi İçin Ön Değerlendirme':'टेस्टोस्टेरोन स्तर का प्रारंभिक आकलन', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'अपने लक्षणों के आधार पर अनुमान लगाएँ या रक्त परीक्षण के परिणाम देखें। यह उपकरण चिकित्सकीय निदान नहीं करता।', 'Hangi Yöntemi Seçmeliyim?':'कौन-सा तरीका चुनूँ?',
@@ -327,7 +383,15 @@ const i18n = {
   'Ne yapıyoruz?':'हम क्या करते हैं?', 'Bilimsel Kaynaklar':'वैज्ञानिक स्रोत', 'Araştırma & Referanslar':'अनुसंधान और संदर्भ', 'Ekip':'टीम',
   'Geliştirici':'डेवलपर', 'Kurucu & Geliştirici':'संस्थापक और डेवलपर', 'Tıbbi Sorumluluk Reddi':'चिकित्सकीय अस्वीकरण', 'Lütfen dikkatle okuyun':'कृपया ध्यान से पढ़ें',
   'Gizlilik & Veri Güvenliği':'गोपनीयता और डेटा सुरक्षा', '%100 güvenli':'100% सुरक्षित', 'Önemli Uyarılar':'महत्वपूर्ण चेतावनी', 'BAŞA DÖN':'ऊपर जाएँ'
- },
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'लक्षणों पर आधारित प्रारंभिक मूल्यांकन रिपोर्ट',
+  'Kan Testi Değerlendirme Raporu':'रक्त परीक्षण मूल्यांकन रिपोर्ट',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'डेटा केवल इस ब्राउज़र में संसाधित किया गया और सर्वर पर नहीं भेजा गया।',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'यह रिपोर्ट केवल जानकारी के लिए है; यह चिकित्सकीय मूल्यांकन, निदान या पर्चे का विकल्प नहीं है। परिणाम किसी चिकित्सक के साथ साझा करें।',
+  'Raporu yazdır / PDF kaydet':'रिपोर्ट प्रिंट करें / PDF में सहेजें',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · प्रिंट विंडो में “PDF में सहेजें” चुनें। आपका डेटा डिवाइस से बाहर नहीं जाता।',
+  'Yazdırmak için önce raporu oluşturun.':'प्रिंट करने के लिए पहले रिपोर्ट बनाएँ।',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'यह ब्राउज़र प्रिंटिंग का समर्थन नहीं करता।'},
  zh: {
   'Ana Sayfa':'首页', 'Fiziksel':'身体分析', 'Kan Testi':'血液检查', 'Blog':'博客',
   'Hakkımızda':'关于我们', 'Testosteron Seviyesi İçin Ön Değerlendirme':'睾酮水平初步评估', 'Belirtilerinize göre yaklaşık bir değerlendirme yapın veya kan testi sonuçlarınızı inceleyin. Bu araç tıbbi tanı koymaz.':'根据症状获得粗略评估，或查看血液检查结果。本工具不作出医学诊断。', 'Hangi Yöntemi Seçmeliyim?':'该选哪种方式？',
@@ -347,7 +411,15 @@ const i18n = {
   'Ne yapıyoruz?':'我们做什么？', 'Bilimsel Kaynaklar':'科学来源', 'Araştırma & Referanslar':'研究与参考', 'Ekip':'团队',
   'Geliştirici':'开发者', 'Kurucu & Geliştirici':'创始人兼开发者', 'Tıbbi Sorumluluk Reddi':'医疗免责声明', 'Lütfen dikkatle okuyun':'请仔细阅读',
   'Gizlilik & Veri Güvenliği':'隐私与数据安全', '%100 güvenli':'100% 安全', 'Önemli Uyarılar':'重要提示', 'BAŞA DÖN':'返回顶部'
- }
+ ,
+  'Semptom Tabanlı Ön Değerlendirme Raporu':'基于症状的初步评估报告',
+  'Kan Testi Değerlendirme Raporu':'血液检测评估报告',
+  'Veriler yalnızca bu tarayıcıda işlendi, sunucuya gönderilmedi.':'数据仅在此浏览器中处理，未发送到服务器。',
+  'Bu rapor bilgilendirme amaçlıdır; hekim değerlendirmesi, tanı veya reçete yerine geçmez. Sonuçları bir hekimle paylaşın.':'本报告仅供参考，不能替代医生的评估、诊断或处方。请将结果与医生分享。',
+  'Raporu yazdır / PDF kaydet':'打印报告 / 保存为 PDF',
+  'A4 · yazdırma penceresinde “PDF olarak kaydet” seçeneğini kullanabilirsiniz. Veriler cihazınızdan çıkmaz.':'A4 · 在打印窗口中选择“另存为 PDF”。您的数据不会离开设备。',
+  'Yazdırmak için önce raporu oluşturun.':'请先生成报告后再打印。',
+  'Bu tarayıcı yazdırmayı desteklemiyor.':'此浏览器不支持打印。'}
 };
 const aboutTranslations = {
  en:{
