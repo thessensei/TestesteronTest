@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import { LANGUAGES, LANGS, TARGET_LANGS, LANG_LABELS, LANG_LOCALES, SOURCE_LANG } from '../api/_langs.js';
 import { ABOUT_LANGUAGES } from '../api/_about-shape.js';
-import { renderBlogPost, localizedContent } from '../api/_blog-page.js';
+import { renderBlogHub, renderBlogPost, localizedContent } from '../api/_blog-page.js';
 import { renderForumThread } from '../api/_forum-page.js';
 import { buildSitemap } from '../api/_sitemap.js';
 
@@ -167,6 +167,28 @@ test('blog sayfası her çevrili dil için hreflang, og:locale ve html lang üre
   const hindi = renderBlogPost({ item: translatedItem, siteUrl: 'https://testotavan.com', lang: 'hi' });
   assert.match(hindi, /class="chip"/, 'dil değiştirici çipleri olmalı');
   assert.equal((hindi.match(/hreflang="/g) || []).length >= 11, true, 'hreflang listesi eksik');
+});
+
+test('blog arşivi çevirisi olmayan içeriği gizler ve İngilizceye düşer', () => {
+  const onlyEnglish = {
+    id: '2', slug: 'sleep', type: 'blog', category: 'Uyku', title: 'Uyku ve Testosteron',
+    summary: 'Türkçe özet', body: '## B\nmetin', time: '5 dk', published_at: '2026-01-01',
+    translations: { en: { title: 'Sleep and Testosterone', summary: 'EN summary', body: '## S\nbody', category: 'Sleep', time: '5 min' } }
+  };
+  const untranslated = {
+    id: '3', slug: 'sadece-tr', type: 'blog', category: 'Uyku', title: 'Yalnızca Türkçe Başlık',
+    summary: 'x', body: '## Y\ny', time: '3 dk', translations: {}
+  };
+  const html = renderBlogHub({ items: [onlyEnglish, untranslated], siteUrl: 'https://testotavan.com', env: {}, lang: 'ru' });
+  assert.ok(html.includes('Sleep and Testosterone'), 'İngilizce başlık gösterilmeli');
+  assert.ok(!html.includes('Uyku ve Testosteron'), 'Türkçe başlık Rusça arşivde görünmemeli');
+  assert.ok(!html.includes('Yalnızca Türkçe Başlık'), 'çevirisi olmayan içerik listelenmemeli');
+  assert.ok(html.includes('Sleep · '), 'kategori etiketi de çevrilmeli');
+  assert.ok(html.includes('https://testotavan.com/?lang=ru#physicalPage'), 'CTA dili korumalı');
+
+  const tr = renderBlogHub({ items: [onlyEnglish, untranslated], siteUrl: 'https://testotavan.com', env: {}, lang: 'tr' });
+  assert.ok(tr.includes('Yalnızca Türkçe Başlık'), 'Türkçe arşiv tüm içeriği listeler');
+  assert.ok(tr.includes('Uyku ve Testosteron'), 'Türkçe arşiv kaynak metni gösterir');
 });
 
 test('dil değiştirince iç bağlantılar da aynı dili taşır', () => {
