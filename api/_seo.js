@@ -648,14 +648,15 @@ ${body}
 
 /** 404 sayfası: arama motoruna index izni verilmez. */
 export function renderNotFound({ siteUrl = DEFAULT_SITE_URL, section = 'blog', lang = 'tr' } = {}) {
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
   const body = `<div class="notfound wrap">
     <div>
       <div class="eyebrow">404</div>
       <h1>404</h1>
       <p>${lang === 'tr' ? 'Bu sayfa taşınmış veya kaldırılmış olabilir. Yayındaki içeriklere aşağıdan ulaşabilirsiniz.' : 'This page may have moved or been removed. Browse the published content below.'}</p>
       <div class="chips" style="justify-content:center">
-        <a class="button" href="${siteUrl}/blog/">${lang === 'tr' ? 'Bloga dön' : 'Back to blog'}</a>
-        <a class="button ghost" href="${siteUrl}/forum/">${lang === 'tr' ? 'Foruma git' : 'Go to forum'}</a>
+        <a class="button" href="${siteUrl}/blog/${langQuery}">${lang === 'tr' ? 'Bloga dön' : 'Back to blog'}</a>
+        <a class="button ghost" href="${siteUrl}/forum/${langQuery}">${lang === 'tr' ? 'Foruma git' : 'Go to forum'}</a>
       </div>
     </div>
   </div>`;
