@@ -332,17 +332,34 @@ function cardHtml(item, blog, lang) {
 export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = process.env, lang = 'tr', category = '' }) {
   const t = T[lang];
   const blog = sectionBase('blog', siteUrl, env);
-  const categories = [...new Set(items.map(item => item.category).filter(Boolean))];
-  const filtered = category ? items.filter(item => item.category === category) : items;
-  const published = items.map(item => item.published_at || item.date).filter(Boolean).sort().at(-1);
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
+  // Kartlar istenen dilde gösterilir. Çevirisi olmayan içerik listelenmez:
+  // hiçbir dilde Türkçe başlık/özet gösterilmemesi kuralı arşiv için de geçerli.
+  const sourceItems = items.filter(item => item && item.slug);
+  const viewOf = item => (lang === 'tr' ? item : localizedContent(item, lang));
+  const shown = sourceItems.filter(item => oneLine(viewOf(item).title, 300));
+  const views = shown.map(viewOf);
+  const catLabels = new Map();
+  const catCounts = new Map();
+  shown.forEach(item => {
+    if (!item.category) return;
+    catCounts.set(item.category, (catCounts.get(item.category) || 0) + 1);
+    const label = oneLine(viewOf(item).category, 80);
+    if (label && !catLabels.has(item.category)) catLabels.set(item.category, label);
+  });
+  const categories = [...catLabels.keys()];
+  const filtered = category
+    ? views.filter((view, index) => shown[index].category === category)
+    : views;
+  const published = shown.map(item => item.published_at || item.date).filter(Boolean).sort().at(-1);
   const canonical = blog.standalone ? `${blog.base}/` : `${siteUrl}/blog/`;
   const description = lang === 'tr'
     ? 'TestoTavan Dergi: testosteron, uyku, beslenme ve antrenman üzerine kanıta dayalı yazılar ve yüksek proteinli tarifler.'
     : t.intro;
   const feature = filtered[0];
   const rest = filtered.slice(1);
-  const categoriesChips = [`<a class="chip" href="${escapeAttr(hubHref(blog, lang))}"${category ? '' : ' aria-current="page"'}>${escapeHtml(t.all)} · ${formatNumber(items.length, lang)}</a>`]
-    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(withLang(`${hubHref(blog)}?kategori=${encodeURIComponent(name)}`, lang))}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(name)} · ${formatNumber(items.filter(item => item.category === name).length, lang)}</a>`))
+  const categoriesChips = [`<a class="chip" href="${escapeAttr(hubHref(blog, lang))}"${category ? '' : ' aria-current="page"'}>${escapeHtml(t.all)} · ${formatNumber(views.length, lang)}</a>`]
+    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(withLang(`${hubHref(blog)}?kategori=${encodeURIComponent(name)}`, lang))}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(catLabels.get(name))} · ${formatNumber(catCounts.get(name) || 0, lang)}</a>`))
     .join('');
 
   const body = `<div class="wrap">
@@ -351,7 +368,7 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     <h1>${escapeHtml(t.title)}</h1>
     <p>${escapeHtml(t.intro)}</p>
     <div class="hero-stats">
-      <div class="stat"><b>${formatNumber(items.length, lang)}</b><span>${escapeHtml(t.posts)}</span></div>
+      <div class="stat"><b>${formatNumber(views.length, lang)}</b><span>${escapeHtml(t.posts)}</span></div>
       <div class="stat"><b>${formatNumber(categories.length, lang)}</b><span>${lang === 'tr' ? 'kategori' : 'categories'}</span></div>
       <div class="stat"><b>${escapeHtml(published ? formatDate(published, lang) : '—')}</b><span>${escapeHtml(t.updated)}</span></div>
     </div>
@@ -375,16 +392,16 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
 
   <div class="cta">
     <div><h2>${escapeHtml(t.ctaTitle)}</h2><p>${escapeHtml(t.ctaBody)}</p></div>
-    <div class="cta-actions"><a class="button" href="${escapeAttr(`${siteUrl}/#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a><a class="button ghost" href="${escapeAttr(`${siteUrl}/forum/`)}">${escapeHtml(t.forumButton)} →</a></div>
+    <div class="cta-actions"><a class="button" href="${escapeAttr(`${siteUrl}/${langQuery}#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a><a class="button ghost" href="${escapeAttr(`${siteUrl}/forum/${langQuery}`)}">${escapeHtml(t.forumButton)} →</a></div>
   </div>
 </div>`;
 
   const itemList = {
     '@type': 'ItemList',
-    itemListElement: items.slice(0, 30).map((item, index) => ({
+    itemListElement: views.slice(0, 30).map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      url: blog.standalone ? absoluteUrl(`/${encodeURIComponent(item.slug)}/`, blog.base) : absoluteUrl(blogPostPath(item.slug), siteUrl),
+      url: withLang(blog.standalone ? absoluteUrl(`/${encodeURIComponent(item.slug)}/`, blog.base) : absoluteUrl(blogPostPath(item.slug), siteUrl), lang),
       name: item.title
     }))
   };
@@ -440,8 +457,12 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     ? `<section class="ingredients"><h2>${escapeHtml(t.ingredients)}</h2><ul>${view.ingredients.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul></section>`
     : '';
 
-  const relatedHtml = related.length
-    ? `<div class="section-head"><h2>${escapeHtml(t.related)}</h2><a class="chip" href="${escapeAttr(hubHref(blog, lang))}">${escapeHtml(t.blog)} →</a></div><div class="cards">${related.map(entry => cardHtml(entry, blog, lang)).join('')}</div>`
+  // İlgili yazılar da seçili dilde gösterilir; çevirisi olmayan kart listelenmez.
+  const relatedViews = related
+    .map(entry => (lang === 'tr' ? entry : localizedContent(entry, lang)))
+    .filter(entry => entry && oneLine(entry.title, 300));
+  const relatedHtml = relatedViews.length
+    ? `<div class="section-head"><h2>${escapeHtml(t.related)}</h2><a class="chip" href="${escapeAttr(hubHref(blog, lang))}">${escapeHtml(t.blog)} →</a></div><div class="cards">${relatedViews.map(entry => cardHtml(entry, blog, lang)).join('')}</div>`
     : '';
 
   const langSwitch = langs.length > 1
@@ -600,6 +621,12 @@ export function createBlogPageHandler(options = {}) {
 
       const item = sql ? await findContentBySlug(sql, slug) : null;
       if (!item) {
+        res.setHeader('Cache-Control', 'public, s-maxage=60');
+        return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
+      }
+
+      // İstenen dilde (ve İngilizce yedeğinde) içerik yoksa boş sayfa gösterme.
+      if (lang !== 'tr' && !oneLine(localizedContent(item, lang)?.title, 300)) {
         res.setHeader('Cache-Control', 'public, s-maxage=60');
         return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
       }
