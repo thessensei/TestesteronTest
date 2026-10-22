@@ -577,6 +577,7 @@ export function renderPage(options = {}) {
   } = options;
 
   const image = ogImage || `${siteUrl}/assets/logo.png`;
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
   const nav = navItems(siteUrl, section, lang);
   const altLinks = alternates
     .map(alt => `<link rel="alternate" hreflang="${escapeAttr(alt.lang)}" href="${escapeAttr(alt.href)}">`)
@@ -614,7 +615,7 @@ ${jsonLdScripts(jsonLd)}
 <body class="${escapeAttr(bodyClass)}">
 <header class="site">
   <div class="wrap site-bar">
-    <a class="brand" href="${siteUrl}/" aria-label="${SITE_NAME} ana sayfa">
+    <a class="brand" href="${siteUrl}/${langQuery}" aria-label="${SITE_NAME} ${lang === 'tr' ? 'ana sayfa' : 'home'}">
       <img src="${siteUrl}/assets/logo.webp" alt="" width="28" height="28" onerror="this.src='${siteUrl}/assets/logo.png'">
       <strong>${SITE_NAME}</strong><span>${section === 'forum' ? (lang === 'tr' ? 'Meydan' : 'Commons') : (lang === 'tr' ? 'Dergi' : 'Journal')}</span>
     </a>
@@ -629,11 +630,11 @@ ${body}
 <footer class="site">
   <div class="wrap">
     <div class="foot-links">
-      <a href="${siteUrl}/">${SITE_NAME}</a>
-      <a href="${siteUrl}/blog/">Blog</a>
+      <a href="${siteUrl}/${langQuery}">${SITE_NAME}</a>
+      <a href="${siteUrl}/blog/${langQuery}">Blog</a>
       <a href="${siteUrl}/blog/rss.xml">RSS</a>
-      <a href="${siteUrl}/forum/">Forum</a>
-      <a href="${siteUrl}/#aboutPage">${lang === 'tr' ? 'Hakkımızda' : 'About'}</a>
+      <a href="${siteUrl}/forum/${langQuery}">Forum</a>
+      <a href="${siteUrl}/${langQuery}#aboutPage">${lang === 'tr' ? 'Hakkımızda' : 'About'}</a>
       <a href="mailto:testotavan@gmail.com">testotavan@gmail.com</a>
     </div>
     <p>${lang === 'tr'

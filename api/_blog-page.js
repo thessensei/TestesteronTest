@@ -444,6 +444,7 @@ const SHARE = (url, title, lang) => {
 export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL, env = process.env, lang = 'tr' }) {
   const t = T[lang];
   const blog = sectionBase('blog', siteUrl, env);
+  const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
   const view = localizedContent(item, lang);
   const langs = availableLangs(item);
   const cover = safeCover(item.cover_url, blog.base);
@@ -558,11 +559,11 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     ${SHARE(canonical, view.title, lang)}
     <div class="cta">
       <div><h2>${escapeHtml(t.forumCtaTitle)}</h2><p>${escapeHtml(t.forumCtaBody)}</p></div>
-      <a class="button" href="${escapeAttr(`${siteUrl}/forum/`)}">${escapeHtml(t.forumButton)} →</a>
+      <a class="button" href="${escapeAttr(`${siteUrl}/forum/${langQuery}`)}">${escapeHtml(t.forumButton)} →</a>
     </div>
     <div class="cta">
       <div><h2>${escapeHtml(t.ctaTitle)}</h2><p>${escapeHtml(t.ctaBody)}</p></div>
-      <a class="button ghost" href="${escapeAttr(`${siteUrl}/#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a>
+      <a class="button ghost" href="${escapeAttr(`${siteUrl}/${langQuery}#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a>
     </div>
     <p class="disclaimer">${lang === 'tr'
       ? 'Bu yazı bilgilendirme amaçlıdır ve tıbbi tanı, tedavi veya reçete yerine geçmez. Sağlık kararlarınızı hekiminizle birlikte alın. Metin editoryal ekibimizce bağımsız olarak hazırlanır; alıntı listesi yayınlanmaz.'
