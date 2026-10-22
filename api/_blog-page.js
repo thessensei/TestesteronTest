@@ -26,6 +26,7 @@ const T = {
     eyebrow: 'TESTOTAVAN DERGİ', title: 'Hormon, uyku ve güç üzerine okunabilir rehber.',
     intro: 'Klinik araştırmaları sadeleştiren, günlük hayata çevrilebilir yazılar ve yüksek proteinli tarifler.',
     latest: 'Son yazılar', all: 'Tümü', recipes: 'Tarifler', articles: 'Yazılar', posts: 'yazı',
+    categories: 'kategori',
     readMore: 'Yazıyı oku', minRead: 'dk okuma', updated: 'Güncellendi',
     home: 'Ana sayfa', blog: 'Blog', share: 'Paylaş', copy: 'Bağlantıyı kopyala', copied: 'Kopyalandı',
     related: 'İlgili yazılar', toc: 'İçindekiler', ingredients: 'Malzemeler',
@@ -39,6 +40,7 @@ const T = {
     eyebrow: 'THE TESTOTAVAN JOURNAL', title: 'A readable guide to hormones, sleep and strength.',
     intro: 'Articles that translate clinical research into daily habits, plus high-protein recipes.',
     latest: 'Latest posts', all: 'All', recipes: 'Recipes', articles: 'Articles', posts: 'posts',
+    categories: 'categories',
     readMore: 'Read article', minRead: 'min read', updated: 'Updated',
     home: 'Home', blog: 'Blog', share: 'Share', copy: 'Copy link', copied: 'Copied',
     related: 'Related posts', toc: 'Contents', ingredients: 'Ingredients',
@@ -52,6 +54,7 @@ const T = {
     eyebrow: 'DAS TESTOTAVAN JOURNAL', title: 'Ein lesbarer Leitfaden zu Hormonen, Schlaf und Kraft.',
     intro: 'Artikel, die klinische Forschung in Alltagsgewohnheiten übersetzen, plus proteinreiche Rezepte.',
     latest: 'Neueste Beiträge', all: 'Alle', recipes: 'Rezepte', articles: 'Artikel', posts: 'Beiträge',
+    categories: 'Kategorien',
     readMore: 'Artikel lesen', minRead: 'Min. Lesezeit', updated: 'Aktualisiert',
     home: 'Startseite', blog: 'Blog', share: 'Teilen', copy: 'Link kopieren', copied: 'Kopiert',
     related: 'Ähnliche Beiträge', toc: 'Inhalt', ingredients: 'Zutaten',
@@ -65,6 +68,7 @@ const T = {
     eyebrow: 'TESTOTAVAN ジャーナル', title: 'ホルモン・睡眠・筋力についての読みやすいガイド。',
     intro: '臨床研究を日常の習慣に翻訳する記事と、高たんぱくレシピ。',
     latest: '最新の記事', all: 'すべて', recipes: 'レシピ', articles: '記事', posts: '記事',
+    categories: 'カテゴリ',
     readMore: '記事を読む', minRead: '分で読めます', updated: '更新',
     home: 'ホーム', blog: 'ブログ', share: '共有', copy: 'リンクをコピー', copied: 'コピーしました',
     related: '関連記事', toc: '目次', ingredients: '材料',
@@ -83,6 +87,7 @@ const T = {
     recipes: 'Recettes',
     articles: 'Articles',
     posts: 'articles',
+    categories: 'catégories',
     readMore: 'Lire l’article',
     minRead: 'min de lecture',
     updated: 'Mis à jour',
@@ -114,6 +119,7 @@ const T = {
     recipes: 'Recetas',
     articles: 'Artículos',
     posts: 'artículos',
+    categories: 'categorías',
     readMore: 'Leer artículo',
     minRead: 'min de lectura',
     updated: 'Actualizado',
@@ -145,6 +151,7 @@ const T = {
     recipes: 'Рецепти',
     articles: 'Статии',
     posts: 'статии',
+    categories: 'категории',
     readMore: 'Прочети статията',
     minRead: 'мин четене',
     updated: 'Обновено',
@@ -176,6 +183,7 @@ const T = {
     recipes: 'Рецепты',
     articles: 'Статьи',
     posts: 'статей',
+    categories: 'категории',
     readMore: 'Читать статью',
     minRead: 'мин чтения',
     updated: 'Обновлено',
@@ -207,6 +215,7 @@ const T = {
     recipes: 'रेसिपी',
     articles: 'लेख',
     posts: 'लेख',
+    categories: 'श्रेणियाँ',
     readMore: 'लेख पढ़ें',
     minRead: 'मिनट पढ़ें',
     updated: 'अपडेट किया गया',
@@ -238,6 +247,7 @@ const T = {
     recipes: '食谱',
     articles: '文章',
     posts: '篇',
+    categories: '分类',
     readMore: '阅读文章',
     minRead: '分钟阅读',
     updated: '更新于',
@@ -369,12 +379,12 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     <p>${escapeHtml(t.intro)}</p>
     <div class="hero-stats">
       <div class="stat"><b>${formatNumber(views.length, lang)}</b><span>${escapeHtml(t.posts)}</span></div>
-      <div class="stat"><b>${formatNumber(categories.length, lang)}</b><span>${lang === 'tr' ? 'kategori' : 'categories'}</span></div>
+      <div class="stat"><b>${formatNumber(categories.length, lang)}</b><span>${escapeHtml(t.categories || 'categories')}</span></div>
       <div class="stat"><b>${escapeHtml(published ? formatDate(published, lang) : '—')}</b><span>${escapeHtml(t.updated)}</span></div>
     </div>
   </section>
 
-  <nav class="chips" aria-label="${escapeAttr(lang === 'tr' ? 'Kategoriler' : 'Categories')}">${categoriesChips}</nav>
+  <nav class="chips" aria-label="${escapeAttr(t.categories || 'Categories')}">${categoriesChips}</nav>
 
   ${feature ? `<a class="feature" href="${escapeAttr(postHref(feature.slug, blog, lang))}">
     <div class="${safeCover(feature.cover_url, blog.base) ? 'cover' : 'cover emoji'}"${safeCover(feature.cover_url, blog.base) ? ` style="background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.5)),url('${escapeAttr(safeCover(feature.cover_url, blog.base))}')"` : ''}>${safeCover(feature.cover_url, blog.base) ? '' : escapeHtml(feature.emoji || '📄')}</div>
@@ -482,7 +492,11 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     dateModified: item.updated_at ? new Date(item.updated_at).toISOString() : undefined,
     inLanguage: lang,
     articleSection: view.category,
-    keywords: [view.category, ...(isRecipe ? ['tarif', 'yüksek protein'] : ['testosteron', 'hormon sağlığı', 'uyku'])].join(', '),
+    keywords: [view.category, ...(({
+      tr: ['tarif', 'yüksek protein'], en: ['recipe', 'high protein'], de: ['Rezept', 'proteinreich'],
+      ja: ['レシピ', '高タンパク'], fr: ['recette', 'riche en protéines'], es: ['receta', 'alta en proteínas'],
+      bg: ['рецепта', 'висок протеин'], ru: ['рецепт', 'высокий белок'], hi: ['रेसिपी', 'उच्च प्रोटीन'], zh: ['食谱', '高蛋白']
+    }[lang] || ['recipe', 'high protein']))].join(', '),
     wordCount: wordCount(bodyText),
     author: { '@type': 'Organization', name: t.author, url: `${siteUrl}/` },
     publisher: { '@id': `${siteUrl}/#organization` },
