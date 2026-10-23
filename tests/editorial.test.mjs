@@ -64,7 +64,7 @@ test('blog veritabanı olmadan rehber arşivi, detay ve doğru 404 döndürür',
     assert.ok(detail.body.includes(item.sources[0].url));
     assert.match(detail.body, /Kaynaklar ve güncellik/);
     assert.match(detail.body, /2026-10-23/);
-    assert.doesNotMatch(detail.body, /Topluluğa katıl|href="[^\"]*\/forum\//);
+    assert.match(detail.body, /href="[^\"]*\/forum\//);
     const schema = JSON.parse(detail.body.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
     assert.ok(schema['@graph'].some(node => node['@type'] === 'BlogPosting'));
   }
@@ -116,7 +116,7 @@ test('RSS ve sitemap veritabanı yokken de aynı rehberleri yayınlar', async ()
     assert.ok(rss.body.includes(post.url));
     assert.ok(sitemap.body.includes(post.url));
   }
-  assert.doesNotMatch(sitemap.body, /<loc>[^<]+\/forum\/<\/loc>/);
+  assert.match(sitemap.body, /<loc>[^<]+\/forum\/<\/loc>/);
 });
 
 test('rehberli herkese açık API DB yokken çalışır; yönetici listesine hazır içerik eklenmez', async () => {
@@ -137,11 +137,12 @@ test('rehberli herkese açık API DB yokken çalışır; yönetici listesine haz
   }
 });
 
-test('forum girişleri bloga kalıcı yönlenir; eski konu URLsi korunur', () => {
+test('forum girişleri blogdan bağımsız açılır; eski konu URLsi korunur', () => {
   const config = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
-  for (const route of ['/forum', '/forum/', '/forum/index.html']) {
-    assert.deepEqual(config.redirects.find(rule => rule.source === route), { source: route, destination: '/blog/', permanent: true });
+  assert.ok(!(config.redirects || []).some(rule => rule.source.startsWith('/forum')));
+  for (const source of ['/forum', '/forum/']) {
+    assert.deepEqual(config.rewrites.find(rule => rule.source === source), { source, destination: '/forum/index.html' });
   }
-  assert.ok(!config.redirects.some(rule => rule.source.includes('*') || rule.source.includes('/t/')));
   assert.ok(config.rewrites.some(rule => rule.source === '/forum/t/(.*)'));
+  assert.ok(config.rewrites.some(rule => rule.source === '/blog' && rule.destination === '/api/seo?type=blog'));
 });

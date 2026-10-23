@@ -1,5 +1,9 @@
 # 🧬 TestoTavan — Doğal Testosteron Optimizasyonu
 
+## Forum geri getirildi
+
+Forum bağımsız sosyal alan olarak eski arayüzüyle yeniden açıldı: üyelik/giriş, konu açma, yanıt, alıntı, beğeni ve moderasyon akışları korunur. Blog ve tarif güncellemeleri geri alınmadı. Veritabanı olmadan arayüz önizlenebilir; gerçek üyelik ve mesaj işlemleri için mevcut `DATABASE_URL` ve forum oturum ayarları gerekir. Canlıda önceden önbelleğe alınan kalıcı yönlendirmeyi görürseniz dağıtımdan sonra tarayıcı/site önbelleğini temizleyin veya gizli pencereyle deneyin.
+
 ## Kurulum denetimi ve güvenli editör
 
 - `.env.example` yalnızca boş ayar alanlarını içerir. Yerel kullanımda `.env.local` dosyasına kopyalayın; gerçek veritabanı bağlantısı ve anahtarları bu **Git dışında tutulan** dosyada tanımlayın. Canlıda dağıtım platformunun gizli ortam değişkenleri kullanılmalıdır. Gizli değerleri sohbete veya depoya eklemeyin.
@@ -47,7 +51,7 @@ API: yönetici oturumu gerektiren `POST /api/ai-blog` için `{ "mode": "topic", 
 
 ## 23 Ekim 2026 — Blog ve bağımlılık güncellemesi
 
-- **Forum girişi artık bloga gider:** `/forum`, `/forum/` ve `/forum/index.html` → `/blog/` (kalıcı yönlendirme). Ana menü ve blogdaki forum katılım çağrıları kaldırıldı. Eski `/forum/t/<id>/` sayfaları ve veritabanı kayıtları silinmedi; forum uygulama dosyaları geriye uyumluluk için depoda tutuluyor. Aşağıdaki eski forum özellikleri açıklamaları bu korunan altyapıyı anlatır, yeni giriş deneyimini değil.
+- **Forum ve blog ayrı bölümlerdir:** `/forum`, `/forum/` ve `/forum/index.html` sosyal sohbet forumunu açar; `/blog/` yazı ve tarif arşividir. Önceki forum → blog yönlendirmesi kaldırıldı. Ana menü, blog gezinmesi, site haritası ve yönetim panelindeki forum bağlantıları geri getirildi. Eski `/forum/t/<id>/` konuları ve kullanıcı/mesaj kayıtları korunur.
 - **Üç yeni kaynaklı rehber:** EAU 2026 ölçüm/tekrar test önerileri, FDA'nın **28 Şubat 2025** etiket değişikliği ve çocuk sahibi olma planında testosteron tedavisi. Kaynak tarihi ile içerik gözden geçirme tarihi ayrıdır. Rehberler tıbbi uzman incelemesi iddiası taşımaz; tanı veya tedavi önerisi değildir.
 - **Normal blog akışı:** sunucu tarafında arama, kategori filtreleri, kalıcı yazı adresleri, RSS ve site haritası. Arama JavaScript kapalıyken de çalışır.
 - **Veritabanından bağımsız rehberler:** `api/_editorial.js` içindeki TR/EN yazılar blog, RSS, sitemap ve `/api/content?guides=1` tarafından aynı kaynaktan okunur. Diğer diller mevcut İngilizce yedeğini kullanır. Veritabanı kapalıyken de bu üç rehber açılır; mevcut veritabanı yazıları yalnızca bağlantı varken görünür.
@@ -91,7 +95,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-318%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-320%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 
