@@ -17,5 +17,7 @@ export function configurationReport(env = process.env) {
   add('ai', 'Konuya göre AI taslağı', false, ai, ai ? 'Sunucu anahtarı tanımlı. Sağlayıcı/model erişimi test edilmedi.' : 'Konu taslağı için desteklenen bir AI sağlayıcısının sunucu anahtarı gerekli.');
   const pinterest = present('PINTEREST_ACCESS_TOKEN') && present('PINTEREST_BOARD_ID');
   add('pinterest', 'Pinterest paylaşımı', false, pinterest, pinterest ? 'Token ve pano tanımlı. API erişimi test edilmedi.' : 'İsteğe bağlı: PINTEREST_ACCESS_TOKEN ve PINTEREST_BOARD_ID birlikte gerekli.');
+  const google = present('GOOGLE_CLIENT_ID') && present('GOOGLE_CLIENT_SECRET');
+  add('google', 'Forum Google girişi', false, google, google ? 'Google OAuth istemcisi tanımlı. API erişimi test edilmedi.' : 'İsteğe bağlı: GOOGLE_CLIENT_ID ve GOOGLE_CLIENT_SECRET birlikte gerekli.');
   return { ready: checks.filter(check => check.required).every(check => check.status === 'configured'), checks, connectivityTested: false };
 }

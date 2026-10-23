@@ -16,7 +16,7 @@ test('kurulum raporu gereklileri ve opsiyonelleri ayırır; sırları dışarı 
   const missing = configurationReport({});
   assert.equal(missing.ready,false);
   assert.equal(missing.checks.filter(x=>x.required&&x.status==='missing').length,3);
-  const env={DATABASE_URL:'postgresql://user:secret-db@db.example/test',ADMIN_PASSWORD:'secret-password-very-long',SESSION_SECRET:'secret-session-'.repeat(4),OPENAI_API_KEY:'private-ai-value',PINTEREST_ACCESS_TOKEN:'private-pin-value',PINTEREST_BOARD_ID:'private-board-value',SITE_URL:'https://site.example'};
+  const env={DATABASE_URL:'postgresql://user:secret-db@db.example/test',ADMIN_PASSWORD:'secret-password-very-long',SESSION_SECRET:'secret-session-'.repeat(4),OPENAI_API_KEY:'private-ai-value',PINTEREST_ACCESS_TOKEN:'private-pin-value',PINTEREST_BOARD_ID:'private-board-value',GOOGLE_CLIENT_ID:'private-google-client-id',GOOGLE_CLIENT_SECRET:'private-google-client-secret',SITE_URL:'https://site.example'};
   const result=configurationReport(env);
   assert.equal(result.ready,true);
   assert.equal(result.connectivityTested,false);

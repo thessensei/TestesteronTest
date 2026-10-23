@@ -72,6 +72,60 @@ function syncHeadHeight() {
   document.documentElement.style.setProperty('--head-h', `${Math.round(head.getBoundingClientRect().height)}px`);
 }
 
+function googleAuthHref(mode = 'login') {
+  try {
+    const clean = new URL(location.href);
+    clean.searchParams.delete('auth');
+    clean.searchParams.delete('auth_error');
+    const returnTo = `${clean.pathname}${clean.search}${clean.hash}`;
+    return `/api/forum-auth?provider=google&mode=${encodeURIComponent(mode)}&returnTo=${encodeURIComponent(returnTo)}`;
+  } catch {
+    return `/api/forum-auth?provider=google&mode=${encodeURIComponent(mode)}`;
+  }
+}
+
+function syncGoogleLinks() {
+  const mode = authMode === 'register' ? 'register' : 'login';
+  $('header-google').href = googleAuthHref('login');
+  $('header-google').title = t('google-continue');
+  $('header-google').setAttribute('aria-label', t('google-continue'));
+  $('gate-google').href = googleAuthHref('register');
+  $('reply-google').href = googleAuthHref('login');
+  $('auth-google').href = googleAuthHref(mode);
+  $('auth-google-label').textContent = mode === 'register' ? t('google-register') : t('google-login');
+}
+
+function consumeOAuthNotice() {
+  try {
+    const url = new URL(location.href);
+    const auth = url.searchParams.get('auth') || '';
+    const authError = url.searchParams.get('auth_error') || '';
+    if (!auth && !authError) return null;
+    url.searchParams.delete('auth');
+    url.searchParams.delete('auth_error');
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    return { auth, authError };
+  } catch {
+    return null;
+  }
+}
+
+function applyOAuthNotice(notice) {
+  if (!notice) return;
+  if (notice.auth && user) {
+    const prefix = notice.auth === 'registered' ? t('welcome-registered') : t('welcome');
+    status(`${prefix}, ${user.username}.`);
+    return;
+  }
+  if (notice.authError) {
+    showAuth('login');
+    if (notice.authError === 'not_configured') status(t('google-not-configured'));
+    else if (notice.authError === 'cancelled') status(t('google-cancelled'));
+    else if (notice.authError === 'unverified_email') status(t('google-unverified'));
+    else status(t('google-failed'));
+  }
+}
+
 function applyLanguage() {
   document.documentElement.lang = lang;
   $('forum-lang').value = lang;
@@ -87,6 +141,7 @@ function applyLanguage() {
   if ($('forum-search')) $('forum-search').placeholder = t('search');
   if (user) $('composer-as').textContent = `${t('postedAs')}: ${user.username}`;
   if (current && listing.thread) document.title = `${listing.thread.title} · ${t('title')}`;
+  syncGoogleLinks();
   renderFilters();
   renderStats();
 }
@@ -178,6 +233,7 @@ function showAuth(mode) {
   $('tab-register').setAttribute('aria-selected', mode === 'register' ? 'true' : 'false');
   $('tab-login').classList.toggle('secondary', mode !== 'login');
   $('tab-register').classList.toggle('secondary', mode !== 'register');
+  syncGoogleLinks();
   $('auth-panel').scrollIntoView?.({ behavior: motion(), block: 'start' });
   const field = $(mode === 'register' ? 'register-form' : 'login-form').querySelector('input[name=username]');
   field?.focus();
@@ -397,6 +453,7 @@ async function open(id, options = {}) {
   if (quoting && quoting.threadId !== id) quoting = null;
   $('listing').hidden = true;
   $('detail').hidden = false;
+  syncGoogleLinks();
   renderThread();
   status(thread.locked ? t('closed') : '');
   if (options.reply) focusReply(options.reply);
@@ -420,6 +477,7 @@ function showListing() {
   document.title = BASE_TITLE;
   $('detail').hidden = true;
   $('listing').hidden = false;
+  syncGoogleLinks();
   return loadList();
 }
 
@@ -590,8 +648,12 @@ $('show-register').onclick = () => showAuth('register');
 $('gate-login').onclick = () => showAuth('login');
 $('gate-register').onclick = () => showAuth('register');
 $('reply-login').onclick = () => showAuth('login');
+$('reply-register').onclick = () => showAuth('register');
 $('tab-login').onclick = () => showAuth('login');
 $('tab-register').onclick = () => showAuth('register');
+for (const googleId of ['header-google', 'gate-google', 'reply-google', 'auth-google']) {
+  $(googleId).addEventListener('click', () => syncGoogleLinks());
+}
 $('quote-cancel').onclick = () => { quoting = null; renderQuoteChip(); };
 $('forum-lang').onchange = () => {
   lang = normalizeLang($('forum-lang').value);
@@ -740,6 +802,7 @@ for (const id of ['new-thread', 'reply-form']) $(id).onsubmit = event => {
 };
 
 run(async () => {
+  const oauthNotice = consumeOAuthNotice();
   applyLanguage();
   syncHeadHeight();
   window.addEventListener('resize', syncHeadHeight, { passive: true });
@@ -760,7 +823,9 @@ run(async () => {
   const route = routeFromHash(location.hash, location.search);
   if (route.thread) {
     await open(route.thread, { reply: route.reply });
+    applyOAuthNotice(oauthNotice);
     return;
   }
   await loadList();
+  applyOAuthNotice(oauthNotice);
 });

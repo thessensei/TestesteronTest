@@ -2,7 +2,7 @@
 
 ## Forum geri getirildi
 
-Forum bağımsız sosyal alan olarak eski arayüzüyle yeniden açıldı: üyelik/giriş, konu açma, yanıt, alıntı, beğeni ve moderasyon akışları korunur. Blog ve tarif güncellemeleri geri alınmadı. Veritabanı olmadan arayüz önizlenebilir; gerçek üyelik ve mesaj işlemleri için mevcut `DATABASE_URL` ve forum oturum ayarları gerekir. Canlıda önceden önbelleğe alınan kalıcı yönlendirmeyi görürseniz dağıtımdan sonra tarayıcı/site önbelleğini temizleyin veya gizli pencereyle deneyin.
+Forum bağımsız sosyal alan olarak eski arayüzüyle yeniden açıldı: üyelik/giriş (kullanıcı adı + şifre ve **Google ile Giriş / Kayıt Ol** OAuth 2.0 + PKCE S256 desteği), konu açma, yanıt, alıntı, beğeni ve moderasyon akışları korunur. Google ile giriş/kayıt için `.env.local` veya dağıtım ortamında `GOOGLE_CLIENT_ID` ve `GOOGLE_CLIENT_SECRET` tanımlanır; Google Cloud Console'da yetkili yönlendirme adresi (Authorized redirect URI) olarak `<SITE_URL>/api/forum-auth` eklenir. Blog ve tarif güncellemeleri geri alınmadı. Veritabanı olmadan arayüz önizlenebilir; gerçek üyelik ve mesaj işlemleri için mevcut `DATABASE_URL` ve forum oturum ayarları gerekir. Canlıda önceden önbelleğe alınan kalıcı yönlendirmeyi görürseniz dağıtımdan sonra tarayıcı/site önbelleğini temizleyin veya gizli pencereyle deneyin.
 
 ## Kurulum denetimi ve güvenli editör
 
