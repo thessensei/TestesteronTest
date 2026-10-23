@@ -1,18 +1,25 @@
 import crypto from 'node:crypto';
+import { resolveSiteUrl } from './_seo.js';
 
 export const FORUM_COOKIE = 'testotavan_forum';
+export const FORUM_OAUTH_COOKIE = 'testotavan_forum_oauth';
 export const FORUM_SESSION_DAYS = 14;
+export const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+export const OAUTH_PASSWORD_PLACEHOLDER = 'oauth$google';
+
 const RESERVED = new Set(['admin', 'administrator', 'moderator', 'mod', 'testotavan', 'sistem', 'system', 'root', 'support', 'destek']);
 const loginAttempts = new Map();
 const registerAttempts = new Map();
+const oauthAttempts = new Map();
 
-function secret() {
-  return process.env.SESSION_SECRET || '';
+function secret(env = process.env) {
+  return env.SESSION_SECRET || '';
 }
 
 export function resetForumAuthLimits() {
   loginAttempts.clear();
   registerAttempts.clear();
+  oauthAttempts.clear();
 }
 
 export function readCookie(req, name) {
@@ -31,6 +38,15 @@ export function forumSessionCookie(token) {
 
 export function clearForumCookie() {
   return `${FORUM_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+}
+
+export function oauthStateCookie(value) {
+  const maxAge = Math.floor(OAUTH_STATE_TTL_MS / 1000);
+  return `${FORUM_OAUTH_COOKIE}=${encodeURIComponent(value)}; Path=/api/forum-auth; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+export function clearOAuthStateCookie() {
+  return `${FORUM_OAUTH_COOKIE}=; Path=/api/forum-auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
 export function hashForumToken(token) {
@@ -64,7 +80,8 @@ export function verifyPassword(password, stored) {
 const DUMMY_HASH = hashPassword('not-a-real-forum-password');
 
 export function verifyPasswordOrDummy(password, stored) {
-  return verifyPassword(password, stored || DUMMY_HASH);
+  const scryptStored = typeof stored === 'string' && stored.startsWith('scrypt$');
+  return verifyPassword(password, scryptStored ? stored : DUMMY_HASH) && scryptStored;
 }
 
 export function validateUsername(raw) {
@@ -140,10 +157,224 @@ export function registerAllowed(req) {
   return hitLimit(registerAttempts, clientIp(req), 60 * 60 * 1000, 8);
 }
 
+export function oauthAllowed(req) {
+  return hitLimit(oauthAttempts, clientIp(req), 15 * 60 * 1000, 20);
+}
+
 export function readForumToken(req) {
   const token = readCookie(req, FORUM_COOKIE);
   return /^[a-f0-9]{64}$/i.test(token) ? token : '';
 }
+
+/* ---------- Google OAuth 2.0 + PKCE (S256) ---------- */
+
+export function isGoogleAuthConfigured(env = process.env) {
+  return Boolean(
+    typeof env.GOOGLE_CLIENT_ID === 'string' && env.GOOGLE_CLIENT_ID.trim()
+    && typeof env.GOOGLE_CLIENT_SECRET === 'string' && env.GOOGLE_CLIENT_SECRET.trim()
+  );
+}
+
+/** Yalnızca aynı site içindeki /forum/ yollarına izin verir (Open Redirect engeli). */
+export function sanitizeReturnTo(raw) {
+  const value = String(raw ?? '').trim();
+  if (!value || value.length > 240 || /[\r\n\\]/.test(value) || value.startsWith('//')) return '/forum/';
+  try {
+    const parsed = new URL(value, 'https://forum.local');
+    if (parsed.origin !== 'https://forum.local') return '/forum/';
+    if (parsed.pathname !== '/forum' && !parsed.pathname.startsWith('/forum/')) return '/forum/';
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '/forum/';
+  }
+}
+
+/** Hedef URL'ye (#thread=... çapasını bozmadan) sorgu parametresi ekler. */
+export function appendAuthParam(returnTo, key, value) {
+  const safe = sanitizeReturnTo(returnTo);
+  const parsed = new URL(safe, 'https://forum.local');
+  parsed.searchParams.set(key, value);
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+}
+
+export function resolveGoogleRedirectUri(req, env = process.env) {
+  const explicit = String(env.GOOGLE_REDIRECT_URI || '').trim();
+  if (explicit) {
+    const parsed = new URL(explicit);
+    const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+    if (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && isLocal)) {
+      return parsed.toString();
+    }
+  }
+  const rawHost = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').split(',')[0].trim();
+  if (/^(localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/i.test(rawHost)) {
+    return `http://${rawHost}/api/forum-auth`;
+  }
+  if (/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?$/i.test(rawHost)) {
+    return `https://${rawHost}/api/forum-auth`;
+  }
+  return `${resolveSiteUrl(req?.headers || {}, env)}/api/forum-auth`;
+}
+
+export function createPkcePair() {
+  const verifier = crypto.randomBytes(32).toString('base64url');
+  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+  return { verifier, challenge };
+}
+
+export function createGoogleAuthStart({ req, env = process.env, returnTo = '/forum/' }) {
+  const state = crypto.randomBytes(24).toString('hex');
+  const { verifier, challenge } = createPkcePair();
+  const safeReturnTo = sanitizeReturnTo(returnTo);
+  const redirectUri = resolveGoogleRedirectUri(req, env);
+  const payload = Buffer.from(JSON.stringify({
+    state,
+    verifier,
+    returnTo: safeReturnTo,
+    exp: Date.now() + OAUTH_STATE_TTL_MS
+  })).toString('base64url');
+  const sig = crypto.createHmac('sha256', secret(env)).update(`forum-oauth.${payload}`).digest('base64url');
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID.trim(),
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    prompt: 'select_account'
+  });
+  return {
+    authorizeUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+    cookie: oauthStateCookie(`${payload}.${sig}`)
+  };
+}
+
+export function verifyGoogleAuthState(req, stateParam, env = process.env) {
+  const rawCookie = readCookie(req, FORUM_OAUTH_COOKIE);
+  const [payload, sig, extra] = String(rawCookie || '').split('.');
+  if (!payload || !sig || extra || !stateParam || !secret(env)) return null;
+  const expectedSig = crypto.createHmac('sha256', secret(env)).update(`forum-oauth.${payload}`).digest('base64url');
+  const sigBuf = Buffer.from(sig);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed.state !== 'string' || typeof parsed.verifier !== 'string') return null;
+  if (!Number.isFinite(parsed.exp) || parsed.exp < Date.now()) return null;
+  const stateBuf = Buffer.from(String(stateParam));
+  const savedStateBuf = Buffer.from(parsed.state);
+  if (stateBuf.length !== savedStateBuf.length || !crypto.timingSafeEqual(stateBuf, savedStateBuf)) return null;
+  return {
+    verifier: parsed.verifier,
+    returnTo: sanitizeReturnTo(parsed.returnTo)
+  };
+}
+
+export async function exchangeGoogleCode({ code, codeVerifier, req, env = process.env, fetchImpl = globalThis.fetch }) {
+  const redirectUri = resolveGoogleRedirectUri(req, env);
+  const tokenRes = await fetchImpl('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+    body: new URLSearchParams({
+      code: String(code),
+      client_id: env.GOOGLE_CLIENT_ID.trim(),
+      client_secret: env.GOOGLE_CLIENT_SECRET.trim(),
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      code_verifier: codeVerifier
+    }).toString(),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!tokenRes.ok) throw new Error('Google token değişimi başarısız.');
+  const tokenData = await tokenRes.json();
+  if (!tokenData?.access_token) throw new Error('Google erişim anahtarı alınamadı.');
+
+  const userRes = await fetchImpl('https://openidconnect.googleapis.com/v1/userinfo', {
+    headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!userRes.ok) throw new Error('Google kullanıcı bilgisi alınamadı.');
+  const profile = await userRes.json();
+  const sub = String(profile?.sub || '').trim();
+  if (!sub || sub.length > 128) throw new Error('Geçersiz Google hesap kimliği.');
+  const email = String(profile?.email || '').trim().toLowerCase();
+  if (!email || profile?.email_verified !== true) {
+    const err = new Error('Google e-posta adresi doğrulanmamış.');
+    err.code = 'UNVERIFIED_EMAIL';
+    throw err;
+  }
+  return {
+    sub,
+    email,
+    name: String(profile?.name || profile?.given_name || '').trim()
+  };
+}
+
+/** Google profil adından veya e-posta ön ekinden kurallara uygun aday kullanıcı adı üretir. */
+export function suggestGoogleUsername(profile = {}) {
+  const clean = raw => String(raw ?? '')
+    .normalize('NFKC')
+    .replace(/[\s.-]+/g, '_')
+    .replace(/[^\p{L}\p{N}_]/gu, '')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 20);
+
+  const candidates = [
+    clean(profile.name),
+    clean(String(profile.email || '').split('@')[0])
+  ];
+  for (const candidate of candidates) {
+    if (candidate.length >= 3 && !RESERVED.has(candidate.toLocaleLowerCase('tr'))) {
+      return candidate;
+    }
+  }
+  return `uye_${crypto.randomInt(1000, 9999)}`;
+}
+
+export async function findOrCreateGoogleForumUser(sql, profile) {
+  const existingGoogle = await sql`SELECT id, username FROM forum_users WHERE google_sub = ${profile.sub}`;
+  if (existingGoogle.length) {
+    return { user: existingGoogle[0], created: false };
+  }
+
+  const base = suggestGoogleUsername(profile);
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const suffix = attempt === 0 ? '' : attempt < 8 ? `_${attempt + 1}` : `_${crypto.randomInt(1000, 9999)}`;
+    const maxBase = 20 - suffix.length;
+    const trimmedBase = base.slice(0, Math.max(3, maxBase)).replace(/_+$/g, '');
+    const candidate = `${trimmedBase.length >= 3 ? trimmedBase : 'uye'}${suffix}`.slice(0, 20);
+    let validated;
+    try {
+      validated = validateUsername(candidate);
+    } catch {
+      continue;
+    }
+    const clash = await sql`SELECT id FROM forum_users WHERE username_key = ${validated.usernameKey}`;
+    if (clash.length) continue;
+
+    const id = crypto.randomUUID();
+    try {
+      await sql`INSERT INTO forum_users (id, username, username_key, password_hash, google_sub, google_email) VALUES (${id}, ${validated.username}, ${validated.usernameKey}, ${OAUTH_PASSWORD_PLACEHOLDER}, ${profile.sub}, ${profile.email})`;
+      return { user: { id, username: validated.username }, created: true };
+    } catch (error) {
+      if (/google_sub/i.test(String(error?.message || error))) {
+        const raceUser = await sql`SELECT id, username FROM forum_users WHERE google_sub = ${profile.sub}`;
+        if (raceUser.length) return { user: raceUser[0], created: false };
+      }
+      if (/unique|duplicate/i.test(String(error?.message || error))) continue;
+      throw error;
+    }
+  }
+  throw new Error('Uygun kullanıcı adı oluşturulamadı.');
+}
+
+/* ---------- Veritabanı şeması ve oturum ---------- */
 
 export async function prepareForumAuth(sql) {
   await sql`CREATE TABLE IF NOT EXISTS forum_users (
@@ -153,6 +384,9 @@ export async function prepareForumAuth(sql) {
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS google_sub TEXT`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS google_email TEXT`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS forum_users_google_sub ON forum_users(google_sub) WHERE google_sub IS NOT NULL`;
   await sql`CREATE TABLE IF NOT EXISTS forum_sessions (
     token_hash TEXT PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES forum_users(id) ON DELETE CASCADE,

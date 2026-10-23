@@ -2,19 +2,28 @@ import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { prepareForum } from './_forum.js';
 import {
+  appendAuthParam,
   clearForumCookie,
   clearLoginFailures,
+  clearOAuthStateCookie,
   createForumSession,
+  createGoogleAuthStart,
   destroyForumSession,
+  exchangeGoogleCode,
   findForumUserByToken,
+  findOrCreateGoogleForumUser,
   forumSessionCookie,
   hashPassword,
+  isGoogleAuthConfigured,
   loginAllowed,
   noteLoginFailure,
+  oauthAllowed,
   readForumToken,
   registerAllowed,
+  sanitizeReturnTo,
   validateLogin,
   validateRegistration,
+  verifyGoogleAuthState,
   verifyPasswordOrDummy
 } from './_forum-auth.js';
 
@@ -22,8 +31,20 @@ function publicUser(user) {
   return user ? { username: user.username } : null;
 }
 
-export function createForumAuthHandler(connect = neon) {
+function redirect(res, location) {
+  res.setHeader('Location', location);
+  res.status(302);
+  if (typeof res.send === 'function') return res.send('');
+  if (typeof res.end === 'function') return res.end();
+  return res;
+}
+
+export function createForumAuthHandler(connect = neon, options = {}) {
+  const fetchImpl = options.fetch || globalThis.fetch;
+
   return async function handler(req, res) {
+    const env = options.env || process.env;
+    const query = req.query || {};
     res.setHeader('Cache-Control', 'no-store');
     if (!['GET', 'POST'].includes(req.method)) {
       res.setHeader('Allow', 'GET, POST');
@@ -33,19 +54,76 @@ export function createForumAuthHandler(connect = neon) {
       if (req.headers['sec-fetch-site'] === 'cross-site') return res.status(403).json({ error: 'İstek reddedildi.' });
       if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || '')) return res.status(415).json({ error: 'JSON gerekli.' });
     }
-    if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
+
+    // Google OAuth 2.0 başlangıç yönlendirmesi: GET /api/forum-auth?provider=google
+    if (req.method === 'GET' && query.provider === 'google') {
+      const returnTo = sanitizeReturnTo(query.returnTo);
+      if (!oauthAllowed(req)) {
+        return redirect(res, appendAuthParam(returnTo, 'auth_error', 'rate_limited'));
+      }
+      if (!env.DATABASE_URL || !env.SESSION_SECRET || !isGoogleAuthConfigured(env)) {
+        return redirect(res, appendAuthParam(returnTo, 'auth_error', 'not_configured'));
+      }
+      const { authorizeUrl, cookie } = createGoogleAuthStart({ req, env, returnTo });
+      res.setHeader('Set-Cookie', cookie);
+      return redirect(res, authorizeUrl);
+    }
+
+    // Google OAuth 2.0 geri dönüş (callback): GET /api/forum-auth?code=...&state=...
+    if (req.method === 'GET' && (query.code || query.error)) {
+      const verified = verifyGoogleAuthState(req, query.state, env);
+      const returnTo = verified ? verified.returnTo : '/forum/';
+      if (query.error) {
+        res.setHeader('Set-Cookie', clearOAuthStateCookie());
+        const reason = query.error === 'access_denied' ? 'cancelled' : 'failed';
+        return redirect(res, appendAuthParam(returnTo, 'auth_error', reason));
+      }
+      if (!verified) {
+        res.setHeader('Set-Cookie', clearOAuthStateCookie());
+        return redirect(res, appendAuthParam('/forum/', 'auth_error', 'invalid_state'));
+      }
+      if (!env.DATABASE_URL || !env.SESSION_SECRET || !isGoogleAuthConfigured(env)) {
+        res.setHeader('Set-Cookie', clearOAuthStateCookie());
+        return redirect(res, appendAuthParam(returnTo, 'auth_error', 'not_configured'));
+      }
+      try {
+        const profile = await exchangeGoogleCode({
+          code: query.code,
+          codeVerifier: verified.verifier,
+          req,
+          env,
+          fetchImpl
+        });
+        const sql = connect(env.DATABASE_URL);
+        await prepareForum(sql);
+        const { user, created } = await findOrCreateGoogleForumUser(sql, profile);
+        const session = await createForumSession(sql, user.id);
+        res.setHeader('Set-Cookie', [clearOAuthStateCookie(), forumSessionCookie(session)]);
+        return redirect(res, appendAuthParam(returnTo, 'auth', created ? 'registered' : 'google'));
+      } catch (error) {
+        console.error('Forum Google OAuth:', error);
+        res.setHeader('Set-Cookie', clearOAuthStateCookie());
+        const code = error?.code === 'UNVERIFIED_EMAIL' ? 'unverified_email' : 'failed';
+        return redirect(res, appendAuthParam(returnTo, 'auth_error', code));
+      }
+    }
+
+    if (!env.DATABASE_URL || !env.SESSION_SECRET) {
       return res.status(503).json({ error: 'Forum henüz yapılandırılmadı.' });
     }
 
     try {
-      const sql = connect(process.env.DATABASE_URL);
+      const sql = connect(env.DATABASE_URL);
       await prepareForum(sql);
       const token = readForumToken(req);
 
       if (req.method === 'GET') {
         const user = token ? await findForumUserByToken(sql, token) : null;
         if (token && !user) res.setHeader('Set-Cookie', clearForumCookie());
-        return res.status(200).json({ user: publicUser(user) });
+        return res.status(200).json({
+          user: publicUser(user),
+          googleEnabled: isGoogleAuthConfigured(env)
+        });
       }
 
       const action = req.body?.action;

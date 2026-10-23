@@ -66,12 +66,22 @@
         <option value="en">EN</option>
         <option value="de">DE</option>
         <option value="ja">JA</option>
+        <option value="fr">FR</option>
+        <option value="es">ES</option>
+        <option value="bg">BG</option>
+        <option value="ru">RU</option>
+        <option value="hi">HI</option>
+        <option value="zh">ZH</option>
       </select>
       <div id="auth-user" hidden>
         <span id="auth-name" class="auth-chip"></span>
         <button id="logout" class="secondary small" type="button">Çıkış</button>
       </div>
       <div id="auth-guest" class="auth-guest">
+        <a id="header-google" class="google-btn small" href="/api/forum-auth?provider=google" aria-label="Google ile devam et">
+          <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.98h3.86c2.26-2.09 3.56-5.17 3.56-8.8z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.07A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.28 14.31a7.18 7.18 0 0 1 0-4.62V6.62H1.29a12 12 0 0 0 0 10.76l3.99-3.07z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.99 3.07c.95-2.85 3.6-4.94 6.72-4.94z"/></svg>
+          <span>Google</span>
+        </a>
         <button id="show-login" class="secondary small" type="button">Giriş yap</button>
         <button id="show-register" class="small" type="button">Kayıt ol</button>
       </div>
@@ -160,6 +170,10 @@
           <h2 data-i18n="gate-title">Sohbete katılmak için hesap gerekir</h2>
           <p data-i18n="gate-body">Konu açmak ve yanıt yazmak ücretsizdir. Önce giriş yap veya kayıt ol.</p>
           <div class="toolbar">
+            <a id="gate-google" class="google-btn" href="/api/forum-auth?provider=google">
+              <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.98h3.86c2.26-2.09 3.56-5.17 3.56-8.8z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.07A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.28 14.31a7.18 7.18 0 0 1 0-4.62V6.62H1.29a12 12 0 0 0 0 10.76l3.99-3.07z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.99 3.07c.95-2.85 3.6-4.94 6.72-4.94z"/></svg>
+              <span data-i18n="google-continue">Google ile devam et</span>
+            </a>
             <button type="button" id="gate-login" class="secondary" data-i18n="login-submit">Giriş yap</button>
             <button type="button" id="gate-register" data-i18n="register-submit">Kayıt ol</button>
           </div>
@@ -193,7 +207,14 @@
         </div>
         <div id="reply-gate" class="gate" hidden>
           <p data-i18n="reply-gate">Yanıt yazmak için giriş yap veya kayıt ol.</p>
-          <button type="button" id="reply-login" data-i18n="login-submit">Giriş yap</button>
+          <div class="toolbar">
+            <a id="reply-google" class="google-btn" href="/api/forum-auth?provider=google">
+              <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.98h3.86c2.26-2.09 3.56-5.17 3.56-8.8z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.07A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.28 14.31a7.18 7.18 0 0 1 0-4.62V6.62H1.29a12 12 0 0 0 0 10.76l3.99-3.07z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.99 3.07c.95-2.85 3.6-4.94 6.72-4.94z"/></svg>
+              <span data-i18n="google-continue">Google ile devam et</span>
+            </a>
+            <button type="button" id="reply-login" class="secondary" data-i18n="login-submit">Giriş yap</button>
+            <button type="button" id="reply-register" data-i18n="register-submit">Kayıt ol</button>
+          </div>
         </div>
         <form id="reply-form" class="composer" hidden>
           <h2 data-i18n="reply-title">Sohbete katıl</h2>
@@ -208,8 +229,16 @@
 
       <section id="auth-panel" class="composer" hidden>
         <div class="auth-tabs" role="tablist">
-          <button type="button" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form">Giriş yap</button>
-          <button type="button" id="tab-register" class="secondary" role="tab" aria-selected="false" aria-controls="register-form">Kayıt ol</button>
+          <button type="button" id="tab-login" role="tab" aria-selected="true" aria-controls="login-form" data-i18n="login-submit">Giriş yap</button>
+          <button type="button" id="tab-register" class="secondary" role="tab" aria-selected="false" aria-controls="register-form" data-i18n="register-submit">Kayıt ol</button>
+        </div>
+        <div class="oauth-box">
+          <a id="auth-google" class="google-btn full" href="/api/forum-auth?provider=google">
+            <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.98h3.86c2.26-2.09 3.56-5.17 3.56-8.8z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.07A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.28 14.31a7.18 7.18 0 0 1 0-4.62V6.62H1.29a12 12 0 0 0 0 10.76l3.99-3.07z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.99 3.07c.95-2.85 3.6-4.94 6.72-4.94z"/></svg>
+            <span id="auth-google-label">Google ile giriş yap</span>
+          </a>
+          <p class="meta oauth-hint" data-i18n="google-hint">Tek tıkla ücretsiz hesap oluşturur veya mevcut Google hesabınla oturum açar.</p>
+          <div class="auth-divider"><span data-i18n="or-divider">veya kullanıcı adıyla devam et</span></div>
         </div>
         <form id="login-form">
           <h2 data-i18n="login-title">Hesabınla devam et</h2>
