@@ -48,6 +48,7 @@ export function buildSitemap({ siteUrl = DEFAULT_SITE_URL, env = process.env, co
 
   add(`${root}/`, { changefreq: 'weekly', priority: 1 });
   add(blog.standalone ? `${blog.base}/` : `${root}/blog/`, { changefreq: 'daily', priority: 0.9 });
+  add(forum.standalone ? `${forum.base}/` : `${root}/forum/`, { changefreq: 'daily', priority: 0.9 });
 
   for (const item of content) {
     if (!item?.slug) continue;

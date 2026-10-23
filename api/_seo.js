@@ -562,6 +562,7 @@ function navItems(siteUrl, section, lang) {
   return [
     { href: `${siteUrl}/${langQuery}`, label: home, key: 'home' },
     { href: `${siteUrl}/blog/${langQuery}`, label: blog, key: 'blog' },
+    { href: `${siteUrl}/forum/${langQuery}`, label: 'Forum', key: 'forum' },
     { href: `${siteUrl}/${langQuery}#physicalPage`, label: analyzer, key: 'analyze' }
   ].map(item => ({ ...item, current: item.key === section }));
 }
@@ -635,6 +636,7 @@ ${body}
       <a href="${siteUrl}/${langQuery}">${SITE_NAME}</a>
       <a href="${siteUrl}/blog/${langQuery}">Blog</a>
       <a href="${siteUrl}/blog/rss.xml">RSS</a>
+      <a href="${siteUrl}/forum/${langQuery}">Forum</a>
       <a href="${siteUrl}/${langQuery}#aboutPage">${lang === 'tr' ? 'Hakkımızda' : 'About'}</a>
       <a href="mailto:testotavan@gmail.com">testotavan@gmail.com</a>
     </div>

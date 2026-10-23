@@ -12,7 +12,7 @@ const port = Number(process.env.PORT || 3000);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8' };
 const apiNames = new Set(['about', 'content', 'seo', 'session', 'login', 'stats', 'forum', 'forum-auth', 'ai-blog']);
 
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.status = code => { res.statusCode = code; return res; };
   res.send = body => { res.end(req.method === 'HEAD' ? undefined : body); return res; };
@@ -20,10 +20,10 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://preview.invalid');
     const pathname = decodeURIComponent(url.pathname);
-    const redirect = config.redirects.find(rule => rule.source === pathname);
+    const redirect = (config.redirects || []).find(rule => rule.source === pathname);
     if (redirect) {
       res.setHeader('Location', redirect.destination + url.search);
-      return res.status(308).send('Blog adresine taşındı.');
+      return res.status(308).send('Sayfa taşındı.');
     }
     req.query = Object.fromEntries(url.searchParams);
     let api;
@@ -54,7 +54,8 @@ http.createServer(async (req, res) => {
     }
     let relative = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
     if (relative === 'admin' || relative === 'admin/') relative = 'admin/index.html';
-    if (!/^(index\.html|robots\.txt|google[\w]+\.html|(?:assets|js|admin)\/[\w./-]+)$/.test(relative)) return res.status(404).send('Not found');
+    if (relative === 'forum' || relative === 'forum/') relative = 'forum/index.html';
+    if (!/^(index\.html|robots\.txt|google[\w]+\.html|(?:assets|js|admin|forum)\/[\w./-]+)$/.test(relative)) return res.status(404).send('Not found');
     const resolved = await fs.realpath(path.resolve(root, relative));
     if (!resolved.startsWith(root + path.sep) || relative.split('/').some(part => part.startsWith('.'))) return res.status(404).send('Not found');
     const data = await fs.readFile(resolved);
@@ -67,4 +68,5 @@ http.createServer(async (req, res) => {
     console.error('[preview]', error.message);
     return res.status(500).json({ error: 'Önizleme isteği tamamlanamadı.' });
   }
-}).listen(port, '0.0.0.0', () => console.log(`TestoTavan preview: http://0.0.0.0:${port}/blog/`));
+});
+server.listen(port, '0.0.0.0', () => console.log(`TestoTavan preview: http://0.0.0.0:${server.address().port}/forum/`));

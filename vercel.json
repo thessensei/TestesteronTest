@@ -55,6 +55,14 @@
   ],
   "rewrites": [
     {
+      "source": "/forum",
+      "destination": "/forum/index.html"
+    },
+    {
+      "source": "/forum/",
+      "destination": "/forum/index.html"
+    },
+    {
       "source": "/api/forum-stats",
       "destination": "/api/forum?stats=1"
     },
@@ -81,23 +89,6 @@
     {
       "source": "/forum/t/(.*)",
       "destination": "/api/seo?type=thread&id=$1"
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/forum",
-      "destination": "/blog/",
-      "permanent": true
-    },
-    {
-      "source": "/forum/",
-      "destination": "/blog/",
-      "permanent": true
-    },
-    {
-      "source": "/forum/index.html",
-      "destination": "/blog/",
-      "permanent": true
     }
   ]
 }
