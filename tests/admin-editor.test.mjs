@@ -146,7 +146,7 @@ test('publish kaydettikten sonra düzenleme modunda kalır, yayın etiketine dö
   const block = adminHtml.slice(start, end);
   assert.match(block, /const editing=Boolean\(editingId\)/);
   assert.match(block, /if\(editing\)\{items=items\.map/, 'düzenleme dalı korunmalı');
-  assert.match(block, /if\(!editing\)resetEditor\(\)/, 'yalnızca yeni içerik formu sıfırlar');
+  assert.match(block, /if\(!editing&&unchanged\)resetEditor\(\)/, 'yalnızca yeni içerik formu sıfırlar');
   assert.match(block, /if\(editing\)setEditorMode\('edit'\)/, 'düzenleme modu korunur');
   assert.doesNotMatch(block, /textContent='Herkese açık yayınla'/);
   assert.match(block, /showPublishResult\(publicUrl,editing\)/);
@@ -172,7 +172,7 @@ test('malzeme alanı metinden çıkarma ve otomatik doldurma düğmelerini taş�
 });
 
 test('Türkçe malzeme değişince ve tarif moduna geçince otomatik senkron tetiklenir', () => {
-  assert.match(adminHtml, /if\(lang==='tr'\)scheduleIngredientSync\(\)/);
+  assert.match(adminHtml, /if\(lang==='tr'\)\{ingredientRevision\+\+;scheduleIngredientSync\(\)\}/);
   assert.match(adminHtml, /scheduleBodyExtraction\(\);scheduleIngredientSync\(\)/);
   assert.match(adminHtml, /mode:'ingredients'/);
   assert.match(adminHtml, /function syncIngredientsFromTr\(/);

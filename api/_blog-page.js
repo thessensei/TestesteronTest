@@ -18,13 +18,14 @@ import {
   readingMinutes, renderNotFound, renderPage, renderRichText, resolveSiteUrl, safeCover,
   sectionBase, seoTitle, stripSourceReferences, websiteLd, wordCount
 } from './_seo.js';
-import { connectDb, findContentBySlug, listContent, prepareContent } from './_content-db.js';
+import { connectDb, listContent, prepareContent } from './_content-db.js';
+import { mergeEditorial, editorialSources } from './_editorial.js';
 import { localizeDuration } from './_content-shape.js';
 
 const T = {
   tr: {
-    eyebrow: 'TESTOTAVAN DERGİ', title: 'Hormon, uyku ve güç üzerine okunabilir rehber.',
-    intro: 'Klinik araştırmaları sadeleştiren, günlük hayata çevrilebilir yazılar ve yüksek proteinli tarifler.',
+    eyebrow: 'TESTOTAVAN BLOG', title: 'Hormon, uyku ve güç üzerine okunabilir rehber.',
+    intro: 'Sağlık rehberleri, güncel gelişmeler ve pratik tarifler. Yeni rehberlerde kaynaklar ve gözden geçirme tarihi açıkça belirtilir.',
     latest: 'Son yazılar', all: 'Tümü', recipes: 'Tarifler', articles: 'Yazılar', posts: 'yazı',
     categories: 'kategori',
     readMore: 'Yazıyı oku', minRead: 'dk okuma', updated: 'Güncellendi',
@@ -339,7 +340,7 @@ function cardHtml(item, blog, lang) {
 
 /* ------------------------------------------------------------------- hub */
 
-export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = process.env, lang = 'tr', category = '' }) {
+export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = process.env, lang = 'tr', category = '', search = '' }) {
   const t = T[lang];
   const blog = sectionBase('blog', siteUrl, env);
   const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
@@ -358,10 +359,12 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     if (label && !catLabels.has(item.category)) catLabels.set(item.category, label);
   });
   const categories = [...catLabels.keys()];
-  const filtered = category
-    ? views.filter((view, index) => shown[index].category === category)
-    : views;
-  const published = shown.map(item => item.published_at || item.date).filter(Boolean).sort().at(-1);
+  const needle = search.toLocaleLowerCase(lang);
+  const filtered = views.filter((view, index) =>
+    (!category || shown[index].category === category) &&
+    (!needle || `${view.title} ${view.summary} ${view.category}`.toLocaleLowerCase(lang).includes(needle)));
+  const searchSuffix = search ? `&q=${encodeURIComponent(search)}` : '';
+  const published = shown.map(item => item.updated_at || item.published_at || item.date).filter(Boolean).sort().at(-1);
   const canonical = blog.standalone ? `${blog.base}/` : `${siteUrl}/blog/`;
   const description = lang === 'tr'
     ? 'TestoTavan Dergi: testosteron, uyku, beslenme ve antrenman üzerine kanıta dayalı yazılar ve yüksek proteinli tarifler.'
@@ -369,7 +372,7 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
   const feature = filtered[0];
   const rest = filtered.slice(1);
   const categoriesChips = [`<a class="chip" href="${escapeAttr(hubHref(blog, lang))}"${category ? '' : ' aria-current="page"'}>${escapeHtml(t.all)} · ${formatNumber(views.length, lang)}</a>`]
-    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(withLang(`${hubHref(blog)}?kategori=${encodeURIComponent(name)}`, lang))}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(catLabels.get(name))} · ${formatNumber(catCounts.get(name) || 0, lang)}</a>`))
+    .concat(categories.map(name => `<a class="chip" href="${escapeAttr(withLang(`${hubHref(blog)}?kategori=${encodeURIComponent(name)}${searchSuffix}`, lang))}"${category === name ? ' aria-current="page"' : ''}>${escapeHtml(catLabels.get(name))} · ${formatNumber(catCounts.get(name) || 0, lang)}</a>`))
     .join('');
 
   const body = `<div class="wrap">
@@ -384,6 +387,15 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     </div>
   </section>
 
+  <form class="blog-search" action="${escapeAttr(hubHref(blog))}" method="get" role="search">
+    <label for="blog-search">${lang === 'tr' ? 'Blogda ara' : 'Search the blog'}</label>
+    <div class="blog-search-row">
+      <input id="blog-search" type="search" name="q" maxlength="120" value="${escapeAttr(search)}" placeholder="${lang === 'tr' ? 'Konu, başlık veya anahtar kelime' : 'Topic, title or keyword'}">
+      ${lang !== 'tr' ? `<input type="hidden" name="lang" value="${escapeAttr(lang)}">` : ''}
+      ${category ? `<input type="hidden" name="kategori" value="${escapeAttr(category)}">` : ''}
+      <button class="button" type="submit">${lang === 'tr' ? 'Ara' : 'Search'}</button>
+    </div>
+  </form>
   <nav class="chips" aria-label="${escapeAttr(t.categories || 'Categories')}">${categoriesChips}</nav>
 
   ${feature ? `<a class="feature" href="${escapeAttr(postHref(feature.slug, blog, lang))}">
@@ -395,20 +407,20 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
       <p>${escapeHtml(metaDescription(feature.summary, feature.body, 200) || '')}</p>
       <div class="meta"><span>${escapeHtml(formatDate(feature.published_at || feature.date, lang))}</span><span>${escapeHtml(readingLabel(readingMinutes(feature.body), lang))}</span><span>${escapeHtml(t.readMore)} →</span></div>
     </div>
-  </a>` : `<div class="empty"><strong>${escapeHtml(t.emptyTitle)}</strong><p>${escapeHtml(t.emptyBody)}</p></div>`}
+  </a>` : `<div class="empty"><strong>${escapeHtml(search || category ? (lang === 'tr' ? 'Eşleşen yazı bulunamadı' : 'No matching posts') : t.emptyTitle)}</strong><p>${escapeHtml(search || category ? (lang === 'tr' ? 'Farklı bir arama deneyin veya tüm yazılara dönün.' : 'Try another search or return to all posts.') : t.emptyBody)}</p></div>`}
 
   ${rest.length ? `<div class="section-head"><h2>${escapeHtml(t.latest)}</h2><span>${formatNumber(rest.length, lang)}</span></div>
   <div class="cards">${rest.map(item => cardHtml(item, blog, lang)).join('\n')}</div>` : ''}
 
   <div class="cta">
     <div><h2>${escapeHtml(t.ctaTitle)}</h2><p>${escapeHtml(t.ctaBody)}</p></div>
-    <div class="cta-actions"><a class="button" href="${escapeAttr(`${siteUrl}/${langQuery}#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a><a class="button ghost" href="${escapeAttr(`${siteUrl}/forum/${langQuery}`)}">${escapeHtml(t.forumButton)} →</a></div>
+    <div class="cta-actions"><a class="button" href="${escapeAttr(`${siteUrl}/${langQuery}#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a></div>
   </div>
 </div>`;
 
   const itemList = {
     '@type': 'ItemList',
-    itemListElement: views.slice(0, 30).map((item, index) => ({
+    itemListElement: filtered.slice(0, 30).map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       url: withLang(blog.standalone ? absoluteUrl(`/${encodeURIComponent(item.slug)}/`, blog.base) : absoluteUrl(blogPostPath(item.slug), siteUrl), lang),
@@ -556,17 +568,19 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     ${toc}
     ${ingredients}
     <div class="article-body">${renderRichText(bodyText)}</div>
+    ${editorialSources(item).length ? `<aside class="toc" aria-label="${lang === 'tr' ? 'Kaynaklar' : 'Sources'}">
+      <h2>${lang === 'tr' ? 'Kaynaklar ve güncellik' : 'Sources and review date'}</h2>
+      <p>${lang === 'tr' ? 'İçerik gözden geçirme' : 'Content reviewed'}: <time datetime="${escapeAttr(item.reviewed_at)}">${escapeHtml(formatDate(item.reviewed_at, lang))}</time></p>
+      <ul>${editorialSources(item).map(source => `<li><a href="${escapeAttr(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(lang === 'tr' ? source.title : source.titleEn || source.title)}</a></li>`).join('')}</ul>
+      <p>${lang === 'tr' ? 'Kaynak özeti; bağımsız tıbbi uzman incelemesi yapılmış değildir.' : 'Source summary; not independently medically reviewed.'}</p>
+    </aside>` : ''}
     ${SHARE(canonical, view.title, lang)}
-    <div class="cta">
-      <div><h2>${escapeHtml(t.forumCtaTitle)}</h2><p>${escapeHtml(t.forumCtaBody)}</p></div>
-      <a class="button" href="${escapeAttr(`${siteUrl}/forum/${langQuery}`)}">${escapeHtml(t.forumButton)} →</a>
-    </div>
     <div class="cta">
       <div><h2>${escapeHtml(t.ctaTitle)}</h2><p>${escapeHtml(t.ctaBody)}</p></div>
       <a class="button ghost" href="${escapeAttr(`${siteUrl}/${langQuery}#physicalPage`)}">${escapeHtml(t.ctaButton)} →</a>
     </div>
     <p class="disclaimer">${lang === 'tr'
-      ? 'Bu yazı bilgilendirme amaçlıdır ve tıbbi tanı, tedavi veya reçete yerine geçmez. Sağlık kararlarınızı hekiminizle birlikte alın. Metin editoryal ekibimizce bağımsız olarak hazırlanır; alıntı listesi yayınlanmaz.'
+      ? 'Bu yazı bilgilendirme amaçlıdır ve tıbbi tanı, tedavi veya reçete yerine geçmez. Sağlık kararlarınızı hekiminizle birlikte alın.'
       : 'This article is for information only and is not a substitute for medical diagnosis, treatment or prescription. Decide together with your physician.'}</p>
   </article>
   ${relatedHtml}
@@ -606,6 +620,7 @@ export function createBlogPageHandler(options = {}) {
     const lang = normalizeLang(query.lang);
     const slug = oneLine(String(query.slug || query.path || '').replace(/^\/+|\/+$/g, ''), 200);
     const category = oneLine(query.kategori || query.category || '', 60);
+    const search = oneLine(query.q || '', 120);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', slug ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=120, stale-while-revalidate=3600');
@@ -617,24 +632,25 @@ export function createBlogPageHandler(options = {}) {
     }
 
     const isHub = !slug || slug === 'index.html';
-    let sql = null;
+    let rows = [];
     try {
-      sql = connect();
+      const sql = connect();
       await prepareContent(sql);
+      rows = await listContent(sql);
     } catch (error) {
       console.warn('[blog-page] veritabanına ulaşılamadı:', error?.message || error);
-      sql = null;
+      rows = [];
     }
 
+    const items = mergeEditorial(rows);
     try {
       if (isHub) {
-        const items = sql ? await listContent(sql) : [];
-        const html = renderBlogHub({ items, siteUrl, env: options.env || process.env, lang, category });
+        const html = renderBlogHub({ items, siteUrl, env: options.env || process.env, lang, category, search });
         res.setHeader('Content-Language', lang);
-        return res.status(200).send(html);
+        return res.status(200).send(req.method === 'HEAD' ? '' : html);
       }
 
-      const item = sql ? await findContentBySlug(sql, slug) : null;
+      const item = items.find(entry => entry.slug === slug || entry.id === slug);
       if (!item) {
         res.setHeader('Cache-Control', 'public, s-maxage=60');
         return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
@@ -646,18 +662,14 @@ export function createBlogPageHandler(options = {}) {
         return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
       }
 
-      let related = [];
-      if (sql) {
-        const all = await listContent(sql);
-        related = all
+      const related = items
           .filter(entry => entry.id !== item.id && entry.slug !== item.slug)
           .sort((a, b) => Number(b.category === item.category) - Number(a.category === item.category))
           .slice(0, 3);
-      }
 
       const html = renderBlogPost({ item, related, siteUrl, env: options.env || process.env, lang });
       res.setHeader('Content-Language', lang);
-      return res.status(200).send(html);
+      return res.status(200).send(req.method === 'HEAD' ? '' : html);
     } catch (error) {
       console.error('[blog-page]', error);
       return res.status(500).send(renderNotFound({ siteUrl, section: 'blog', lang }));

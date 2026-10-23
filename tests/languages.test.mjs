@@ -196,7 +196,7 @@ test('dil değiştirince iç bağlantılar da aynı dili taşır', () => {
   assert.ok(html.includes('href="https://testotavan.com/blog/uyku-ve-testosteron/?lang=ru"'), 'yazı bağlantısı dil taşımalı');
   assert.ok(html.includes('href="https://testotavan.com/?lang=ru"'), 'ana sayfa bağlantısı dil taşımalı');
   assert.ok(html.includes('href="https://testotavan.com/blog/?lang=ru"'), 'blog bağlantısı dil taşımalı');
-  assert.ok(html.includes('href="https://testotavan.com/forum/?lang=ru"'), 'yazı CTA forum bağlantısı dil taşımalı');
+  assert.ok(!html.includes('href="https://testotavan.com/forum/?lang=ru"'), 'blog artık forum katılım çağrısı içermemeli');
   assert.ok(html.includes('href="https://testotavan.com/?lang=ru#physicalPage"'), 'yazı CTA analiz bağlantısı dil taşımalı');
   assert.ok(!html.includes('ana sayfa"'), 'marka bağlantısının etiketi Türkçe kalmamalı');
 

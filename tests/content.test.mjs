@@ -126,13 +126,13 @@ test('API yüklenmeden koda gömülü içerik gösterilmez', () => {
     assert.ok(!contentSource.includes('seedContent'), 'sabit örnek içerikler kaldırılmalı');
 });
 
-test('yalnızca panel kayıtları gösterilir ve son kayıt silinince liste boş kalır', async () => {
+test('herkese açık API yanıtı düzenleme, silme ve boş listede doğru gösterilir', async () => {
     let records = [
         { id: 'content-blog', type: 'blog', title: 'Panel yazısı' },
         { id: 'content-recipe', type: 'recipe', title: 'Panel tarifi' }
     ];
     const { api } = loadContentModule(async url => {
-        assert.equal(url, '/api/content');
+        assert.equal(url, '/api/content?guides=1');
         return { ok: true, json: async () => records };
     });
     await api.loadSharedContent();
@@ -247,4 +247,12 @@ test('sitede fiyat bilgisi gösterilmez', () => {
     const core = fs.readFileSync(path.join(srcJsDir, 'validation.js'), 'utf8');
     assert.ok(!/\bTL\b/.test(core), 'validation çekirdeği fiyat içermemeli');
     assert.match(indexHtml, /Sonuç süresi/, 'lojistik bilgisi korunmalı');
+});
+
+// PUT yolunda daha önce tanımsız sanitizeTranslations çağrısı vardı.
+test('içerik düzenleme çevirileri mevcut temizleyiciyle kaydeder', () => {
+    const source = fs.readFileSync(path.join(root, 'api', 'content.js'), 'utf8');
+    const update = source.slice(source.indexOf("if (req.method === 'PUT')"), source.indexOf("if (req.method === 'DELETE')"));
+    assert.match(update, /sanitizeTranslationBodies\(cleanTranslations\(input\.translations\)\)/);
+    assert.doesNotMatch(update, /sanitizeTranslations\(/);
 });

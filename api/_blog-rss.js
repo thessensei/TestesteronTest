@@ -1,3 +1,4 @@
+import { mergeEditorial } from './_editorial.js';
 /*
  * /blog/rss.xml — TestoTavan Dergi akışı.
  *
@@ -67,11 +68,11 @@ export function createBlogRssHandler(options = {}) {
     }
 
     const siteUrl = resolveSiteUrl(req.headers || {}, options.env || process.env);
-    let items = [];
+    let items = mergeEditorial();
     try {
       const sql = connect();
       await prepareContent(sql);
-      items = await listContent(sql);
+      items = mergeEditorial(await listContent(sql));
     } catch (error) {
       console.warn('[blog-rss] içerik okunamadı:', error?.message || error);
     }

@@ -173,5 +173,23 @@
     return out;
   }
 
-  global.MeydanIngredients = { extractIngredients, mergeIngredients };
+  /** Toplu yapıştırmada virgülden bölme: 1,5 gibi miktarlar korunur. */
+  function parseIngredientBatch(text) {
+    const rows = String(text || '').replace(/\r/g, '').split('\n').map(cleanLine).filter(Boolean);
+    if (!rows.length) return { ok: false, error: 'Her satıra bir malzeme yazın.' };
+    if (rows.some(row => row.length > 200)) return { ok: false, error: 'Bir malzeme en fazla 200 karakter olabilir.' };
+    const items = dedupe(rows);
+    if (items.length > 100) return { ok: false, error: 'En fazla 100 malzeme eklenebilir.' };
+    return { ok: true, items };
+  }
+
+  function moveIngredient(values, index, direction) {
+    const result = [...values];
+    const next = index + direction;
+    if (!Number.isInteger(index) || ![-1, 1].includes(direction) || index < 0 || index >= result.length || next < 0 || next >= result.length) return result;
+    [result[index], result[next]] = [result[next], result[index]];
+    return result;
+  }
+
+  global.MeydanIngredients = { extractIngredients, mergeIngredients, parseIngredientBatch, moveIngredient };
 })(typeof window !== 'undefined' ? window : globalThis);

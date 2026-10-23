@@ -24,11 +24,13 @@ export function clearSessionCookie() {
 
 export function isAdmin(req) {
   if (!secret()) return false;
-  const cookies = Object.fromEntries((req.headers.cookie || '').split(';').map(part => { const i=part.indexOf('='); return i<0?[part.trim(),'']:[part.slice(0,i).trim(),part.slice(i+1)]; }));
+  const cookies = Object.fromEntries((req.headers?.cookie || '').split(';').map(part => { const i=part.indexOf('='); return i<0?[part.trim(),'']:[part.slice(0,i).trim(),part.slice(i+1)]; }));
   const value = cookies[COOKIE_NAME];
   if (!value) return false;
-  const [expires, received] = value.split('.');
-  if (!expires || !received || Number(expires) < Date.now()) return false;
+  const parts = value.split('.');
+  if (parts.length !== 2) return false;
+  const [expires, received] = parts;
+  if (!/^\d{13}$/.test(expires) || !/^[0-9a-f]{64}$/.test(received) || Number(expires) <= Date.now()) return false;
   const expected = signature(expires);
   try {
     return crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected));

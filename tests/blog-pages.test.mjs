@@ -197,7 +197,7 @@ test('veritabanı yokken blog arşivi yine de yayınlanabilir bir sayfa döner',
   };
   await handler({ method: 'GET', query: {}, headers: { host: 'testosteron-test.vercel.app' } }, res);
   assert.equal(res.code, 200);
-  assert.match(res.body, /Henüz yayınlanmış yazı yok/);
+  assert.match(res.body, /testosteron-testi-2026-dogru-olcum/);
 });
 
 test('site haritası yazıları için tarih ve öncelik taşır', () => {

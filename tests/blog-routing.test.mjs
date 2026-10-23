@@ -120,7 +120,7 @@ test('blog yönlendiricisi veritabanı yokken de çalışır ve yazı bulunamaz'
   });
   const hub = await request(handler);
   assert.equal(hub.code, 200);
-  assert.match(hub.body, /Henüz yayınlanmış yazı yok/);
+  assert.match(hub.body, /testosteron-testi-2026-dogru-olcum/);
 
   const post = await request(handler, { query: { slug: 'sabah-gunesi-ve-uyku' } });
   assert.equal(post.code, 404);

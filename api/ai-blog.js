@@ -1,3 +1,4 @@
+import { createBlogDraftFromTopic, validateTopicInput } from './_topic-draft.js';
 import { isAdmin } from './_auth.js';
 import { completeBlogTranslations, createBlogDraftFromUrl, translateIngredientLines, validateNewsUrl } from './_ai-blog.js';
 
@@ -53,6 +54,18 @@ export function createAiBlogHandler(options = {}) {
       } catch (error) {
         console.error('[ai-blog] çeviri hatası:', error);
         return res.status(500).json({ error: 'Çeviri servisi şu anda yanıt veremiyor.' });
+      }
+    }
+
+    if (body.mode === 'topic') {
+      const input = validateTopicInput(body);
+      if (!input.ok) return res.status(400).json({ error: input.error });
+      try {
+        const result = await createBlogDraftFromTopic(input, aiOptions);
+        return res.status(result.ok ? 200 : 422).json(result);
+      } catch (error) {
+        console.error('[ai-blog] konu taslağı oluşturulamadı');
+        return res.status(500).json({ error: 'Konu taslağı şu anda oluşturulamıyor. Yeniden deneyin.' });
       }
     }
 
