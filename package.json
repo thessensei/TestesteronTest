@@ -4,15 +4,21 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.2.0"
   },
   "scripts": {
     "build:assets": "node tools/build.mjs",
     "check:assets": "node tools/build.mjs --check",
     "test": "node --test \"tests/**/*.test.mjs\"",
-    "backfill:languages": "node tools/backfill-languages.mjs"
+    "backfill:languages": "node tools/backfill-languages.mjs",
+    "dev": "node --env-file-if-exists=.env.local tools/dev-server.mjs",
+    "check:config": "node --env-file-if-exists=.env.local tools/check-config.mjs",
+    "verify": "npm run check:assets && npm test"
   },
   "devDependencies": {
-    "esbuild": "0.25.10"
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

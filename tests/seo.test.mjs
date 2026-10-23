@@ -32,7 +32,7 @@ test('site haritası geçerli namespace ve yalnızca gerçek canonical URL içer
   const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
   assert.ok(urls.includes(`${productionOrigin}/`));
   assert.ok(urls.includes(`${productionOrigin}/blog/`));
-  assert.ok(urls.includes(`${productionOrigin}/forum/`));
+  assert.ok(!urls.includes(`${productionOrigin}/forum/`), 'yönlendirilen forum girişi haritada olmamalı');
   assert.ok(urls.includes(`${productionOrigin}/blog/derin-uyku-ve-hormon-dengesi/`), 'blog yazısı kendi adresinde listelenmeli');
   assert.ok(urls.includes(`${productionOrigin}/blog/tavuklu-bulgur/`), 'tarif de listelenmeli');
   assert.ok(urls.includes(`${productionOrigin}/forum/t/12345678-1234-4123-8123-123456789abc/`), 'onaylı konu listelenmeli');
@@ -52,7 +52,7 @@ test('site haritası alt alan adı (subdomain) yapılandırmasını onurlandır�
   });
   assert.match(xml, /<loc>https:\/\/blog\.testotavan\.com\/<\/loc>/);
   assert.match(xml, /<loc>https:\/\/blog\.testotavan\.com\/ornek-yazi\/<\/loc>/);
-  assert.match(xml, /<loc>https:\/\/forum\.testotavan\.com\/<\/loc>/);
+  assert.doesNotMatch(xml, /<loc>https:\/\/forum\.testotavan\.com\/<\/loc>/);
   assert.match(xml, /<loc>https:\/\/forum\.testotavan\.com\/t\/12345678-1234-4123-8123-123456789abc\/<\/loc>/);
   assert.doesNotMatch(xml, /<loc>https:\/\/testosteron-test\.vercel\.app\/blog\//);
 });
@@ -107,7 +107,7 @@ test('ana sayfada index izni, canonical, sosyal önizleme ve geçerli JSON-LD bu
   assert.match(html, /Testosteron Seviyesi İçin Ön Değerlendirme/);
   assert.match(html, /Bu araç tıbbi tanı koymaz/);
   assert.ok(html.includes('href="/blog/"'), 'blog arşivine iç bağlantı olmalı');
-  assert.ok(html.includes('href="/forum/"'), 'foruma iç bağlantı olmalı');
+  assert.ok(!html.includes('href="/forum/"'), 'ana gezinme forum yerine blogu kullanmalı');
 
   const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(match, 'structured data script should exist');

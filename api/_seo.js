@@ -433,6 +433,10 @@ html[data-theme="community"] .section-head h2{font-family:var(--sans);font-weigh
 .section-head span{color:var(--muted);font-size:13px}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+.blog-search-row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 20px}
+.blog-search input[type="search"]{flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--panel);color:var(--text)}
+.blog-search input[type="search"]::placeholder{color:var(--muted)}
+.blog-search input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-size:12px;font-weight:600;color:var(--muted)}
 .chip:hover{color:var(--text);border-color:var(--accent)}
 .chip[aria-current]{background:var(--accent);border-color:var(--accent);color:#0b0b0f}
@@ -549,7 +553,6 @@ function navItems(siteUrl, section, lang) {
   const tr = lang === 'tr';
   const home = tr ? 'Ana Sayfa' : 'Home';
   const blog = 'Blog';
-  const forum = tr ? 'Forum' : 'Forum';
   const analyzer = ({
     tr: 'Test Analizi', en: 'Test Analysis', de: 'Test-Analyse', ja: 'テスト分析',
     fr: 'Analyse du test', es: 'Análisis de la prueba', bg: 'Анализ на теста',
@@ -559,7 +562,6 @@ function navItems(siteUrl, section, lang) {
   return [
     { href: `${siteUrl}/${langQuery}`, label: home, key: 'home' },
     { href: `${siteUrl}/blog/${langQuery}`, label: blog, key: 'blog' },
-    { href: `${siteUrl}/forum/${langQuery}`, label: forum, key: 'forum' },
     { href: `${siteUrl}/${langQuery}#physicalPage`, label: analyzer, key: 'analyze' }
   ].map(item => ({ ...item, current: item.key === section }));
 }
@@ -633,7 +635,6 @@ ${body}
       <a href="${siteUrl}/${langQuery}">${SITE_NAME}</a>
       <a href="${siteUrl}/blog/${langQuery}">Blog</a>
       <a href="${siteUrl}/blog/rss.xml">RSS</a>
-      <a href="${siteUrl}/forum/${langQuery}">Forum</a>
       <a href="${siteUrl}/${langQuery}#aboutPage">${lang === 'tr' ? 'Hakkımızda' : 'About'}</a>
       <a href="mailto:testotavan@gmail.com">testotavan@gmail.com</a>
     </div>
@@ -657,7 +658,7 @@ export function renderNotFound({ siteUrl = DEFAULT_SITE_URL, section = 'blog', l
       <p>${lang === 'tr' ? 'Bu sayfa taşınmış veya kaldırılmış olabilir. Yayındaki içeriklere aşağıdan ulaşabilirsiniz.' : 'This page may have moved or been removed. Browse the published content below.'}</p>
       <div class="chips" style="justify-content:center">
         <a class="button" href="${siteUrl}/blog/${langQuery}">${lang === 'tr' ? 'Bloga dön' : 'Back to blog'}</a>
-        <a class="button ghost" href="${siteUrl}/forum/${langQuery}">${lang === 'tr' ? 'Foruma git' : 'Go to forum'}</a>
+        <a class="button ghost" href="${siteUrl}/${langQuery}">${lang === 'tr' ? 'Ana sayfa' : 'Home'}</a>
       </div>
     </div>
   </div>`;

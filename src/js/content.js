@@ -38,7 +38,7 @@ let activeContentFilter = 'all';
 let sharedContent = [];
 let blogDataRequested = false;
 let adminAuthenticated = false;
-function getCustomContent(){ return sharedContent; }
+function getCustomContent(){ return sharedContent.filter(item=>!item.read_only); }
 // "20 dk" -> EN "20 min" · DE "20 Min." · JA "20分" · FR/ES "20 min" · BG/RU "20 мин" · HI "20 मिनट" · ZH "20 分钟"
 function localizeDuration(text, lang){
  const src=String(text||'').trim();
@@ -69,7 +69,23 @@ function localizedContent(item){
   ingredients};
 }
 function getAllContent(){ return sharedContent.map(localizedContent).filter(Boolean); }
-async function loadSharedContent(){ try { const response=await fetch('/api/content'); if(response.ok){ sharedContent=await response.json(); renderContent(); } } catch(e){ console.warn('İçerikler yüklenemedi',e); } }
+async function loadSharedContent(){
+    const list=document.getElementById('contentList');
+    const tr=(localStorage.getItem('testotavan_language')||'tr')==='tr';
+    if(list&&!sharedContent.length) list.innerHTML=`<p role="status">${tr?'Yazılar yükleniyor…':'Loading posts…'}</p>`;
+    try {
+        const response=await fetch('/api/content?guides=1');
+        if(!response.ok) throw new Error('İçerik servisi yanıt vermedi.');
+        const items=await response.json();
+        if(!Array.isArray(items)) throw new Error('Geçersiz içerik yanıtı.');
+        sharedContent=items;
+        renderContent();
+    } catch(e){
+        blogDataRequested=false;
+        console.warn('İçerikler yüklenemedi',e);
+        if(list&&!sharedContent.length) list.innerHTML=`<div class="empty-state" role="status"><p>${tr?'Yazılar yüklenemedi. Lütfen tekrar deneyin.':'Posts could not be loaded. Please try again.'}</p><button type="button" class="filter-chip" onclick="loadSharedContent()">${tr?'Tekrar dene':'Try again'}</button></div>`;
+    }
+}
 function ensureBlogData(){
     if (blogDataRequested) return;
     blogDataRequested = true;

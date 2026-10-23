@@ -1,3 +1,4 @@
+import { mergeEditorial } from './_editorial.js';
 import crypto from 'node:crypto';
 import { isAdmin } from './_auth.js';
 import { isSafeCoverUrl } from './_media.js';
@@ -25,17 +26,27 @@ function sanitizeTranslationBodies(translations) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
+    res.setHeader('Allow', 'GET, POST, PUT, DELETE');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  if (req.method !== 'GET') {
+    if (!isAdmin(req)) return res.status(401).json({ error: 'Yetkisiz erişim.' });
+    if (req.headers?.['sec-fetch-site'] === 'cross-site') return res.status(403).json({ error: 'İstek reddedildi.' });
+    if (req.method !== 'DELETE' && !/^application\/json(?:;|$)/i.test(req.headers?.['content-type'] || '')) return res.status(415).json({ error: 'JSON gövdesi gerekli.' });
+    if (req.method !== 'DELETE' && (!req.body || typeof req.body !== 'object' || Array.isArray(req.body))) return res.status(400).json({ error: 'Geçersiz içerik gövdesi.' });
+  }
+  const includeGuides = req.method === 'GET' && req.query?.guides === '1';
   try {
     const sql = db();
     await prepareContent(sql);
 
     if (req.method === 'GET') {
       const rows = await listContent(sql);
-      res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
-      return res.status(200).json(rows);
+      res.setHeader('Cache-Control', isAdmin(req) ? 'private, no-store' : 'public, s-maxage=30, stale-while-revalidate=300');
+      return res.status(200).json(includeGuides ? mergeEditorial(rows) : rows);
     }
-
-    if (!isAdmin(req)) return res.status(401).json({ error: 'Yetkisiz erişim.' });
 
     if (req.method === 'POST') {
       const input = req.body || {};
@@ -74,7 +85,7 @@ export default async function handler(req, res) {
       const id = clean(req.query.id, 120);
       if (!id) return res.status(400).json({ error: 'İçerik kimliği gerekli.' });
       const input = req.body || {};
-      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8), time: clean(input.time, 30), summary: clean(input.summary, 240), body: stripSourceReferences(clean(input.body, 20000)), ingredients: cleanIngredients(input.ingredients), translations: sanitizeTranslations(input.translations), cover_url: isSafeCoverUrl(input.cover_url) };
+      const item = { type: input.type === 'recipe' ? 'recipe' : 'blog', category: clean(input.category, 60), title: clean(input.title, 100), emoji: clean(input.emoji, 8), time: clean(input.time, 30), summary: clean(input.summary, 240), body: stripSourceReferences(clean(input.body, 20000)), ingredients: cleanIngredients(input.ingredients), translations: sanitizeTranslationBodies(cleanTranslations(input.translations)), cover_url: isSafeCoverUrl(input.cover_url) };
       if (!item.category || !item.title || !item.time || !item.summary || !item.body) return res.status(400).json({ error: 'Zorunlu alanlar eksik.' });
       if (item.type === 'recipe' && !item.ingredients.length) return res.status(400).json({ error: 'Tarifler için en az bir malzeme gerekli.' });
 
@@ -97,6 +108,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error(error);
+    if (includeGuides) {
+      res.setHeader('Cache-Control', 'public, s-maxage=30');
+      return res.status(200).json(mergeEditorial());
+    }
     return res.status(500).json({ error: 'İçerik servisine ulaşılamadı.' });
   }
 }

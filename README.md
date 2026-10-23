@@ -1,5 +1,78 @@
 # 🧬 TestoTavan — Doğal Testosteron Optimizasyonu
 
+## Kurulum denetimi ve güvenli editör
+
+- `.env.example` yalnızca boş ayar alanlarını içerir. Yerel kullanımda `.env.local` dosyasına kopyalayın; gerçek veritabanı bağlantısı ve anahtarları bu **Git dışında tutulan** dosyada tanımlayın. Canlıda dağıtım platformunun gizli ortam değişkenleri kullanılmalıdır. Gizli değerleri sohbete veya depoya eklemeyin.
+- `npm run dev` ve `npm run check:config`, varsa `.env.local` dosyasını Node.js ile okur. Node 22 sürümü `.nvmrc` ile belirtilmiştir.
+- `npm run check:config`: veritabanı bağlantı biçimi, yönetici parolası (en az 16 karakter), oturum anahtarı (en az 32 karakter), site adresi ve opsiyonel AI/Pinterest ayarlarını değerleri yazdırmadan denetler. Eksik zorunlu ayarda çıkış kodu **1** döner. Bu bir ağ/kimlik doğrulama testi değildir; canlı servislerin çalıştığı anlamına gelmez. Uzunluk denetimi kurulum raporuna aittir; mevcut kullanıcıları kilitleyecek bir parola değişikliği yapılmaz.
+- Yönetici panelindeki **Kurulum durumu** aynı raporu `GET /api/session?settings=1` üzerinden gösterir; oturumu olmayan kullanıcılar bu bilgilere erişemez. **Güvenli çıkış**, oturum çerezini sona erdirir ve sekmedeki taslak/AI tercihlerini temizler.
+- **Taslağı bu sekmede sakla** yalnızca yayın alanlarını `sessionStorage` içinde tutar. **Saklanan taslağı geri yükle** yeni içerik olarak açar; eski yayının üzerine yazmaz. Oturumluk saklama kalıcı yedek değildir; sekme/tarayıcı oturumu kapanınca kaybolabilir. API anahtarları ve parolalar taslak biçimine dahil edilmez.
+- Kaydedilmemiş değişikliklerde sayfadan ayrılma / başka içeriği açma uyarısı vardır. Aynı anda ikinci kayıt isteği gönderilmez. Kayıt beklerken yapılan yeni düzenlemeler korunur; başka bir yazı açılırsa eski yanıt o yazının formunu değiştirmez. Bağlantı koptuğunda işlem sunucuda tamamlanmış olabilir: yeniden yayınlamadan önce kütüphaneyi kontrol edin. Sunucu tarafında tam idempotency veya çoklu yönetici çakışma çözümü bu değişikliğin kapsamında değildir.
+- İçerik değiştirme istekleri veritabanına ulaşmadan önce yönetici yetkisi, cross-site ve JSON denetiminden geçer. Yönetici içerik listesi, oturum yanıtları ve panel dosyaları önbelleğe alınmaz.
+- `npm run verify` üretilmiş dosya uyumunu ve bütün testleri çalıştırır. `.github/workflows/verify.yml` push / PR üzerinde aynı kontrolleri ve yüksek önem seviyesindeki npm açık denetimini çalıştırır. İş akışı bu dal uzak depoya gönderildikten sonra etkinleşir; burada yalnızca yerel kontroller çalıştırılmıştır.
+
+```sh
+cp .env.example .env.local
+# .env.local içindeki gerekli değerleri güvenli biçimde doldurun.
+npm run check:config
+npm run verify
+npm run dev
+```
+
+Bu çalışma ortamında gerçek veritabanı, yönetici parolası, oturum anahtarı ve AI sağlayıcısı tanımlı değildir. Kurulum raporu bunları eksik gösterir; demo kimlik bilgileri oluşturulmaz ve canlı ayarların durumuna ilişkin varsayım yapılmaz. Hazır blog rehberleri yine veritabanı olmadan açılır.
+
+---
+
+## Konuya göre taslak ve tarif malzemesi editörü
+
+`/admin/` → **Nasıl yazı oluşturulsun? → Konuya göre yaz**:
+
+1. 5–300 karakterlik bir konu girin. Hedef kitle, porsiyon veya diyet kısıtlarını isteğe bağlı ek notlara yazın (en fazla 2000 karakter).
+2. İçerik türünü seçin. Konu modundaki “Otomatik algıla” blog yazısı üretir; yemek için **Yemek tarifi** seçilmelidir.
+3. **10 dilde taslak üret** düğmesine basın. Mevcut sunucu AI sağlayıcısı kullanılır. Anahtar/sağlayıcı yoksa açık hata verilir; uydurma başarılı içerik gösterilmez. URL modu ayrıca kullanılmaya devam eder.
+4. Taslağı, sağlık ifadelerini, miktarları ve çevirileri kontrol edin. **Herkese açık yayınla** veya düzenleme modunda **Kaydet** ile ayrıca onaylayın. Konu modu internet araştırması yapmaz ve otomatik yayınlamaz. Açık form değişmişse gecikmiş AI çıktısı formun üzerine yazılmaz.
+
+### Malzeme ekleme / güncelleme
+
+- Her dilde tek satır ekleme, Enter ile sonraki satır, silme ve yukarı/aşağı sıralama.
+- **Toplu malzeme ekle / değiştir** alanına her satıra bir malzeme yapıştırın. “Listeye ekle” mevcut satırları korur ve birebir tekrarları ayıklar. “Listeyi değiştir” onayla tüm listeyi yeniler; miktar değişikliklerinde bu seçenek kullanılabilir.
+- `1,5 su bardağı` gibi ondalıklar ve kesirler korunur. En fazla 100 satır, satır başına 200 karakter desteklenir. Boş satırlar kayda gönderilmez, fakat düzenleme sırasında indisleri korunur; yanlış satır silinmez.
+- Türkçe değişiklikler boş veya otomatik yönetilen çevirileri günceller. Elle yazılan çevirilere dokunulmaz. Kaydedilmiş çevirileri de yenilemek için **Malzeme çevirilerini yenile** düğmesi ve açık onay gerekir.
+- Çeviri sürerken kaynak liste veya açık tarif değişirse eski yanıt atılır. Çeviri sırasında elle değiştirilen hedef dil korunur. Hazırlanış gövdesi otomatik yeniden yazılmaz; malzeme değişiminden sonra ayrıca kontrol edilmelidir.
+- Listeyi değiştirmek tek başına kaydetmez. Tarifin **Kaydet** düğmesi aynı içeriği günceller; yeni kayıt oluşturmaz.
+
+API: yönetici oturumu gerektiren `POST /api/ai-blog` için `{ "mode": "topic", "topic": "İki kişilik mercimek salatası", "brief": "Pratik hazırlık", "type": "recipe" }`. Mevcut URL, `ingredients` ve `translate` modları korunur. Konu üretimi `api/_topic-draft.js` içinde tutulur; gerçek sağlayıcı bağlantısı dışında taslak, validasyon ve çeviri hata durumları taklit yanıtlarla test edilir.
+
+---
+
+## 23 Ekim 2026 — Blog ve bağımlılık güncellemesi
+
+- **Forum girişi artık bloga gider:** `/forum`, `/forum/` ve `/forum/index.html` → `/blog/` (kalıcı yönlendirme). Ana menü ve blogdaki forum katılım çağrıları kaldırıldı. Eski `/forum/t/<id>/` sayfaları ve veritabanı kayıtları silinmedi; forum uygulama dosyaları geriye uyumluluk için depoda tutuluyor. Aşağıdaki eski forum özellikleri açıklamaları bu korunan altyapıyı anlatır, yeni giriş deneyimini değil.
+- **Üç yeni kaynaklı rehber:** EAU 2026 ölçüm/tekrar test önerileri, FDA'nın **28 Şubat 2025** etiket değişikliği ve çocuk sahibi olma planında testosteron tedavisi. Kaynak tarihi ile içerik gözden geçirme tarihi ayrıdır. Rehberler tıbbi uzman incelemesi iddiası taşımaz; tanı veya tedavi önerisi değildir.
+- **Normal blog akışı:** sunucu tarafında arama, kategori filtreleri, kalıcı yazı adresleri, RSS ve site haritası. Arama JavaScript kapalıyken de çalışır.
+- **Veritabanından bağımsız rehberler:** `api/_editorial.js` içindeki TR/EN yazılar blog, RSS, sitemap ve `/api/content?guides=1` tarafından aynı kaynaktan okunur. Diğer diller mevcut İngilizce yedeğini kullanır. Veritabanı kapalıyken de bu üç rehber açılır; mevcut veritabanı yazıları yalnızca bağlantı varken görünür.
+- **Yönetim ayrımı:** `/api/content` panel kayıtlarını döndürmeye devam eder. Hazır rehberler panelde silinebilir kayıt gibi gösterilmez; güncellemeleri `api/_editorial.js` üzerinden yapılır. Aynı slug ile bir panel kaydı varsa öncelik panel kaydındadır. Hazır rehberlerin kaynakları ayrı alanda gösterilir; eski gövde ayıklama davranışı değiştirilmedi.
+- **Paketler:** resmî npm kayıtlarından `@neondatabase/serverless` 1.2.0 ve `esbuild` 0.28.2; kilit dosyası yenilendi. Node.js 22+ gerekir. Harici OCR/CDN bağımlılıkları bu değişikliğin kapsamında yükseltilmedi.
+- **Hata düzeltmesi:** içerik düzenleme yolundaki tanımsız `sanitizeTranslations` çağrısı mevcut çeviri temizleme akışına bağlandı.
+
+### Yerel çalıştırma ve doğrulama
+
+```sh
+npm ci
+npm run build:assets
+npm test
+npm run check:assets
+npm audit
+npm run dev
+# http://localhost:3000/blog/
+```
+
+Önizleme sunucusu `0.0.0.0:3000` üzerinde çalışır (`PORT` ile değiştirilebilir). Üretim için Vercel yapılandırması kullanılmaya devam eder. `DATABASE_URL` olmadan hazır rehberler incelenebilir; yönetim ve kalıcı veri işlemleri için mevcut ortam değişkenleri gereklidir. Önizleme sunucusu bir üretim sunucusu veya tam Vercel emülatörü değildir; medya yükleme gibi platforma özgü uçlar mevcut dağıtımda doğrulanmalıdır.
+
+Rehberler otomatik olarak internetten kopyalanmaz. Sonraki içerik güncellemesinde resmî kaynağı kontrol edin; TR/EN metinlerini, kaynak alanını ve gözden geçirme tarihini birlikte güncelleyin. Bu değişiklik üretim veritabanına veri yazmaz ve tek başına canlıya dağıtım yapmaz.
+
+---
+
 **TestoTavan**, erkek sağlığı ve doğal testosteron desteği hakkındaki verilere dayalı, kişiselleştirilmiş öneriler sunan web tabanlı bir analiz platformudur. Kullanıcılar belirtilerini ve (isteğe bağlı) kan testi değerlerini girerek anlık bir "hormon analiz raporu" alır ve doğal optimizasyon yollarını öğrenir.
 
 ## 🚀 Mission
@@ -18,7 +91,7 @@ We offer natural, safe, and alternative solutions to address the decline in test
 ![Tema](https://img.shields.io/badge/tema-koyu-111111)
 ![Ücretsiz](https://img.shields.io/badge/%C3%BCcretsiz-evet-00E676)
 ![Kayıt](https://img.shields.io/badge/kay%C4%B1t-gerekmez-00E676)
-![Testler](https://img.shields.io/badge/testler-278%20ge%C3%A7ti-brightgreen)
+![Testler](https://img.shields.io/badge/testler-318%20ge%C3%A7ti-brightgreen)
 ![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-v1.0.0-blue)
 ## ✨ Features
 

@@ -4,3 +4,9 @@ src/
 tools/
 tests/
 assets/logo-source.png
+
+# Gizli ortam dosyaları ve yalnızca geliştirme amaçlı ayarlar
+.env
+.env.*
+.github/
+.nvmrc

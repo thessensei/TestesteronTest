@@ -20,7 +20,7 @@
     <link rel="alternate" hreflang="hi" href="https://testosteron-test.vercel.app/?lang=hi">
     <link rel="alternate" hreflang="zh" href="https://testosteron-test.vercel.app/?lang=zh">
     <link rel="alternate" hreflang="x-default" href="https://testosteron-test.vercel.app/">
-    <!-- Blog ve forum ayrı keşif kanalları: RSS + site haritası -->
+    <!-- Blog keşif kanalları: RSS + site haritası -->
     <link rel="alternate" type="application/rss+xml" title="TestoTavan Dergi" href="/blog/rss.xml">
     <link rel="sitemap" type="application/xml" title="Site haritası" href="/sitemap.xml">
     <link rel="icon" type="image/png" href="assets/logo.png">
@@ -2109,10 +2109,9 @@
     <div class="card blog-hero" style="margin-top:16px">
         <h3 style="font-size:19px; max-width:280px; line-height:1.25">Daha güçlü bir yaşam için uygulanabilir bilgiler.</h3>
         <p style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-top:8px;max-width:330px">Bilimsel sağlık yazıları ve hedeflerinize uygun, pratik yemek tarifleri.</p><div id="viewCounter" style="margin-top:12px;color:var(--gold);font-size:10px">Ziyaret sayısı yükleniyor...</div>
-        <!-- Her yazı kendi SEO sayfasında yayınlanır; arşiv ve topluluk ayrı bölümlerdir. -->
+        <!-- Her yazı kaynakları ve tarihiyle kendi kalıcı blog sayfasında yayınlanır. -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
             <a class="filter-chip" href="/blog/" style="text-decoration:none;display:inline-flex;align-items:center">Tüm yazılar →</a>
-            <a class="filter-chip" href="/forum/" style="text-decoration:none;display:inline-flex;align-items:center">Topluluk forumu →</a>
             <a class="filter-chip" href="/blog/rss.xml" style="text-decoration:none;display:inline-flex;align-items:center">RSS akışı</a>
         </div>
     </div>
@@ -2138,7 +2137,6 @@
 
 <!-- Alt Navigasyon -->
 <nav class="nav-bottom" aria-label="Ana navigasyon">
-    <a class="nav-item" href="/forum/" style="text-decoration:none"><svg class="ic" aria-hidden="true"><use href="#i-news"></use></svg><span>Forum</span></a>
     <button type="button" class="nav-item active" aria-current="page" aria-controls="homePage" onclick="changePage('homePage')"><svg class="ic" aria-hidden="true"><use href="#i-home"></use></svg><span>Ana Sayfa</span></button>
     <button type="button" class="nav-item" aria-controls="physicalPage" onclick="changePage('physicalPage')"><svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg><span>Semptom</span></button>
     <button type="button" class="nav-item" aria-controls="bloodPage" onclick="changePage('bloodPage')"><svg class="ic" aria-hidden="true"><use href="#i-drop"></use></svg><span>Doğrulama</span></button>

@@ -1,3 +1,4 @@
+import { mergeEditorial } from './_editorial.js';
 /*
  * /sitemap.xml — yayındaki her şeyi tek yerden bildiren dinamik site haritası.
  *
@@ -47,7 +48,6 @@ export function buildSitemap({ siteUrl = DEFAULT_SITE_URL, env = process.env, co
 
   add(`${root}/`, { changefreq: 'weekly', priority: 1 });
   add(blog.standalone ? `${blog.base}/` : `${root}/blog/`, { changefreq: 'daily', priority: 0.9 });
-  add(forum.standalone ? `${forum.base}/` : `${root}/forum/`, { changefreq: 'daily', priority: 0.9 });
 
   for (const item of content) {
     if (!item?.slug) continue;
@@ -95,13 +95,13 @@ export function createSitemapHandler(options = {}) {
     }
 
     const siteUrl = resolveSiteUrl(req.headers || {}, options.env || process.env);
-    let content = [];
+    let content = mergeEditorial();
     let threads = [];
 
     try {
       const sql = connect();
       await prepareContent(sql);
-      content = await listContent(sql);
+      content = mergeEditorial(await listContent(sql));
       const rows = await sql`SELECT id, created_at FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC LIMIT 2000`;
       threads = [...rows];
     } catch (error) {
