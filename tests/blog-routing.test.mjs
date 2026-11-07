@@ -38,6 +38,7 @@ function fakeContentSql(rows = [contentRow()]) {
     if (/^(CREATE|ALTER)/.test(text)) return [];
     if (/INSERT|UPDATE|DELETE/.test(text)) return [];
     if (/FROM content/.test(text)) {
+      if (/WHERE slug=\? OR id=\?/.test(text)) return rows.filter(row => row.slug === values[0] || row.id === values[1]).slice(0, 1);
       if (/WHERE slug=\?/.test(text)) return rows.filter(row => row.slug === values[0]);
       if (/WHERE id=\?/.test(text)) return rows.filter(row => row.id === values[0]);
       return rows;
@@ -55,8 +56,8 @@ function fakeForumSql({ thread = null, replies = [], related = [], authorPosts =
     queries.push({ text, values });
     if (/^(CREATE|ALTER)/.test(text)) return [];
     called += 1;
-    if (/FROM forum_threads t WHERE t.id=\? AND t.approved=TRUE/.test(text)) return thread ? [thread] : [];
-    if (/FROM forum_replies r WHERE r.thread_id=\?/.test(text)) return replies;
+    if (/FROM forum_threads t LEFT JOIN forum_users u ON u.id=t.user_id WHERE t.id=\? AND t.approved=TRUE/.test(text)) return thread ? [thread] : [];
+    if (/FROM forum_replies r LEFT JOIN forum_users u ON u.id=r.user_id WHERE r.thread_id=\?/.test(text)) return replies;
     if (/AND t.id<>\? AND t.category=\?/.test(text)) return related;
     if (/WITH thread_authors/.test(text)) return authorPosts;
     return [];
@@ -88,14 +89,14 @@ test('blog arşivi ve yazı sayfası doğru HTTP davranışını gösterir', asy
   const hub = await request(handler);
   assert.equal(hub.code, 200);
   assert.match(hub.headers['Content-Type'], /text\/html/);
-  assert.match(hub.headers['Cache-Control'], /s-maxage=120/);
+  assert.match(hub.headers['Cache-Control'], /s-maxage=30/);
   assert.match(hub.body, /<link rel="canonical" href="https:\/\/testosteron-test\.vercel\.app\/blog\/">/);
   assert.match(hub.body, /href="\/blog\/sabah-gunesi-ve-uyku\/"/, 'arşiv kartı yazının kendi adresine gitmeli');
   assert.match(hub.body, /Blog — Hormon, uyku ve güç rehberi/);
 
   const post = await request(handler, { query: { slug: 'sabah-gunesi-ve-uyku/' } });
   assert.equal(post.code, 200);
-  assert.match(post.headers['Cache-Control'], /s-maxage=300|stale-while-revalidate=86400/);
+  assert.match(post.headers['Cache-Control'], /s-maxage=30/);
   assert.match(post.body, /<h1>Sabah güneşi ve uyku hormonları<\/h1>/);
   assert.match(post.body, /DiscussionForumPosting|BlogPosting/);
   assert.doesNotMatch(post.body, /Kaynak:\s*Örnek Haber/, 'kaynak satırı yayınlanmamalı');
@@ -119,11 +120,11 @@ test('blog yönlendiricisi veritabanı yokken de çalışır ve yazı bulunamaz'
     env: {}
   });
   const hub = await request(handler);
-  assert.equal(hub.code, 200);
-  assert.match(hub.body, /testosteron-testi-2026-dogru-olcum/);
+  assert.equal(hub.code, 503);
+  assert.doesNotMatch(hub.body, /testosteron-testi-2026-dogru-olcum/);
 
   const post = await request(handler, { query: { slug: 'sabah-gunesi-ve-uyku' } });
-  assert.equal(post.code, 404);
+  assert.equal(post.code, 503);
 });
 
 test('blog yazısı dil varyantında çeviri metnini ve hreflang bağlarını kullanır', async () => {

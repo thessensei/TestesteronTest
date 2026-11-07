@@ -15,6 +15,8 @@ import {
   organizationLd, renderNotFound, renderPage, resolveSiteUrl, sectionBase, websiteLd
 } from './_seo.js';
 import { prepareForum } from './_forum.js';
+import { renderPostContent } from '../forum/post-content.js';
+import { avatarUrl } from './_forum-profile.js';
 import { LANGS, SOURCE_LANG } from './_langs.js';
 
 const LANG_CODES = new Set(LANGS);
@@ -85,17 +87,22 @@ function normalizeLang(value) {
 }
 
 const categoryLabel = (value, lang) => ({
-  tr: { Genel: 'Genel', Antrenman: 'Antrenman', Beslenme: 'Beslenme', Deneyimler: 'Deneyimler' },
-  en: { Genel: 'General', Antrenman: 'Training', Beslenme: 'Nutrition', Deneyimler: 'Experiences' },
-  de: { Genel: 'Allgemein', Antrenman: 'Training', Beslenme: 'Ernährung', Deneyimler: 'Erfahrungen' },
-  ja: { Genel: '一般', Antrenman: 'トレーニング', Beslenme: '栄養', Deneyimler: '体験談' },
-  fr: { Genel: 'Général', Antrenman: 'Entraînement', Beslenme: 'Nutrition', Deneyimler: 'Expériences' },
-  es: { Genel: 'General', Antrenman: 'Entrenamiento', Beslenme: 'Nutrición', Deneyimler: 'Experiencias' },
-  bg: { Genel: 'Общи', Antrenman: 'Тренировки', Beslenme: 'Хранене', Deneyimler: 'Опит' },
-  ru: { Genel: 'Общее', Antrenman: 'Тренировки', Beslenme: 'Питание', Deneyimler: 'Опыт' },
-  hi: { Genel: 'सामान्य', Antrenman: 'ट्रेनिंग', Beslenme: 'पोषण', Deneyimler: 'अनुभव' },
-  zh: { Genel: '综合', Antrenman: '训练', Beslenme: '营养', Deneyimler: '经验分享' },
+  tr: { Genel: 'Genel', Antrenman: 'Antrenman', Beslenme: 'Beslenme', Deneyimler: 'Deneyimler', 'Sıcak Fırsatlar': 'Sıcak Fırsatlar' },
+  en: { Genel: 'General', Antrenman: 'Training', Beslenme: 'Nutrition', Deneyimler: 'Experiences', 'Sıcak Fırsatlar': 'Hot Deals' },
+  de: { Genel: 'Allgemein', Antrenman: 'Training', Beslenme: 'Ernährung', Deneyimler: 'Erfahrungen', 'Sıcak Fırsatlar': 'Schnäppchen' },
+  ja: { Genel: '一般', Antrenman: 'トレーニング', Beslenme: '栄養', Deneyimler: '体験談', 'Sıcak Fırsatlar': 'お得情報' },
+  fr: { Genel: 'Général', Antrenman: 'Entraînement', Beslenme: 'Nutrition', Deneyimler: 'Expériences', 'Sıcak Fırsatlar': 'Bons plans' },
+  es: { Genel: 'General', Antrenman: 'Entrenamiento', Beslenme: 'Nutrición', Deneyimler: 'Experiencias', 'Sıcak Fırsatlar': 'Ofertas' },
+  bg: { Genel: 'Общи', Antrenman: 'Тренировки', Beslenme: 'Хранене', Deneyimler: 'Опит', 'Sıcak Fırsatlar': 'Оферти' },
+  ru: { Genel: 'Общее', Antrenman: 'Тренировки', Beslenme: 'Питание', Deneyimler: 'Опыт', 'Sıcak Fırsatlar': 'Выгодные предложения' },
+  hi: { Genel: 'सामान्य', Antrenman: 'ट्रेनिंग', Beslenme: 'पोषण', Deneyimler: 'अनुभव', 'Sıcak Fırsatlar': 'बेहतरीन ऑफ़र' },
+  zh: { Genel: '综合', Antrenman: '训练', Beslenme: '营养', Deneyimler: '经验分享', 'Sıcak Fırsatlar': '优惠信息' },
 }[lang] || {})[value] || value;
+
+function avatarMarkup(item) {
+  const url = avatarUrl(item.author, item.avatar_present, item.avatar_version);
+  return `<span class="avatar profile-avatar" aria-hidden="true">${escapeHtml(INITIALS(item.author))}${url ? `<img src="${escapeAttr(url)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>`;
+}
 
 /** Konu sayfasının tüm HTML'i (saf fonksiyon — testler doğrudan çağırır). */
 export function renderForumThread({ thread, replies = [], related = [], authorPosts = new Map(), siteUrl = DEFAULT_SITE_URL, env = process.env, lang = 'tr' }) {
@@ -111,7 +118,7 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
 
   const replyHtml = replies.length
     ? replies.map(reply => `<article class="reply" id="reply-${escapeAttr(reply.id)}">
-      <span class="avatar" aria-hidden="true">${escapeHtml(INITIALS(reply.author))}</span>
+      ${avatarMarkup(reply)}
       <div>
         <div class="reply-head">
           <b>${escapeHtml(reply.author)}</b>
@@ -119,8 +126,9 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
           <time datetime="${escapeAttr(reply.created_at || '')}">${escapeHtml(formatDate(reply.created_at, lang))}</time>
           <span>${formatNumber(reply.likes, lang)} ${escapeHtml(t.likes)}</span>
         </div>
+        ${reply.profile_note ? `<div class="profile-note">${escapeHtml(reply.profile_note)}</div>` : ''}
         ${reply.quote_author ? `<blockquote class="quote"><strong>${escapeHtml(reply.quote_author)}</strong> — ${escapeHtml(reply.quote_excerpt || '')}</blockquote>` : ''}
-        <p>${escapeHtml(reply.body)}</p>
+        <p>${renderPostContent(reply.body)}</p>
       </div>
     </article>`).join('\n')
     : `<p class="empty">${escapeHtml(t.noReplies)}</p>`;
@@ -153,13 +161,14 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
     </div>
     <h1>${escapeHtml(thread.title)}</h1>
     <div class="byline" style="margin-top:16px">
-      <span class="avatar" aria-hidden="true">${escapeHtml(INITIALS(thread.author))}</span>
+      ${avatarMarkup(thread)}
       <span><b>${escapeHtml(thread.author)}</b> · ${escapeHtml(rankLabel(posts(thread.author), lang))}</span>
       <time datetime="${escapeAttr(thread.created_at || '')}">${escapeHtml(formatDate(thread.created_at, lang))}</time>
       <span>${formatNumber(thread.view_count, lang)} ${escapeHtml(t.views)}</span>
       <span>${formatNumber(thread.likes, lang)} ${escapeHtml(t.likes)}</span>
     </div>
-    <p class="post-body">${escapeHtml(thread.body)}</p>
+    ${thread.profile_note ? `<p class="profile-note">${escapeHtml(thread.profile_note)}</p>` : ''}
+    <p class="post-body">${renderPostContent(thread.body)}</p>
     <div class="chips" style="margin-top:18px">
       <a class="button" href="${escapeAttr(joinHref)}">${escapeHtml(thread.locked ? t.back : t.replyCta)} →</a>
       <button class="chip" type="button" id="copyLink" data-url="${escapeAttr(canonical)}">${escapeHtml(t.share)}</button>
@@ -266,7 +275,7 @@ export function createForumPageHandler(options = {}) {
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=30');
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD');
@@ -282,16 +291,16 @@ export function createForumPageHandler(options = {}) {
       const sql = options.sql || connect();
       await prepareForum(sql);
 
-      const [thread] = await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes
-        FROM forum_threads t WHERE t.id=${id} AND t.approved=TRUE`;
+      const [thread] = await sql`SELECT t.*, u.profile_note, u.avatar_present, u.avatar_version, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes
+        FROM forum_threads t LEFT JOIN forum_users u ON u.id=t.user_id WHERE t.id=${id} AND t.approved=TRUE`;
       if (!thread) {
         res.setHeader('Cache-Control', 'public, s-maxage=60');
         return res.status(404).send(renderNotFound({ siteUrl, section: 'forum', lang }));
       }
 
-      const replies = await sql`SELECT r.id, r.author, r.body, r.created_at, r.quote_author, r.quote_excerpt,
+      const replies = await sql`SELECT r.id, r.author, r.body, r.created_at, r.quote_author, r.quote_excerpt, u.profile_note, u.avatar_present, u.avatar_version,
           (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='reply' AND l.target_id=r.id) AS likes
-        FROM forum_replies r WHERE r.thread_id=${id} AND r.approved=TRUE
+        FROM forum_replies r LEFT JOIN forum_users u ON u.id=r.user_id WHERE r.thread_id=${id} AND r.approved=TRUE
         ORDER BY r.created_at, r.id LIMIT 50`;
       const relatedRows = await sql`SELECT t.id, t.author, t.title, t.body, t.category, t.created_at, t.view_count,
           (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND r.approved=TRUE) AS reply_count

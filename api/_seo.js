@@ -414,6 +414,9 @@ html[data-theme="community"] header.site{background:rgba(6,9,12,.85)}
 .site-nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
 .site-nav a{padding:8px 12px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:600;color:var(--muted);border:1px solid transparent}
 .site-nav a:hover{color:var(--text);border-color:var(--line)}
+.blog-language{display:flex;align-items:center;gap:6px}
+.blog-language select,.blog-language button{font:inherit;font-size:12px;font-weight:600;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px;cursor:pointer}
+.blog-language label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .site-nav a[aria-current]{color:#0b0b0f;background:var(--accent);border-color:var(--accent)}
 
 .hero{padding:56px 0 28px}
@@ -446,6 +449,7 @@ html[data-theme="community"] .section-head h2{font-family:var(--sans);font-weigh
 .post-card:hover{transform:translateY(-3px);border-color:var(--line)}
 .post-card .cover{aspect-ratio:16/9;background:linear-gradient(135deg,#1b1b26,#0d0d14);background-size:cover;background-position:center}
 .post-card .cover.emoji{display:grid;place-items:center;font-size:40px}
+.post-card .cover img{display:block;width:100%;height:100%;object-fit:cover;aspect-ratio:16/9}
 .post-card .card-body{padding:16px 18px 20px;display:flex;flex-direction:column;gap:8px;flex:1}
 .post-card h3{font-family:var(--serif);font-size:19px;line-height:1.25;margin:0;letter-spacing:-.01em}
 .post-card p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55}
@@ -518,7 +522,7 @@ html[data-theme="community"] .cta{background:linear-gradient(135deg,rgba(46,230,
 .post-shell{margin-top:26px;padding:26px 28px;border:1px solid var(--line-soft);border-radius:22px;background:var(--panel)}
 .post-shell .post-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .post-shell h1{font-family:var(--sans);font-size:clamp(25px,4vw,36px);line-height:1.2;margin:0;letter-spacing:-.02em}
-.post-body{font-size:16.5px;line-height:1.8;color:#e6f3f0;white-space:pre-wrap;overflow-wrap:anywhere}
+.profile-avatar{position:relative;overflow:hidden}.profile-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.profile-note{font-size:12px;color:var(--muted);overflow-wrap:anywhere}.post-body{font-size:16.5px;line-height:1.8;color:#e6f3f0;white-space:pre-wrap;overflow-wrap:anywhere}
 .reply{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:18px 0;border-top:1px solid var(--line-soft)}
 .reply .reply-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .reply .reply-head b{color:var(--text);font-size:14px}
@@ -540,7 +544,8 @@ footer.site a:hover{color:var(--accent)}
   .hero{padding:36px 0 18px}
   .hero h1{max-width:none}
   .site-bar{gap:10px;padding:10px 0}
-  .site-nav{margin-left:0;width:100%;overflow:auto;padding-bottom:4px}
+  .blog-language{order:1;margin-left:auto}
+  .site-nav{order:2;margin-left:0;width:100%;overflow:auto;padding-bottom:4px}
   .topic-card{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:16px}
   .topic-stats{grid-column:2;flex-direction:row;gap:14px;align-items:center}
   .article-body{font-size:16.5px}
@@ -576,7 +581,7 @@ export function renderPage(options = {}) {
     lang = 'tr', title, description, canonical, siteUrl = DEFAULT_SITE_URL,
     theme = 'editorial', section = 'blog', robots = 'index,follow,max-image-preview:large',
     ogType = 'website', ogImage = '', publishedTime = '', modifiedTime = '',
-    alternates = [], jsonLd = [], body = '', bodyClass = ''
+    alternates = [], jsonLd = [], body = '', bodyClass = '', languagePicker = ''
   } = options;
 
   const image = ogImage || `${siteUrl}/assets/logo.png`;
@@ -625,6 +630,7 @@ ${jsonLdScripts(jsonLd)}
     <nav class="site-nav" aria-label="${lang === 'tr' ? 'Ana gezinme' : 'Primary'}">
       ${nav.map(item => `<a href="${item.href}"${item.current ? ' aria-current="page"' : ''}>${escapeHtml(item.label)}</a>`).join('')}
     </nav>
+    ${languagePicker}
   </div>
 </header>
 <main class="${escapeAttr(bodyClass)}">

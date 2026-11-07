@@ -1,5 +1,8 @@
 import { createBlogDraftFromTopic, validateTopicInput } from './_topic-draft.js';
 import { isAdmin } from './_auth.js';
+import { clean, cleanIngredients } from './_content-shape.js';
+import { TARGET_LANGS } from './_langs.js';
+import { assessTranslationQuality, machineTranslateFields, networkTranslationAllowed } from './_translate.js';
 import { completeBlogTranslations, createBlogDraftFromUrl, translateIngredientLines, validateNewsUrl } from './_ai-blog.js';
 
 export function createAiBlogHandler(options = {}) {
@@ -34,6 +37,30 @@ export function createAiBlogHandler(options = {}) {
       // Yayın kalite kapısı: ilk taslak kısa/kaynaksız değilse ikinci bir yazım turu istenir.
       qualityRetry: body.qualityRetry !== false
     };
+
+    if (body.mode === 'machine-translate') {
+      const lang = body.lang;
+      if (!TARGET_LANGS.includes(lang)) return res.status(400).json({ error: 'Geçersiz hedef dil.' });
+      const raw = body.item;
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return res.status(400).json({ error: 'Geçersiz içerik.' });
+      const source = {
+        title: clean(raw.title, 100), summary: clean(raw.summary, 240), body: clean(raw.body, 20000),
+        category: clean(raw.category, 60), time: clean(raw.time, 30),
+        ingredients: raw.type === 'recipe' ? cleanIngredients(raw.ingredients) : []
+      };
+      if (!source.title || !source.summary || !source.body || !source.category || !source.time) return res.status(400).json({ error: 'Çeviri için Türkçe alanları doldurun.' });
+      if (!networkTranslationAllowed(options, options.env || process.env)) return res.status(503).json({ error: 'Makine çevirisi etkin değil.' });
+      try {
+        const translation = await machineTranslateFields(source, lang, options);
+        if (!translation) return res.status(502).json({ error: 'Çeviri servisi yanıt vermedi.' });
+        if (translation.title.length > 100 || translation.summary.length > 240 || translation.body.length > 20000 || translation.category.length > 60 || translation.time.length > 30 || translation.ingredients.some(line => line.length > 200)) return res.status(422).json({ error: 'Çeviri alan sınırını aşıyor; elle kontrol edin.' });
+        const quality = assessTranslationQuality(translation, source, lang);
+        if (!quality.complete) return res.status(422).json({ error: 'Çeviri bütünlük kontrolünden geçmedi; elle kontrol edin.', quality });
+        return res.status(200).json({ ok: true, lang, translation, quality });
+      } catch {
+        return res.status(502).json({ error: 'Çeviri servisine ulaşılamadı.' });
+      }
+    }
 
     if (body.mode === 'ingredients') {
       try {

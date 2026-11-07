@@ -4,13 +4,17 @@ import { isAdmin } from './_auth.js';
 import { CATEGORIES, EDIT_WINDOW_MS, prepareForum, quoteExcerpt, validateEdit, validateLike, validatePost, validId } from './_forum.js';
 import { findForumUserByToken, readForumToken } from './_forum-auth.js';
 import { collectForumStats } from './_forum-stats.js';
+import { avatarUrl } from './_forum-profile.js';
 
 const MODERATION_ACTIONS = ['approve', 'lock', 'unlock', 'pin', 'unpin'];
 
 /** Kullanıcı kimliğini yanıttan çıkarır, sahiplik bilgisini ekler. */
 function present(row, viewer, posts) {
-  const { user_id: owner, ...rest } = row;
+  const { user_id: owner, profile_note: note, avatar_present: hasAvatar, avatar_version: version, ...rest } = row;
   const item = { ...rest, mine: Boolean(viewer && owner && owner === viewer.id) };
+  if (note) item.profile_note = note;
+  const image = avatarUrl(item.author, hasAvatar, version);
+  if (image) item.avatar_url = image;
   if (posts) item.author_posts = posts.get(item.author) ?? 0;
   return item;
 }
@@ -79,9 +83,9 @@ export function createForumHandler(connect = neon) {
         const viewerId = viewer?.id ?? null;
         const offset = Math.min(100000, Math.max(0, parseInt(query.offset, 10) || 0));
         if (query.id) {
-          const [thread] = await sql`SELECT t.*, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id AND l.user_id=${viewerId})) AS liked FROM forum_threads t WHERE t.id=${query.id} AND (t.approved=TRUE OR ${manage})`;
+          const [thread] = await sql`SELECT t.*, u.profile_note, u.avatar_present, u.avatar_version, (SELECT COUNT(*)::int FROM forum_replies r WHERE r.thread_id=t.id AND (r.approved=TRUE OR ${manage})) AS reply_count, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='thread' AND l.target_id=t.id AND l.user_id=${viewerId})) AS liked FROM forum_threads t LEFT JOIN forum_users u ON u.id=t.user_id WHERE t.id=${query.id} AND (t.approved=TRUE OR ${manage})`;
           if (!thread) return res.status(404).json({ error: 'Konu bulunamadı.' });
-          const replies = await sql`SELECT r.*, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='reply' AND l.target_id=r.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='reply' AND l.target_id=r.id AND l.user_id=${viewerId})) AS liked FROM forum_replies r WHERE r.thread_id=${query.id} AND (r.approved=TRUE OR ${manage}) ORDER BY r.created_at, r.id LIMIT 50 OFFSET ${offset}`;
+          const replies = await sql`SELECT r.*, u.profile_note, u.avatar_present, u.avatar_version, (SELECT COUNT(*)::int FROM forum_likes l WHERE l.target_kind='reply' AND l.target_id=r.id) AS likes, (${viewerId}::uuid IS NOT NULL AND EXISTS (SELECT 1 FROM forum_likes l WHERE l.target_kind='reply' AND l.target_id=r.id AND l.user_id=${viewerId})) AS liked FROM forum_replies r LEFT JOIN forum_users u ON u.id=r.user_id WHERE r.thread_id=${query.id} AND (r.approved=TRUE OR ${manage}) ORDER BY r.created_at, r.id LIMIT 50 OFFSET ${offset}`;
           if (query.view === '1' && thread.approved) {
             const bumped = await sql`UPDATE forum_threads SET view_count=view_count+1 WHERE id=${query.id} AND approved=TRUE RETURNING view_count`;
             if (bumped.length) thread.view_count = bumped[0].view_count;

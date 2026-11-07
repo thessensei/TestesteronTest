@@ -96,14 +96,33 @@ export async function listContent(sql, query = null) {
   return rows.map(withPublicUrl);
 }
 
+/** Arşivde yalnızca seçili dil ve İngilizce yedeği gerekir; diğer dillerin büyük gövdeleri taşınmaz. */
+export async function listContentForHub(sql, lang = 'tr') {
+  const rows = await sql`SELECT id, type, category, title, slug, emoji, time_text AS time, summary, body,
+    jsonb_strip_nulls(jsonb_build_object(${lang}::text, translations->${lang}::text, 'en', translations->'en')) AS translations,
+    cover_url, TO_CHAR(published_at, 'YYYY-MM-DD') AS date, published_at, updated_at
+    FROM content ORDER BY published_at DESC`;
+  return rows.map(withPublicUrl);
+}
+
+/** Detay sayfasındaki üç kart için tam gövde ve malzemeler gerekli değildir. */
+export async function listRelatedContent(sql, item) {
+  const rows = await sql`SELECT t.id, t.type, t.category, t.title, t.slug, t.emoji, t.time_text AS time, t.summary,
+    COALESCE((SELECT jsonb_object_agg(e.key, e.value - 'body' - 'ingredients')
+      FROM jsonb_each(t.translations) e WHERE jsonb_typeof(e.value) = 'object'), '{}'::jsonb) AS translations,
+    t.cover_url, TO_CHAR(t.published_at, 'YYYY-MM-DD') AS date, t.published_at, t.updated_at
+    FROM content t WHERE t.id <> ${item.id}
+    ORDER BY (t.category = ${item.category}) DESC, t.published_at DESC LIMIT 3`;
+  return rows.map(withPublicUrl);
+}
+
 export async function findContentBySlug(sql, slug) {
   const value = String(slug || '').trim();
   if (!value) return null;
-  const rows = await sql`SELECT id, type, category, title, slug, emoji, time_text AS time, summary, body, ingredients, translations, cover_url, TO_CHAR(published_at, 'YYYY-MM-DD') AS date, published_at, updated_at FROM content WHERE slug=${value} LIMIT 1`;
-  if (rows.length) return withPublicUrl(rows[0]);
-  // Eski bağlantılar (/blog/content-123...) kimlikle de çalışır.
-  const byId = await sql`SELECT id, type, category, title, slug, emoji, time_text AS time, summary, body, ingredients, translations, cover_url, TO_CHAR(published_at, 'YYYY-MM-DD') AS date, published_at, updated_at FROM content WHERE id=${value} LIMIT 1`;
-  return byId.length ? withPublicUrl(byId[0]) : null;
+  const rows = await sql`SELECT id, type, category, title, slug, emoji, time_text AS time, summary, body, ingredients, translations, cover_url, TO_CHAR(published_at, 'YYYY-MM-DD') AS date, published_at, updated_at
+    FROM content WHERE slug=${value} OR id=${value}
+    ORDER BY CASE WHEN slug=${value} THEN 0 ELSE 1 END LIMIT 1`;
+  return rows.length ? withPublicUrl(rows[0]) : null;
 }
 
 export async function findContentById(sql, id) {

@@ -63,8 +63,21 @@ test('önizleme forumu, varlıklarını ve blogu yönlendirmeden ayrı sunar', {
     assert.ok((await res.text()).length > 0);
   }
   const blog = await get('/blog/');
-  assert.equal(blog.status, 200);
-  assert.match(await blog.text(), /TESTOTAVAN BLOG/);
+  assert.equal(blog.status, 503, 'veritabanı yokken blog hata göstermeli');
+  assert.equal(blog.headers.get('location'), null);
+  assert.match(await blog.text(), /Blog geçici olarak kullanılamıyor/);
+  assert.equal((await get('/api/media')).status, 405, 'medya yükleme rotası işleyiciye ulaşmalı');
+  assert.equal((await get('/api/media/gecersiz')).status, 400, 'medya kimliği işleyicide doğrulanmalı');
+  const media = await fetch(`http://127.0.0.1:${port}/api/media`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ data: 'A'.repeat(2 * 1024 * 1024) }), signal: AbortSignal.timeout(5000)
+  });
+  assert.equal(media.status, 401, 'büyük base64 isteği 413 yerine yetki denetimine ulaşmalı');
+  const tooBig = await fetch(`http://127.0.0.1:${port}/api/media`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ data: 'A'.repeat(3 * 1024 * 1024) }), signal: AbortSignal.timeout(5000)
+  });
+  assert.equal(tooBig.status, 413);
   assert.equal((await get('/api/_forum')).status, 404, 'private modül açılmamalı');
   assert.equal((await get('/forum/t/not-a-uuid/')).status, 404, 'konu yönlendirmesi ayrı SEO işleyicisinde kalmalı');
 });

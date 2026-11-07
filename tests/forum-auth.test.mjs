@@ -145,7 +145,7 @@ test('register, login, session and logout stay on the account', async () => {
 
   const me = await call(handler, 'GET', null, { cookie: `testotavan_forum=${token}` }, '203.0.113.34');
   assert.equal(me.code, 200);
-  assert.deepEqual(me.data.user, { username: 'Ada' });
+  assert.deepEqual(me.data.user, { username: 'Ada', profile_note: '', avatar_url: '' });
 
   const loggedOut = await call(handler, 'POST', { action: 'logout' }, { cookie: `testotavan_forum=${token}` }, '203.0.113.34');
   assert.equal(loggedOut.code, 200);
@@ -241,7 +241,7 @@ test('Google OAuth signs up new member, preserves thread hash, avoids hijacking 
   // Oturum kontrolü Google hesabını döndürür
   const me = await call(handler, 'GET', null, { cookie: `testotavan_forum=${sessionToken}` }, '203.0.113.52');
   assert.equal(me.code, 200);
-  assert.deepEqual(me.data, { user: { username: 'Ada_2' }, googleEnabled: true });
+  assert.deepEqual(me.data, { user: { username: 'Ada_2', profile_note: '', avatar_url: '' }, googleEnabled: true });
 
   // 3) Aynı Google hesabıyla tekrar giriş: yeni kayıt açmadan "Ada_2" oturumu başlatır
   const secondStart = await call(handler, 'GET', null, {}, '203.0.113.53', { provider: 'google', returnTo: '/forum/' });

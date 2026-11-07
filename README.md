@@ -23,7 +23,7 @@ npm run verify
 npm run dev
 ```
 
-Bu çalışma ortamında gerçek veritabanı, yönetici parolası, oturum anahtarı ve AI sağlayıcısı tanımlı değildir. Kurulum raporu bunları eksik gösterir; demo kimlik bilgileri oluşturulmaz ve canlı ayarların durumuna ilişkin varsayım yapılmaz. Hazır blog rehberleri yine veritabanı olmadan açılır.
+Bu çalışma ortamında gerçek veritabanı, yönetici parolası, oturum anahtarı ve AI sağlayıcısı tanımlı değildir. Kurulum raporu bunları eksik gösterir; demo kimlik bilgileri oluşturulmaz ve canlı ayarların durumuna ilişkin varsayım yapılmaz. Veritabanı yokken blog servisi geçici hata gösterir; eski hazır rehberler otomatik yayınlanmaz.
 
 ---
 
@@ -52,10 +52,10 @@ API: yönetici oturumu gerektiren `POST /api/ai-blog` için `{ "mode": "topic", 
 ## 23 Ekim 2026 — Blog ve bağımlılık güncellemesi
 
 - **Forum ve blog ayrı bölümlerdir:** `/forum`, `/forum/` ve `/forum/index.html` sosyal sohbet forumunu açar; `/blog/` yazı ve tarif arşividir. Önceki forum → blog yönlendirmesi kaldırıldı. Ana menü, blog gezinmesi, site haritası ve yönetim panelindeki forum bağlantıları geri getirildi. Eski `/forum/t/<id>/` konuları ve kullanıcı/mesaj kayıtları korunur.
-- **Üç yeni kaynaklı rehber:** EAU 2026 ölçüm/tekrar test önerileri, FDA'nın **28 Şubat 2025** etiket değişikliği ve çocuk sahibi olma planında testosteron tedavisi. Kaynak tarihi ile içerik gözden geçirme tarihi ayrıdır. Rehberler tıbbi uzman incelemesi iddiası taşımaz; tanı veya tedavi önerisi değildir.
+- **Tarihsel kaynak içerik (artık otomatik yayınlanmaz):** EAU 2026 ölçüm/tekrar test önerileri, FDA'nın **28 Şubat 2025** etiket değişikliği ve çocuk sahibi olma planında testosteron tedavisi. Kaynak tarihi ile içerik gözden geçirme tarihi ayrıdır. Rehberler tıbbi uzman incelemesi iddiası taşımaz; tanı veya tedavi önerisi değildir.
 - **Normal blog akışı:** sunucu tarafında arama, kategori filtreleri, kalıcı yazı adresleri, RSS ve site haritası. Arama JavaScript kapalıyken de çalışır.
-- **Veritabanından bağımsız rehberler:** `api/_editorial.js` içindeki TR/EN yazılar blog, RSS, sitemap ve `/api/content?guides=1` tarafından aynı kaynaktan okunur. Diğer diller mevcut İngilizce yedeğini kullanır. Veritabanı kapalıyken de bu üç rehber açılır; mevcut veritabanı yazıları yalnızca bağlantı varken görünür.
-- **Yönetim ayrımı:** `/api/content` panel kayıtlarını döndürmeye devam eder. Hazır rehberler panelde silinebilir kayıt gibi gösterilmez; güncellemeleri `api/_editorial.js` üzerinden yapılır. Aynı slug ile bir panel kaydı varsa öncelik panel kaydındadır. Hazır rehberlerin kaynakları ayrı alanda gösterilir; eski gövde ayıklama davranışı değiştirilmedi.
+- **Arşiv temizliği:** Kodda tarihsel kaynak olarak tutulan hazır rehberler artık blog, RSS, sitemap veya içerik API tarafından otomatik yayınlanmaz. Yalnızca veritabanındaki yazılar ve tarifler gösterilir.
+- **Yönetim ayrımı:** `/api/content` yalnızca panel kayıtlarını döndürür. Yönetim panelindeki **Tüm blog yazılarını sil** düğmesi, onay sonrası veritabanındaki blogları kalıcı olarak siler; tarifler korunur.
 - **Paketler:** resmî npm kayıtlarından `@neondatabase/serverless` 1.2.0 ve `esbuild` 0.28.2; kilit dosyası yenilendi. Node.js 22+ gerekir. Harici OCR/CDN bağımlılıkları bu değişikliğin kapsamında yükseltilmedi.
 - **Hata düzeltmesi:** içerik düzenleme yolundaki tanımsız `sanitizeTranslations` çağrısı mevcut çeviri temizleme akışına bağlandı.
 
@@ -71,9 +71,9 @@ npm run dev
 # http://localhost:3000/blog/
 ```
 
-Önizleme sunucusu `0.0.0.0:3000` üzerinde çalışır (`PORT` ile değiştirilebilir). Üretim için Vercel yapılandırması kullanılmaya devam eder. `DATABASE_URL` olmadan hazır rehberler incelenebilir; yönetim ve kalıcı veri işlemleri için mevcut ortam değişkenleri gereklidir. Önizleme sunucusu bir üretim sunucusu veya tam Vercel emülatörü değildir; medya yükleme gibi platforma özgü uçlar mevcut dağıtımda doğrulanmalıdır.
+Önizleme sunucusu `0.0.0.0:3000` üzerinde çalışır (`PORT` ile değiştirilebilir). Üretim için Vercel yapılandırması kullanılmaya devam eder. `DATABASE_URL` olmadan blog ve içerik yönetimi kullanılamaz; yönetim ve kalıcı veri işlemleri için mevcut ortam değişkenleri gereklidir. Önizleme sunucusu bir üretim sunucusu veya tam Vercel emülatörü değildir; medya yükleme gibi platforma özgü uçlar mevcut dağıtımda doğrulanmalıdır.
 
-Rehberler otomatik olarak internetten kopyalanmaz. Sonraki içerik güncellemesinde resmî kaynağı kontrol edin; TR/EN metinlerini, kaynak alanını ve gözden geçirme tarihini birlikte güncelleyin. Bu değişiklik üretim veritabanına veri yazmaz ve tek başına canlıya dağıtım yapmaz.
+Hazır rehberler artık otomatik yayınlanmaz. Bu kod değişikliği üretim veritabanını kendiliğinden silmez; dağıtımdan sonra yönetim panelindeki temizleme işlemi ayrıca çalıştırılmalıdır.
 
 ---
 
@@ -259,7 +259,8 @@ Vercel projesi ayarlarında (veya yerelde `.env`) şu değişkenler tanımlanmal
 | `SITE_URL` | Yayındaki kök adres, ör. `https://testosteron-test.vercel.app` (opsiyonel) |
 | `BLOG_SITE_URL` | Blog ayrı bir alt alan adında yayınlanacaksa kök adres, ör. `https://blog.testotavan.com` (opsiyonel) |
 | `FORUM_SITE_URL` | Forum ayrı bir alt alan adında yayınlanacaksa kök adres, ör. `https://forum.testotavan.com` (opsiyonel) |
-| `ENABLE_MACHINE_TRANSLATION` | `0` ise AI çevirisi eksik kaldığında yedek çeviri servisi çağrılmaz (opsiyonel) |
+| `ENABLE_MACHINE_TRANSLATION` | `0` ise makine çevirisi ve AI yedek ağ çevirisi kapatılır (opsiyonel) |
+| `GOOGLE_TRANSLATE_API_KEY` | Resmî Google Cloud Translation API v2 anahtarı (opsiyonel; API ve faturalandırma etkin olmalı) |
 | `GEMINI_API_KEY` | Google Gemini API anahtarı — haberden otomatik blog üretimi ve tam çeviri için (opsiyonel) |
 | `GEMINI_MODEL` | Gemini model kimliği (opsiyonel; varsayılan `gemini-3.8-flash`; kapatılmış 1.x/2.0 modelleri otomatik güncel modele taşınır) |
 | `OPENAI_API_KEY` | OpenAI API anahtarı — alternatif AI sağlayıcısı (opsiyonel) |
@@ -407,6 +408,14 @@ Davranış kuralları:
 > sonucu panele bildirilir. En kötü durumda yayın yanıtı ~6 sn gecikir (2 deneme × 3 sn) ve
 > pin hatası yayını hiçbir koşulda düşürmez.
 
+### Otomatik blog çevirisi
+
+- Yönetici Türkçe başlık, özet ve gövdeyi girer. Yayın formundaki **Yayınlarken boş dilleri otomatik çevir** seçeneği varsayılan olarak açıktır. Yayın isteğinden önce çeviriler hazırlanır; işlem süresince yönetici sekmesi açık kalmalıdır. Bu, arka planda devam eden kalıcı bir iş kuyruğu değildir.
+- Yalnızca başlık, özet ve gövdesi tamamen boş diller çevrilir. Elle veya kısmen doldurulmuş metinler ve mevcut süre/malzemeler korunur; Türkçe kaynak değiştirilirse eski çeviriler otomatik olarak güncellenmez. Admin bunları ayrıca kontrol etmelidir.
+- Başarısız veya bütünlük kontrolünden geçmeyen diller kaydedilmez; Türkçe içerik yayınlanır ve eksik diller yayın sonucunda bildirilir. Sayı, paragraf ve dil kontrolleri tıbbi çevirinin doğruluğunu garanti etmez; sağlık ifadeleri ve tarif miktarları editör tarafından incelenmelidir.
+- Eski içerikler için yönetici panelindeki **Eksik dilleri çevir** kullanılabilir. İşlem sırasında sekme açık tutulmalıdır. Blog üstündeki dil seçici, kaydedilmiş çevirileri kullanır; yazı sayfasında çevirisi olmayan diller devre dışıdır. Blog listesi daha önceki İngilizce yedek davranışını korur.
+- Önerilen kurulum: Google Cloud'da Cloud Translation API v2'yi ve faturalandırmayı etkinleştirip `GOOGLE_TRANSLATE_API_KEY` değerini dağıtımın gizli ortam değişkenlerine ekleyin. Google kullanım ücreti/kota uygulayabilir ve metin üçüncü taraf servise gönderilir. Anahtar yoksa mevcut gayriresmî Google/MyMemory ağ yedeği denenir; kullanılabilirliği garanti değildir. `ENABLE_MACHINE_TRANSLATION=0` ağ çevirisini kapatır. Yerel testlerde ağ erişimi taklit edilir.
+
 ## 🌍 Diller (10 dil)
 
 Tek doğruluk kaynağı `api/_langs.js`:
@@ -457,7 +466,7 @@ Kurallar:
 | `/api/forum-auth` | `GET` / `POST` | Forum kaydı, girişi, oturumu ve çıkışı. Şifre scrypt ile saklanır; oturum çerezi 14 gün |
 | `/api/media` | `POST` | Base64 görsel yükleme (admin yetkisi ister) |
 | `/api/forum-stats` | `GET` | Meydan nabzı: konu, yanıt, üye ve görüntülenme toplamları; kategori dağılımı, öne çıkan konular, en aktif yazarlar, son konular (`recent`, başlık + tarih + yanıt sayısı). `/api/forum?stats=1` adresine yönlenir (60 sn CDN önbelleği) |
-| `/api/media/:id` | `GET` / `DELETE` | Yüklenen görseli sunar / siler |
+| `/api/media/:id` | `GET` | Yüklenen görseli sunar |
 | `/blog/`, `/blog/<slug>/` | `GET` | Blog arşivi ve her yazının kalıcı SEO sayfası (sunucu tarafında HTML) |
 | `/forum/t/<id>/` | `GET` | Forum konusunun kalıcı, JavaScript'siz okunabilen sayfası |
 | `/sitemap.xml` | `GET` | Dinamik site haritası (yazılar + tarifler + onaylı konular) |
@@ -470,6 +479,13 @@ TestoTavan is not a medical device or diagnostic tool. The results are for infor
 ---
 
 © TestoTavan
+
+### Forum profilleri
+
+- Forum hesabıyla giriş yapan kullanıcı üstteki **Profilim** düğmesinden profil resmi ve en fazla 160 karakterlik tek satır not ekleyebilir, değiştirebilir veya kaldırabilir. Bu alanlar herkese açıktır; kişisel sağlık bilgileri paylaşılmamalıdır.
+- Resim JPEG, PNG, WebP veya GIF olarak en fazla 5 MB seçilir; tarayıcıda 256×256 JPEG'e dönüştürülür. Sunucu yalnızca 128 KB'a kadar doğrulanmış JPEG verisini kabul eder. Görsel forum veritabanında saklanır, herkese açık aynı-site adresinden sunulur ve kaldırıldığında artık sunulmaz.
+- Profil hesabın `user_id` kimliğiyle konu ve yanıtlara bağlanır; hesaba bağlanmamış eski mesajlarda baş harf gösterilir. Profil değişiklikleri etkileşimli forumda hemen, önbelleğe alınan kalıcı sayfada kısa gecikmeyle görünür. Profil alanları forum gönderilerinden bağımsız güncellenir ve gönderi onayından geçmez.
+- Sunucu tarafında oturum, aynı-site isteği, içerik türü, boyut/biçim ve güncelleme sıklığı denetlenir; görsellerden HTML veya SVG sunulmaz. Veritabanı şeması mevcut forum hazırlama akışında geriye dönük tamamlanır.
 
 ## 📰 Blog ve Meydan mimarisi
 

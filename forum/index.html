@@ -75,6 +75,7 @@
       </select>
       <div id="auth-user" hidden>
         <span id="auth-name" class="auth-chip"></span>
+        <button id="show-profile" class="secondary small" type="button" data-i18n="profile">Profilim</button>
         <button id="logout" class="secondary small" type="button">Çıkış</button>
       </div>
       <div id="auth-guest" class="auth-guest">
@@ -95,9 +96,6 @@
     <a href="/#physicalPage">Analiz</a>
     <a href="/#bloodPage">Doğrulama</a>
     <a href="/#aboutPage">Hakkımızda</a>
-    <span class="sub-nav-spacer"></span>
-    <a class="sub-link" href="/sitemap.xml">Site haritası</a>
-    <a class="sub-link" href="/blog/rss.xml">RSS</a>
   </nav>
 </header>
 
@@ -139,6 +137,8 @@
             </div>
             <button id="refresh" type="button" class="ghost-button" data-i18n="refresh">Yenile</button>
           </div>
+
+          <div class="deals-banner"><div><strong data-i18n="cat-deals">Sıcak Fırsatlar</strong><p data-i18n="dealHint">Ürün bağlantısını, fiyatı ve varsa kampanya koşullarını mesajına ekle. Fiyat ve stok değişebilir.</p></div><button type="button" class="chip" data-category="Sıcak Fırsatlar" data-i18n="dealShare">Fırsatları gör</button></div>
 
           <!-- Forum (kategori) şeridi -->
           <div class="board-filter">
@@ -188,8 +188,10 @@
               <option value="Antrenman">Antrenman</option>
               <option value="Beslenme">Beslenme</option>
               <option value="Deneyimler">Deneyimler</option>
+              <option value="Sıcak Fırsatlar">Sıcak Fırsatlar</option>
             </select>
           </label>
+          <p id="deal-hint" class="deal-hint" data-i18n="dealHint" hidden>Ürün bağlantısını, fiyatı ve varsa kampanya koşullarını mesajına ekle. Fiyat ve stok değişebilir.</p>
           <label data-i18n-label="titleField">Konu başlığı<input name="title" type="text" required minlength="5" maxlength="120" placeholder="Neyi konuşmak istersin?"></label>
           <label data-i18n-label="message">Mesaj<textarea name="body" required minlength="3" maxlength="4000" rows="5"></textarea></label>
           <button type="submit" data-i18n="send-topic">Onaya gönder →</button>
@@ -201,7 +203,7 @@
         <button id="back" type="button" class="ghost-button" data-i18n="back">← Tüm konular</button>
         <header class="thread-head" id="thread-head"></header>
         <div id="conversation"></div>
-        <div class="pager">
+        <div class="pager" id="reply-pager">
           <button id="reply-prev" type="button" class="secondary small" data-i18n="reply-prev">← Önceki yanıtlar</button>
           <button id="reply-next" type="button" class="secondary small" data-i18n="reply-next">Sonraki yanıtlar →</button>
         </div>
@@ -222,8 +224,25 @@
             <span id="quote-chip-text"></span>
             <button type="button" id="quote-cancel" class="secondary small" data-i18n="cancelQuote">Alıntıyı kaldır</button>
           </div>
-          <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="4"></textarea></label>
-          <button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button>
+          <p class="meta" data-i18n="replyNotice">Yanıtlar admin onayından sonra yayınlanır.</p>
+          <label data-i18n-label="reply">Yanıt<textarea name="body" required minlength="3" maxlength="4000" rows="5" aria-describedby="reply-count reply-feedback"></textarea></label>
+          <div class="reply-form-foot"><span id="reply-count" class="meta">0 / 4000</span><button type="submit" data-i18n="send-reply">Yanıtı onaya gönder →</button></div>
+          <p id="reply-feedback" class="reply-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="profile-panel" class="composer profile-panel" hidden aria-labelledby="profile-title">
+        <h2 id="profile-title" data-i18n="profileTitle">Profilini düzenle</h2>
+        <p class="meta" data-i18n="profileHelp">Kısa notun ve profil resmin tüm konu ve yanıtlarında herkese açık görünür. Kişisel sağlık verilerini paylaşma.</p>
+        <form id="profile-form">
+          <div class="profile-preview-row"><span id="profile-preview" class="avatar profile-preview" aria-hidden="true"></span><div>
+            <label data-i18n-label="profilePhoto">Profil resmi<input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+            <button type="button" class="secondary small" id="profile-remove" data-i18n="profileRemove">Resmi kaldır</button>
+          </div></div>
+          <label data-i18n-label="profileNote">Profil notu<input id="profile-note" name="note" type="text" maxlength="160" aria-describedby="profile-note-hint"></label>
+          <p id="profile-note-hint" class="meta" data-i18n="profilePublic">Herkese açık · en fazla 160 karakter</p>
+          <div class="toolbar"><button type="submit" data-i18n="profileSave">Profili kaydet</button><button type="button" class="secondary small" id="profile-cancel" data-i18n="profileCancel">Vazgeç</button></div>
+          <p id="profile-feedback" class="reply-feedback" role="status" aria-live="polite"></p>
         </form>
       </section>
 

@@ -1,6 +1,6 @@
 import { prepareForumAuth } from './_forum-auth.js';
 
-export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler'];
+export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler', 'Sıcak Fırsatlar'];
 // Kendi mesajını düzenleme penceresi. SQL tarafı da bu sabitten üretilir;
 // istemci (forum/forum-core.js) aynı değeri kullanır ve testler ikisini karşılaştırır.
 export const EDIT_WINDOW_MS = 30 * 60 * 1000;

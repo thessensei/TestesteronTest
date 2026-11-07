@@ -1,4 +1,3 @@
-import { mergeEditorial } from './_editorial.js';
 /*
  * /sitemap.xml — yayındaki her şeyi tek yerden bildiren dinamik site haritası.
  *
@@ -96,13 +95,13 @@ export function createSitemapHandler(options = {}) {
     }
 
     const siteUrl = resolveSiteUrl(req.headers || {}, options.env || process.env);
-    let content = mergeEditorial();
+    let content = [];
     let threads = [];
 
     try {
       const sql = connect();
       await prepareContent(sql);
-      content = mergeEditorial(await listContent(sql));
+      content = await listContent(sql);
       const rows = await sql`SELECT id, created_at FROM forum_threads WHERE approved=TRUE ORDER BY created_at DESC LIMIT 2000`;
       threads = [...rows];
     } catch (error) {
@@ -111,7 +110,7 @@ export function createSitemapHandler(options = {}) {
 
     const xml = buildSitemap({ siteUrl, env: options.env || process.env, content, threads });
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=30');
     return res.status(200).send(xml);
   };
 }

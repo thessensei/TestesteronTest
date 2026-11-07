@@ -11,6 +11,7 @@
  *   /blog/rss.xml    → /api/seo?type=rss
  */
 
+import { LANG_NAMES } from './_langs.js';
 import {
   DEFAULT_SITE_URL, SITE_NAME, LANG_LABELS, LANGS, TARGET_LANGS,
   absoluteUrl, blogPostPath, breadcrumbLd, escapeHtml, escapeAttr, extractFaq, extractHeadings, extractRecipeSteps,
@@ -18,8 +19,8 @@ import {
   readingMinutes, renderNotFound, renderPage, renderRichText, resolveSiteUrl, safeCover,
   sectionBase, seoTitle, stripSourceReferences, websiteLd, wordCount
 } from './_seo.js';
-import { connectDb, listContent, prepareContent } from './_content-db.js';
-import { mergeEditorial, editorialSources } from './_editorial.js';
+import { connectDb, findContentBySlug, listContentForHub, listRelatedContent, prepareContent } from './_content-db.js';
+import { editorialSources } from './_editorial.js';
 import { localizeDuration } from './_content-shape.js';
 
 const T = {
@@ -308,6 +309,17 @@ function availableLangs(item) {
   return langs;
 }
 
+// URL tabanlı seçim, JavaScript kapalıyken de çalışır; mevcut arama/filtre korunur.
+function blogLanguagePicker(action, lang, available = LANGS, category = '', search = '') {
+  return `<form class="blog-language" method="get" action="${escapeAttr(action)}">
+    <label for="blog-language-select">${lang === 'tr' ? 'Blog dili' : 'Blog language'}</label>
+    ${category ? `<input type="hidden" name="kategori" value="${escapeAttr(category)}">` : ''}
+    ${search ? `<input type="hidden" name="q" value="${escapeAttr(search)}">` : ''}
+    <select id="blog-language-select" name="lang" onchange="this.form.submit()">${LANGS.map(code => `<option value="${code}"${code === lang ? ' selected' : ''}${!available.includes(code) && code !== lang ? ' disabled' : ''}>${escapeHtml(LANG_NAMES[code])}${!available.includes(code) ? ' · —' : ''}</option>`).join('')}</select>
+    <noscript><button type="submit">${lang === 'tr' ? 'Seç' : 'Go'}</button></noscript>
+  </form>`;
+}
+
 /** Dil parametresini koruyan iç bağlantı: TR dışındaki her dilde `?lang=` taşınır. */
 function withLang(href, lang) {
   if (!lang || lang === 'tr') return href;
@@ -328,7 +340,7 @@ function cardHtml(item, blog, lang) {
   const t = T[lang];
   const isRecipe = item.type === 'recipe';
   return `<a class="post-card" href="${escapeAttr(postHref(item.slug, blog, lang))}">
-  <div class="cover${cover ? '' : ' emoji'}"${cover ? ` style="background-image:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.5)),url('${escapeAttr(cover)}')"` : ''}>${cover ? '' : escapeHtml(item.emoji || '📄')}</div>
+  <div class="cover${cover ? '' : ' emoji'}">${cover ? `<img src="${escapeAttr(cover)}" alt="" loading="lazy" decoding="async">` : escapeHtml(item.emoji || '📄')}</div>
   <div class="card-body">
     <div><span class="badge${isRecipe ? ' recipe' : ''}">${escapeHtml(isRecipe ? t.recipes : t.articles)}</span></div>
     <h3>${escapeHtml(item.title)}</h3>
@@ -432,6 +444,7 @@ export function renderBlogHub({ items = [], siteUrl = DEFAULT_SITE_URL, env = pr
     lang, siteUrl, section: 'blog', theme: 'editorial',
     title: seoTitle(lang === 'tr' ? 'Blog — Hormon, uyku ve güç rehberi' : t.title, lang),
     description, canonical, ogType: 'website',
+    languagePicker: blogLanguagePicker(hubHref(blog), lang, LANGS, category, search),
     jsonLd: [
       { '@context': 'https://schema.org', '@graph': [organizationLd(siteUrl), websiteLd(siteUrl), itemList, breadcrumbLd([{ name: SITE_NAME, path: '/' }, { name: 'Blog', path: '/blog/' }], siteUrl)] }
     ],
@@ -597,6 +610,7 @@ export function renderBlogPost({ item, related = [], siteUrl = DEFAULT_SITE_URL,
     title: seoTitle(view.title, lang),
     description,
     canonical: canonicalFor(lang),
+    languagePicker: blogLanguagePicker(postHref(item.slug, blog), lang, langs),
     ogType: 'article',
     ogImage: cover || undefined,
     publishedTime: item.published_at ? new Date(item.published_at).toISOString() : '',
@@ -623,7 +637,7 @@ export function createBlogPageHandler(options = {}) {
     const search = oneLine(query.q || '', 120);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', slug ? 'public, s-maxage=300, stale-while-revalidate=86400' : 'public, s-maxage=120, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=30');
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -632,47 +646,41 @@ export function createBlogPageHandler(options = {}) {
     }
 
     const isHub = !slug || slug === 'index.html';
-    let rows = [];
     try {
       const sql = connect();
       await prepareContent(sql);
-      rows = await listContent(sql);
-    } catch (error) {
-      console.warn('[blog-page] veritabanına ulaşılamadı:', error?.message || error);
-      rows = [];
-    }
-
-    const items = mergeEditorial(rows);
-    try {
       if (isHub) {
+        const items = await listContentForHub(sql, lang);
         const html = renderBlogHub({ items, siteUrl, env: options.env || process.env, lang, category, search });
         res.setHeader('Content-Language', lang);
         return res.status(200).send(req.method === 'HEAD' ? '' : html);
       }
 
-      const item = items.find(entry => entry.slug === slug || entry.id === slug);
+      const item = await findContentBySlug(sql, slug);
       if (!item) {
-        res.setHeader('Cache-Control', 'public, s-maxage=60');
+        res.setHeader('Cache-Control', 'public, s-maxage=30');
         return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
       }
 
       // İstenen dilde (ve İngilizce yedeğinde) içerik yoksa boş sayfa gösterme.
       if (lang !== 'tr' && !oneLine(localizedContent(item, lang)?.title, 300)) {
-        res.setHeader('Cache-Control', 'public, s-maxage=60');
+        res.setHeader('Cache-Control', 'public, s-maxage=30');
         return res.status(404).send(renderNotFound({ siteUrl, section: 'blog', lang }));
       }
 
-      const related = items
-          .filter(entry => entry.id !== item.id && entry.slug !== item.slug)
-          .sort((a, b) => Number(b.category === item.category) - Number(a.category === item.category))
-          .slice(0, 3);
+      const related = (await listRelatedContent(sql, item)).filter(entry => entry.id !== item.id && entry.slug !== item.slug).slice(0, 3);
 
       const html = renderBlogPost({ item, related, siteUrl, env: options.env || process.env, lang });
       res.setHeader('Content-Language', lang);
       return res.status(200).send(req.method === 'HEAD' ? '' : html);
     } catch (error) {
       console.error('[blog-page]', error);
-      return res.status(500).send(renderNotFound({ siteUrl, section: 'blog', lang }));
+      res.setHeader('Cache-Control', 'no-store');
+      const title = lang === 'tr' ? 'Blog geçici olarak kullanılamıyor' : 'Blog temporarily unavailable';
+      const html = renderPage({ lang, siteUrl, section: 'blog', title, description: title,
+        canonical: `${siteUrl}/blog/`, robots: 'noindex,nofollow',
+        body: `<div class="notfound wrap"><div><h1>503</h1><p>${escapeHtml(title)}</p><p>${lang === 'tr' ? 'Lütfen daha sonra tekrar deneyin.' : 'Please try again later.'}</p></div></div>` });
+      return res.status(503).send(req.method === 'HEAD' ? '' : html);
     }
   };
 }

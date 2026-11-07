@@ -3,6 +3,7 @@ import {
   escapeHtml as esc, formatCount, formatDateTime, hashFor, initials, normalizeLang,
   rankKey, relativeTime, routeFromHash, translator, withinEditWindow
 } from './forum-core.js';
+import { renderPostContent } from './post-content.js';
 
 const $ = id => document.getElementById(id);
 // Sekme başlığı: liste görünümünde SEO başlığı korunur, konu açılınca konu adı öne geçer.
@@ -35,6 +36,7 @@ let t = translator(lang);
 let manage = false, offset = 0, replyOffset = 0, current = null, user = null, authMode = null;
 let listing = { threads: [], thread: null, replies: [] };
 let quoting = null, editing = null;
+let avatarDraft = null, profileEpoch = 0, profileImageBusy = false;
 // Meydan filtreleri: varsayılan olarak yeni konular, tüm kategoriler, arama yok.
 let sort = 'new', category = '', searchText = '';
 let stats = { threads: 0, replies: 0, members: 0, views: 0, categories: [], trending: [], contributors: [] };
@@ -140,6 +142,8 @@ function applyLanguage() {
   $('show-register').textContent = t('register-submit');
   if ($('forum-search')) $('forum-search').placeholder = t('search');
   if (user) $('composer-as').textContent = `${t('postedAs')}: ${user.username}`;
+  $('reply-form').elements.body.placeholder = t('replyPlaceholder');
+  updateReplyCount();
   if (current && listing.thread) document.title = `${listing.thread.title} · ${t('title')}`;
   syncGoogleLinks();
   renderFilters();
@@ -221,7 +225,7 @@ function renderAuth() {
   $('auth-gate').hidden = manage || signedIn;
   $('new-thread').hidden = manage || !signedIn;
   if (signedIn) $('composer-as').textContent = `${t('postedAs')}: ${user.username}`;
-  if (!signedIn) $('auth-panel').hidden = authMode == null;
+  if (!signedIn) { $('auth-panel').hidden = authMode == null; $('profile-panel').hidden = true; }
 }
 
 function showAuth(mode) {
@@ -246,7 +250,11 @@ async function authApi(body, method = 'POST') {
     body: JSON.stringify(body)
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || t('authRequired'));
+  if (!response.ok) {
+    const error = new Error(data.error || t('authRequired'));
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 
@@ -278,10 +286,11 @@ function authorBlock(item, isReply) {
   const posts = Number(item.author_posts) || 0;
   const owner = Boolean(isReply && listing.thread && item.author === listing.thread.author);
   return `<div class="author">
-    <span class="avatar" aria-hidden="true">${esc(initials(item.author))}</span>
+    <span class="avatar profile-avatar" aria-hidden="true">${esc(initials(item.author))}${item.avatar_url?.startsWith('/api/forum-auth?avatar=') ? `<img src="${esc(item.avatar_url)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>
     <span class="author-name">${esc(item.author)}${item.mine ? ` <em class="you">(${esc(t('you'))})</em>` : ''}</span>
     <span class="rank">${esc(t(rankKey(posts)))}</span>
     <span class="meta">${formatCount(posts, lang)} ${esc(t('posts'))}</span>
+    ${item.profile_note ? `<span class="author-note">${esc(item.profile_note)}</span>` : ''}
     ${owner ? `<span class="badge owner">${esc(t('topicOwner'))}</span>` : ''}
   </div>`;
 }
@@ -299,7 +308,8 @@ function actionBar(item, kind) {
   const editable = item.mine && withinEditWindow(item.created_at, Date.now(), EDIT_WINDOW_MS);
   return `<div class="post-actions">
     <button class="chip${item.liked ? ' on' : ''}" type="button" data-like="${id}" data-kind="${kind}" aria-pressed="${item.liked ? 'true' : 'false'}" title="${esc(likeLabel)}">${icon('heart')}<span class="sr-only">${esc(likeLabel)}</span><span data-count="${id}">${likes}</span></button>
-    ${kind === 'reply' ? `<button class="chip" type="button" data-quote="${id}" title="${esc(t('quote'))}">${icon('quote')}<span>${esc(t('quote'))}</span></button>` : ''}
+    ${kind === 'thread' && !listing.thread.locked && listing.thread.approved && !manage ? `<button class="chip reply-action" type="button" data-reply>${icon('quote')}<span>${esc(t('writeReply'))}</span></button>` : ''}
+    ${kind === 'reply' && !listing.thread.locked && listing.thread.approved && !manage ? `<button class="chip" type="button" data-quote="${id}" title="${esc(t('quote'))}">${icon('quote')}<span>${esc(t('quote'))}</span></button>` : ''}
     <button class="chip" type="button" data-copy="${id}" data-kind="${kind}" title="${esc(t('copyLink'))}">${icon('link')}<span class="sr-only">${esc(t('copyLink'))}</span></button>
     ${editable ? `<button class="chip" type="button" data-edit="${id}" data-kind="${kind}" title="${esc(t('editHint'))}">${icon('edit')}<span>${esc(t('edit'))}</span></button>` : ''}
   </div>`;
@@ -318,7 +328,7 @@ function quoteBlock(item) {
 }
 
 function bodyHtml(item, kind) {
-  if (editing !== item.id) return `<p class="body">${esc(item.body)}</p>`;
+  if (editing !== item.id) return `<p class="body">${renderPostContent(item.body)}</p>`;
   const field = `edit-${item.id}`;
   return `<form class="edit-form" data-edit-form="${esc(item.id)}" data-kind="${kind}">
     <label class="sr-only" for="${esc(field)}">${esc(t('message'))}</label>
@@ -420,12 +430,13 @@ function renderThread() {
   $('conversation').innerHTML = postHtml(thread, 'thread')
     + `<p class="meta" style="margin:0 0 6px"><a href="/forum/t/${esc(thread.id)}/" style="color:var(--accent);text-decoration:none">${esc(t('openPage'))} →</a></p>`
     + `<h2 class="replies-heading">${esc(t('replyHeading'))}</h2>`
-    + (listing.replies.map(item => postHtml(item, 'reply')).join('') || `<p class="meta">${esc(t('noReplies'))}</p>`);
+    + (listing.replies.map(item => postHtml(item, 'reply')).join('') || `<div class="reply-empty"><strong>${esc(t('noReplies'))}</strong><p>${esc(t('firstReply'))}</p></div>`);
   const canReply = Boolean(user) && !thread.locked && thread.approved && !manage;
   $('reply-form').hidden = !canReply;
   $('reply-gate').hidden = Boolean(user) || thread.locked || !thread.approved || manage;
   $('reply-prev').disabled = replyOffset === 0;
   $('reply-next').disabled = listing.replies.length < REPLY_PAGE;
+  $('reply-pager').hidden = $('reply-prev').disabled && $('reply-next').disabled;
   renderQuoteChip();
 }
 
@@ -447,6 +458,7 @@ async function open(id, options = {}) {
   const first = store.get(VIEW_KEY + id) !== '1';
   const { thread, replies } = await api(`id=${encodeURIComponent(id)}&offset=${replyOffset}${first ? '&view=1' : ''}`);
   store.set(VIEW_KEY + id, '1');
+  if (current !== id) { $('reply-form').reset(); $('reply-feedback').textContent = ''; updateReplyCount(); }
   current = id;
   listing = { threads: listing.threads, thread, replies };
   editing = null;
@@ -527,6 +539,13 @@ async function toggleLike(button) {
   } finally { button.disabled = false; }
 }
 
+function focusComposer() {
+  if (!user) { $('reply-gate').scrollIntoView?.({ behavior: motion(), block: 'center' }); return; }
+  if ($('reply-form').hidden) return;
+  $('reply-form').scrollIntoView?.({ behavior: motion(), block: 'center' });
+  $('reply-form').elements.body.focus();
+}
+
 function startQuote(button) {
   if (!user) { showAuth('login'); status(t('authRequired')); return; }
   const item = listing.replies.find(reply => reply.id === button.dataset.quote);
@@ -534,8 +553,7 @@ function startQuote(button) {
   quoting = { id: item.id, author: item.author, excerpt: preview(item.body), threadId: current };
   editing = null;
   renderThread();
-  $('reply-form').scrollIntoView?.({ behavior: motion(), block: 'center' });
-  $('reply-form').querySelector('textarea')?.focus();
+  focusComposer();
   status(t('quote'));
 }
 
@@ -625,6 +643,111 @@ function handleModeration(button) {
 
 const run = task => Promise.resolve().then(task).catch(error => status(error.message));
 
+function updateReplyCount() {
+  $('reply-count').textContent = `${$('reply-form').elements.body.value.length} / 4000 ${t('characters')}`;
+}
+function updateDealHint() { $('deal-hint').hidden = $('new-thread').elements.category.value !== 'Sıcak Fırsatlar'; }
+$('reply-form').elements.body.addEventListener('input', updateReplyCount);
+$('new-thread').elements.category.addEventListener('change', updateDealHint);
+
+// Profil resimleri tarayıcıda küçültülüp yeniden JPEG olarak kodlanır; metadata taşınmaz.
+function renderProfilePreview(src = '') {
+  const preview = $('profile-preview');
+  preview.textContent = initials(user?.username || '');
+  if (src) {
+    const image = document.createElement('img');
+    image.alt = ''; image.src = src;
+    image.onerror = () => image.remove();
+    preview.appendChild(image);
+  }
+}
+function closeProfile() {
+  profileEpoch++; avatarDraft = null; profileImageBusy = false;
+  $('profile-panel').hidden = true;
+  $('profile-photo').value = '';
+}
+function openProfile() {
+  if (!user) { showAuth('login'); return; }
+  profileEpoch++; avatarDraft = null; profileImageBusy = false;
+  $('profile-note').value = user.profile_note || '';
+  $('profile-photo').value = '';
+  $('profile-feedback').textContent = '';
+  renderProfilePreview(user.avatar_url || '');
+  $('profile-panel').hidden = false;
+  $('profile-panel').scrollIntoView?.({ behavior: motion(), block: 'start' });
+  $('profile-note').focus();
+}
+$('show-profile').onclick = openProfile;
+$('profile-cancel').onclick = closeProfile;
+$('profile-remove').onclick = () => {
+  profileEpoch++; profileImageBusy = false; avatarDraft = '';
+  $('profile-photo').value = ''; $('profile-feedback').textContent = '';
+  renderProfilePreview();
+};
+$('profile-photo').onchange = async event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const epoch = ++profileEpoch;
+  profileImageBusy = false;
+  if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+    event.target.value = ''; avatarDraft = null; renderProfilePreview(user?.avatar_url || ''); $('profile-feedback').textContent = t('profilePhotoError'); return;
+  }
+  profileImageBusy = true;
+  $('profile-feedback').textContent = t('profileProcessing');
+  let objectUrl = '';
+  try {
+    objectUrl = URL.createObjectURL(file);
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('image')); img.src = objectUrl;
+    });
+    if (epoch !== profileEpoch) return;
+    if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth > 10000 || image.naturalHeight > 10000 || image.naturalWidth * image.naturalHeight > 40000000) throw new Error('image');
+    const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('canvas');
+    const size = Math.min(image.naturalWidth, image.naturalHeight);
+    ctx.fillStyle = '#111820'; ctx.fillRect(0, 0, 256, 256);
+    ctx.drawImage(image, (image.naturalWidth - size) / 2, (image.naturalHeight - size) / 2, size, size, 0, 0, 256, 256);
+    const data = canvas.toDataURL('image/jpeg', 0.82);
+    if (!data.startsWith('data:image/jpeg;base64,') || data.length > 'data:image/jpeg;base64,'.length + Math.ceil(128 * 1024 / 3) * 4) throw new Error('size');
+    avatarDraft = data.split(',')[1]; renderProfilePreview(data);
+    $('profile-feedback').textContent = '';
+  } catch {
+    if (epoch === profileEpoch) { event.target.value = ''; avatarDraft = null; renderProfilePreview(user?.avatar_url || ''); $('profile-feedback').textContent = t('profilePhotoError'); }
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (epoch === profileEpoch) profileImageBusy = false;
+  }
+};
+$('profile-form').onsubmit = event => {
+  event.preventDefault();
+  if (!user) { showAuth('login'); return; }
+  if (profileImageBusy) { $('profile-feedback').textContent = t('profileProcessing'); return; }
+  const owner = user.username, epoch = profileEpoch;
+  const payload = { action: 'profile', note: $('profile-note').value };
+  if (avatarDraft !== null) payload.avatar = avatarDraft;
+  const controls = [...$('profile-form').querySelectorAll('input, button')];
+  controls.forEach(control => { control.disabled = true; });
+  $('show-profile').disabled = true;
+  run(async () => {
+    try {
+      const result = await authApi(payload);
+      if (!user || user.username !== owner) return;
+      user = result.user; renderAuth();
+      if (current) { try { await open(current); } catch (error) { status(error.message); } }
+      if (profileEpoch === epoch) {
+        avatarDraft = null; $('profile-photo').value = '';
+        $('profile-note').value = user.profile_note || '';
+        renderProfilePreview(user.avatar_url || '');
+        $('profile-feedback').textContent = t('profileSaved');
+      }
+    } catch (error) {
+      if (error.status === 401 && user?.username === owner) {
+        user = null; closeProfile(); renderAuth(); showAuth('login'); status(error.message);
+      } else if (profileEpoch === epoch) $('profile-feedback').textContent = error.message;
+    } finally { controls.forEach(control => { control.disabled = false; }); $('show-profile').disabled = false; }
+  });
+};
+
 $('refresh').onclick = () => run(loadList);
 // Sağ raydaki "Yeni Konu Aç": giriş yoksa kayıt panelini açar, varsa besteciye gider.
 $('rail-new-topic').onclick = event => {
@@ -632,6 +755,8 @@ $('rail-new-topic').onclick = event => {
   if (!user) { showAuth('register'); status(t('authRequired')); return; }
   const reveal = () => {
     $('new-thread').hidden = manage;
+    if (category) $('new-thread').elements.category.value = category;
+    updateDealHint();
     $('new-thread').scrollIntoView?.({ behavior: motion(), block: 'center' });
     $('new-thread').querySelector('input[name=title]')?.focus();
   };
@@ -671,6 +796,7 @@ $('forum-lang').onchange = () => {
 $('logout').onclick = () => run(async () => {
   await authApi({ action: 'logout' });
   user = null;
+  closeProfile();
   authMode = null;
   quoting = null;
   $('auth-panel').hidden = true;
@@ -704,12 +830,16 @@ document.addEventListener('click', event => {
     event.preventDefault();
     category = categoryButton.dataset.category || '';
     offset = 0;
+    $('new-thread').elements.category.value = category || 'Genel';
+    updateDealHint();
     renderFilters();
-    run(loadList);
+    if (current) { updateHash(''); run(showListing); } else run(loadList);
     return;
   }
   if (event.target.closest('[data-clear]')) {
     category = '';
+    $('new-thread').elements.category.value = 'Genel';
+    updateDealHint();
     searchText = '';
     if ($('forum-search')) $('forum-search').value = '';
     offset = 0;
@@ -717,6 +847,7 @@ document.addEventListener('click', event => {
     run(loadList);
     return;
   }
+  if (event.target.closest('[data-reply]')) { focusComposer(); return; }
   const jump = event.target.closest('[data-jump]');
   const opener = event.target.closest('[data-open]');
   if (opener) {
@@ -791,12 +922,19 @@ for (const id of ['new-thread', 'reply-form']) $(id).onsubmit = event => {
     if (quoting && quoting.threadId === current) data.quoteId = quoting.id;
   }
   button.disabled = true;
+  if (id === 'reply-form') $('reply-feedback').textContent = '';
   run(async () => {
     try {
       const result = await api('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       form.reset();
-      if (id === 'reply-form') { quoting = null; renderQuoteChip(); }
+      if (id === 'reply-form') {
+        quoting = null; renderQuoteChip(); updateReplyCount();
+        $('reply-feedback').textContent = result.message;
+      } else { if (category) form.elements.category.value = category; updateDealHint(); }
       status(result.message);
+    } catch (error) {
+      if (id === 'reply-form') $('reply-feedback').textContent = error.message;
+      status(error.message);
     } finally { button.disabled = false; }
   });
 };

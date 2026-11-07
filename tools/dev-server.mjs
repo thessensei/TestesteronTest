@@ -10,7 +10,7 @@ import config from '../vercel.json' with { type: 'json' };
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.env.PORT || 3000);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8' };
-const apiNames = new Set(['about', 'content', 'seo', 'session', 'login', 'stats', 'forum', 'forum-auth', 'ai-blog']);
+const apiNames = new Set(['about', 'content', 'seo', 'session', 'login', 'stats', 'forum', 'forum-auth', 'ai-blog', 'media/index', 'media/[id]']);
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -32,6 +32,8 @@ const server = http.createServer(async (req, res) => {
     else if (/^\/blog(?:\/|$)/.test(pathname)) { api = 'seo'; req.query.type = 'blog'; req.query.slug = pathname.slice(5).replace(/^\/+|\/+$/g, ''); }
     else if (pathname.startsWith('/forum/t/')) { api = 'seo'; req.query.type = 'thread'; req.query.id = pathname.slice(9).replace(/\/$/, ''); }
     else if (pathname === '/api/forum-stats') { api = 'forum'; req.query.stats = '1'; }
+    else if (pathname === '/api/media' || pathname === '/api/media/') api = 'media/index';
+    else if (/^\/api\/media\/[^/]+$/.test(pathname)) { api = 'media/[id]'; req.query.id = pathname.slice('/api/media/'.length); }
     else if (pathname.startsWith('/api/')) api = pathname.slice(5);
     if (api) {
       if (!apiNames.has(api)) return res.status(404).send('Not found');
@@ -39,7 +41,9 @@ const server = http.createServer(async (req, res) => {
         const chunks = []; let size = 0;
         for await (const chunk of req) {
           size += chunk.length;
-          if (size > 1024 * 1024) return res.status(413).send('Request too large');
+          // 2 MB görsel base64 olarak yaklaşık 2,67 MB yer kaplar.
+          const bodyLimit = api === 'media/index' ? 3 * 1024 * 1024 : 1024 * 1024;
+          if (size > bodyLimit) return res.status(413).send('Request too large');
           chunks.push(chunk);
         }
         try { req.body = JSON.parse(Buffer.concat(chunks).toString() || '{}'); }

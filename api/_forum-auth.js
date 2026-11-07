@@ -386,6 +386,10 @@ export async function prepareForumAuth(sql) {
   )`;
   await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS google_sub TEXT`;
   await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS google_email TEXT`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS profile_note TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS avatar_data TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS avatar_present BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE forum_users ADD COLUMN IF NOT EXISTS avatar_version INTEGER NOT NULL DEFAULT 0`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS forum_users_google_sub ON forum_users(google_sub) WHERE google_sub IS NOT NULL`;
   await sql`CREATE TABLE IF NOT EXISTS forum_sessions (
     token_hash TEXT PRIMARY KEY,
@@ -399,7 +403,7 @@ export async function prepareForumAuth(sql) {
 export async function findForumUserByToken(sql, token) {
   if (!token || !secret()) return null;
   const tokenHash = hashForumToken(token);
-  const rows = await sql`SELECT u.id, u.username FROM forum_sessions s JOIN forum_users u ON u.id = s.user_id WHERE s.token_hash = ${tokenHash} AND s.expires_at > NOW()`;
+  const rows = await sql`SELECT u.id, u.username, u.profile_note, u.avatar_present, u.avatar_version FROM forum_sessions s JOIN forum_users u ON u.id = s.user_id WHERE s.token_hash = ${tokenHash} AND s.expires_at > NOW()`;
   return rows[0] || null;
 }
 

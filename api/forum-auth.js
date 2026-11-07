@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 import { prepareForum } from './_forum.js';
+import { publicProfile, validateProfile } from './_forum-profile.js';
 import {
   appendAuthParam,
   clearForumCookie,
@@ -23,13 +24,12 @@ import {
   sanitizeReturnTo,
   validateLogin,
   validateRegistration,
+  validateUsername,
   verifyGoogleAuthState,
   verifyPasswordOrDummy
 } from './_forum-auth.js';
 
-function publicUser(user) {
-  return user ? { username: user.username } : null;
-}
+const publicUser = publicProfile;
 
 function redirect(res, location) {
   res.setHeader('Location', location);
@@ -117,6 +117,19 @@ export function createForumAuthHandler(connect = neon, options = {}) {
       await prepareForum(sql);
       const token = readForumToken(req);
 
+      if (req.method === 'GET' && query.avatar !== undefined) {
+        let username;
+        try { username = validateUsername(query.avatar).usernameKey; } catch { return res.status(404).json({ error: 'Resim bulunamadı.' }); }
+        const version = Number(query.v);
+        if (!Number.isSafeInteger(version) || version < 1) return res.status(404).json({ error: 'Resim bulunamadı.' });
+        const [image] = await sql`SELECT avatar_data FROM forum_users WHERE username_key=${username} AND avatar_version=${version} AND avatar_present=TRUE`;
+        if (!image?.avatar_data) return res.status(404).json({ error: 'Resim bulunamadı.' });
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).send(Buffer.from(image.avatar_data, 'base64'));
+      }
+
       if (req.method === 'GET') {
         const user = token ? await findForumUserByToken(sql, token) : null;
         if (token && !user) res.setHeader('Set-Cookie', clearForumCookie());
@@ -131,6 +144,24 @@ export function createForumAuthHandler(connect = neon, options = {}) {
         if (token) await destroyForumSession(sql, token);
         res.setHeader('Set-Cookie', clearForumCookie());
         return res.status(200).json({ ok: true, user: null });
+      }
+
+      if (action === 'profile') {
+        const user = token ? await findForumUserByToken(sql, token) : null;
+        if (!user) return res.status(401).json({ error: 'Profil için giriş yapın.' });
+        let profile;
+        try { profile = validateProfile(req.body); } catch (error) { return res.status(400).json({ error: error.message }); }
+        const limitKey = crypto.createHmac('sha256', env.SESSION_SECRET).update(`forum-profile:${user.id}`).digest('hex');
+        const allowed = await sql`INSERT INTO forum_limits (key,last_post) VALUES (${limitKey},NOW()) ON CONFLICT (key) DO UPDATE SET last_post=NOW() WHERE forum_limits.last_post < NOW() - INTERVAL '3 seconds' RETURNING key`;
+        if (!allowed.length) return res.status(429).json({ error: 'Profili güncellemek için birkaç saniye bekleyin.' });
+        const changed = profile.avatar !== null;
+        const [updated] = await sql`UPDATE forum_users SET profile_note=${profile.note},
+          avatar_data=CASE WHEN ${changed} THEN ${profile.avatar || ''} ELSE avatar_data END,
+          avatar_present=CASE WHEN ${changed} THEN ${Boolean(profile.avatar)} ELSE avatar_present END,
+          avatar_version=avatar_version + CASE WHEN ${changed} THEN 1 ELSE 0 END
+          WHERE id=${user.id} RETURNING username, profile_note, avatar_present, avatar_version`;
+        if (!updated) return res.status(401).json({ error: 'Hesap bulunamadı.' });
+        return res.status(200).json({ user: publicUser(updated) });
       }
 
       if (action === 'register') {
@@ -153,7 +184,7 @@ export function createForumAuthHandler(connect = neon, options = {}) {
         }
         const session = await createForumSession(sql, id);
         res.setHeader('Set-Cookie', forumSessionCookie(session));
-        return res.status(201).json({ user: { username: credentials.username } });
+        return res.status(201).json({ user: publicUser({ username: credentials.username }) });
       }
 
       if (action === 'login') {
@@ -162,7 +193,7 @@ export function createForumAuthHandler(connect = neon, options = {}) {
         try { credentials = validateLogin(req.body || {}); } catch (error) {
           return res.status(400).json({ error: error.message });
         }
-        const rows = await sql`SELECT id, username, password_hash FROM forum_users WHERE username_key = ${credentials.usernameKey}`;
+        const rows = await sql`SELECT id, username, password_hash, profile_note, avatar_present, avatar_version FROM forum_users WHERE username_key = ${credentials.usernameKey}`;
         const row = rows[0];
         const matches = verifyPasswordOrDummy(credentials.password, row?.password_hash);
         if (!row || !matches) {
@@ -172,7 +203,7 @@ export function createForumAuthHandler(connect = neon, options = {}) {
         clearLoginFailures(req);
         const session = await createForumSession(sql, row.id);
         res.setHeader('Set-Cookie', forumSessionCookie(session));
-        return res.status(200).json({ user: { username: row.username } });
+        return res.status(200).json({ user: publicUser(row) });
       }
 
       return res.status(400).json({ error: 'Geçersiz işlem.' });

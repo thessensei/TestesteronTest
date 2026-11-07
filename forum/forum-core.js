@@ -5,8 +5,8 @@
  */
 // Dil listesi sunucudaki api/_langs.js ile aynı olmalı (tests/languages.test.mjs doğrular).
 export const LANGUAGES = ['tr', 'en', 'de', 'ja', 'fr', 'es', 'bg', 'ru', 'hi', 'zh'];
-export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler'];
-export const CATEGORY_KEYS = { Genel: 'cat-general', Antrenman: 'cat-training', Beslenme: 'cat-nutrition', Deneyimler: 'cat-stories' };
+export const CATEGORIES = ['Genel', 'Antrenman', 'Beslenme', 'Deneyimler', 'Sıcak Fırsatlar'];
+export const CATEGORY_KEYS = { Genel: 'cat-general', Antrenman: 'cat-training', Beslenme: 'cat-nutrition', Deneyimler: 'cat-stories', 'Sıcak Fırsatlar': 'cat-deals' };
 export const PAGE_SIZE = 30;
 export const REPLY_PAGE = 50;
 // Sunucudaki api/_forum.js ile aynı olmalı; testler iki değeri karşılaştırır.
@@ -438,6 +438,38 @@ export const UI = {
     colLast: '最后回复', newTopic: '发布主题', latestContent: '最新内容', noLastReply: '暂无回复'
   }
 };
+
+// Ek forum deneyimi metinleri bütün desteklenen dillerde aynı anahtarları taşır.
+const FORUM_EXTRAS = {
+  tr: ['Sıcak Fırsatlar', 'Fırsatları gör', 'Ürün bağlantısını, fiyatı ve varsa kampanya koşullarını mesajına ekle. Fiyat ve stok değişebilir.', 'Yanıt yaz', 'İlk yanıtı sen yaz; deneyimini veya sorunu paylaş.', 'Düşünceni paylaş. Bağlantı da ekleyebilirsin.', 'Yanıtlar admin onayından sonra yayınlanır.', 'karakter', 'Yanıt gönderildi'],
+  en: ['Hot Deals', 'View deals', 'Add the product link, price and any offer terms. Prices and stock may change.', 'Write a reply', 'Be the first to reply; share your experience or question.', 'Share your thoughts. You can also add a link.', 'Replies are published after admin approval.', 'characters', 'Reply submitted'],
+  de: ['Schnäppchen', 'Angebot teilen', 'Füge Produktlink, Preis und Angebotsbedingungen hinzu. Preis und Verfügbarkeit können sich ändern.', 'Antwort schreiben', 'Antworte als Erste oder Erster und teile deine Erfahrung oder Frage.', 'Teile deine Meinung. Du kannst auch einen Link hinzufügen.', 'Antworten werden nach Admin-Freigabe veröffentlicht.', 'Zeichen', 'Antwort gesendet'],
+  ja: ['お得情報', 'お得情報を共有', '商品リンク、価格、キャンペーン条件を追加してください。価格や在庫は変わる場合があります。', '返信を書く', '最初に返信して、体験や質問を共有しましょう。', '意見を共有しましょう。リンクも追加できます。', '返信は管理者の承認後に公開されます。', '文字', '返信を送信しました'],
+  fr: ['Bons plans', 'Partager une offre', 'Ajoutez le lien, le prix et les conditions. Le prix et le stock peuvent changer.', 'Répondre', 'Soyez le premier à partager une expérience ou une question.', 'Partagez votre avis. Vous pouvez ajouter un lien.', 'Les réponses sont publiées après validation.', 'caractères', 'Réponse envoyée'],
+  es: ['Ofertas', 'Compartir una oferta', 'Añade el enlace, el precio y las condiciones. El precio y las existencias pueden cambiar.', 'Responder', 'Sé el primero en compartir tu experiencia o pregunta.', 'Comparte tu opinión. También puedes añadir un enlace.', 'Las respuestas se publican tras la aprobación.', 'caracteres', 'Respuesta enviada'],
+  bg: ['Оферти', 'Сподели оферта', 'Добавете връзка, цена и условия. Цената и наличността може да се променят.', 'Напиши отговор', 'Бъдете първи и споделете опит или въпрос.', 'Споделете мнението си. Можете да добавите връзка.', 'Отговорите се публикуват след одобрение.', 'символа', 'Отговорът е изпратен'],
+  ru: ['Выгодные предложения', 'Поделиться предложением', 'Добавьте ссылку, цену и условия. Цена и наличие могут измениться.', 'Написать ответ', 'Ответьте первым и поделитесь опытом или вопросом.', 'Поделитесь мнением. Можно добавить ссылку.', 'Ответы публикуются после одобрения.', 'символов', 'Ответ отправлен'],
+  hi: ['बेहतरीन ऑफ़र', 'ऑफ़र साझा करें', 'उत्पाद का लिंक, कीमत और शर्तें जोड़ें। कीमत और उपलब्धता बदल सकती है।', 'उत्तर लिखें', 'पहला उत्तर दें और अपना अनुभव या सवाल साझा करें।', 'अपनी राय साझा करें। आप लिंक भी जोड़ सकते हैं।', 'उत्तर एडमिन की स्वीकृति के बाद प्रकाशित होते हैं।', 'अक्षर', 'उत्तर भेजा गया'],
+  zh: ['优惠信息', '分享优惠', '添加商品链接、价格和优惠条件。价格和库存可能变化。', '撰写回复', '来写第一条回复，分享你的经验或问题。', '分享你的想法，也可以添加链接。', '回复经管理员审核后发布。', '字符', '回复已提交']
+};
+const EXTRA_KEYS = ['cat-deals', 'dealShare', 'dealHint', 'writeReply', 'firstReply', 'replyPlaceholder', 'replyNotice', 'characters', 'replySubmitted'];
+for (const language of LANGUAGES) EXTRA_KEYS.forEach((key, index) => { UI[language][key] = FORUM_EXTRAS[language][index]; });
+
+const PROFILE_KEYS = ['profile', 'profileTitle', 'profileHelp', 'profileNote', 'profilePhoto', 'profileRemove', 'profileSave', 'profileCancel', 'profileSaved', 'profilePhotoError', 'profilePublic', 'profileProcessing'];
+const PROFILE_TEXT = {
+  tr: ['Profilim', 'Profilini düzenle', 'Kısa notun ve profil resmin tüm konu ve yanıtlarında herkese açık görünür. Kişisel sağlık verilerini paylaşma.', 'Profil notu', 'Profil resmi', 'Resmi kaldır', 'Profili kaydet', 'Vazgeç', 'Profilin güncellendi.', 'Resim okunamadı. En fazla 5 MB JPEG, PNG, WebP veya GIF seç.', 'Herkese açık · en fazla 160 karakter', 'Resim hazırlanıyor…'],
+  en: ['My profile', 'Edit your profile', 'Your short note and photo are public on your topics and replies. Do not share personal health data.', 'Profile note', 'Profile photo', 'Remove photo', 'Save profile', 'Cancel', 'Your profile was updated.', 'Could not read image. Choose a JPEG, PNG, WebP or GIF up to 5 MB.', 'Public · up to 160 characters', 'Preparing image…'],
+  de: ['Mein Profil', 'Profil bearbeiten', 'Deine Notiz und dein Foto sind in Themen und Antworten öffentlich. Teile keine persönlichen Gesundheitsdaten.', 'Profilnotiz', 'Profilbild', 'Bild entfernen', 'Profil speichern', 'Abbrechen', 'Dein Profil wurde aktualisiert.', 'Bild nicht lesbar. Wähle JPEG, PNG, WebP oder GIF bis 5 MB.', 'Öffentlich · höchstens 160 Zeichen', 'Bild wird vorbereitet…'],
+  ja: ['プロフィール', 'プロフィールを編集', '短いメモと写真はトピックや返信に公開されます。個人の健康情報は共有しないでください。', 'プロフィールメモ', 'プロフィール写真', '写真を削除', '保存', 'キャンセル', 'プロフィールを更新しました。', '画像を読み込めません。5 MB以下のJPEG、PNG、WebP、GIFを選択してください。', '公開 · 最大160文字', '画像を準備中…'],
+  fr: ['Mon profil', 'Modifier le profil', 'Votre note et votre photo sont publiques dans vos sujets et réponses. Ne partagez pas de données de santé.', 'Note de profil', 'Photo de profil', 'Supprimer la photo', 'Enregistrer', 'Annuler', 'Profil mis à jour.', 'Image illisible. Choisissez un JPEG, PNG, WebP ou GIF de 5 Mo maximum.', 'Public · 160 caractères maximum', 'Préparation de l’image…'],
+  es: ['Mi perfil', 'Editar perfil', 'Tu nota y foto son públicas en tus temas y respuestas. No compartas datos de salud personales.', 'Nota del perfil', 'Foto de perfil', 'Eliminar foto', 'Guardar perfil', 'Cancelar', 'Perfil actualizado.', 'No se pudo leer la imagen. Elige JPEG, PNG, WebP o GIF de hasta 5 MB.', 'Público · máximo 160 caracteres', 'Preparando imagen…'],
+  bg: ['Моят профил', 'Редактиране на профила', 'Бележката и снимката са публични във вашите теми и отговори. Не споделяйте лични здравни данни.', 'Бележка', 'Профилна снимка', 'Премахни снимката', 'Запази', 'Отказ', 'Профилът е обновен.', 'Невалидно изображение. Изберете JPEG, PNG, WebP или GIF до 5 MB.', 'Публично · до 160 символа', 'Подготовка на изображението…'],
+  ru: ['Мой профиль', 'Редактировать профиль', 'Заметка и фото видны всем в ваших темах и ответах. Не публикуйте личные медицинские данные.', 'Заметка профиля', 'Фото профиля', 'Удалить фото', 'Сохранить профиль', 'Отмена', 'Профиль обновлён.', 'Не удалось прочитать изображение. Выберите JPEG, PNG, WebP или GIF до 5 МБ.', 'Публично · до 160 символов', 'Подготовка изображения…'],
+  hi: ['मेरी प्रोफ़ाइल', 'प्रोफ़ाइल संपादित करें', 'आपका नोट और फ़ोटो आपके विषयों और उत्तरों में सार्वजनिक होंगे। निजी स्वास्थ्य जानकारी साझा न करें।', 'प्रोफ़ाइल नोट', 'प्रोफ़ाइल फ़ोटो', 'फ़ोटो हटाएँ', 'प्रोफ़ाइल सहेजें', 'रद्द करें', 'प्रोफ़ाइल अपडेट हुई।', 'छवि नहीं पढ़ी जा सकी। 5 MB तक JPEG, PNG, WebP या GIF चुनें।', 'सार्वजनिक · अधिकतम 160 अक्षर', 'छवि तैयार हो रही है…'],
+  zh: ['我的资料', '编辑资料', '你的简短备注和照片会公开显示在主题和回复中。请勿分享个人健康信息。', '个人备注', '头像', '移除照片', '保存资料', '取消', '资料已更新。', '无法读取图片。请选择不超过5 MB的JPEG、PNG、WebP或GIF。', '公开 · 最多160个字符', '正在处理图片…']
+};
+for (const language of LANGUAGES) PROFILE_KEYS.forEach((key, index) => { UI[language][key] = PROFILE_TEXT[language][index]; });
+
 
 const RELATIVE = {
   tr: { justNow: 'az önce', minutes: n => `${n} dk önce`, hours: n => `${n} sa önce`, days: n => `${n} gün önce`, weeks: n => `${n} hafta önce` },
