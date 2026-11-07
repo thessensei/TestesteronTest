@@ -103,7 +103,7 @@ test('?lang= parametresi dili belirler ve canonical adresi günceller', () => {
   assert.match(source, /function langFromUrl\(\)\{/, '?lang= okuyucusu tanımlı olmalı');
   assert.match(source, /new URLSearchParams\(location\.search\)\.get\('lang'\)/, 'lang parametresi adresten okunmalı');
   assert.match(source, /SUPPORTED_LANGUAGES\.some\(l=>l\.code===raw\)/, 'bilinmeyen dil yok sayılmalı');
-  assert.match(source, /let currentLanguage = urlLang \|\| localStorage\.getItem\('testotavan_language'\)/, 'adres dili kayıtlı dilden öncelikli olmalı');
+  assert.match(source, /let currentLanguage = urlLang \|\| getStoredLanguage\(\)/, 'adres dili kayıtlı dilden öncelikli olmalı');
   assert.match(source, /function syncLanguageUrl\(lang\)\{/, 'seçim adrese yazılmalı');
   assert.match(source, /window\.history\.replaceState/, 'adres geçmişi bozulmadan güncellenmeli');
   assert.match(source, /url\.searchParams\.delete\('lang'\)/, 'Türkçede parametre kaldırılmalı');

@@ -52,33 +52,24 @@ test('panel kaydı aynı slug için önceliklidir, tekrar veya veri mutasyonu ol
   assert.equal(mergeEditorial([{ ...EDITORIAL_POSTS[0], slug: 'yeni-slug' }]).length, 3);
 });
 
-test('blog veritabanı olmadan rehber arşivi, detay ve doğru 404 döndürür', async () => {
+test('veritabanı yokken hazır rehberler yeniden yayınlanmaz ve servis hatası gösterilir', async () => {
   const handler = createBlogPageHandler(offline);
   const hub = await request(handler);
-  assert.equal(hub.code, 200);
+  assert.equal(hub.code, 503);
+  assert.match(hub.body, /geçici olarak kullanılamıyor/);
   for (const item of EDITORIAL_POSTS) {
-    assert.ok(hub.body.includes(item.url));
-    const detail = await request(handler, { slug: item.slug });
-    assert.equal(detail.code, 200);
-    assert.ok(detail.body.includes(`<h1>${item.title}</h1>`));
-    assert.ok(detail.body.includes(item.sources[0].url));
-    assert.match(detail.body, /Kaynaklar ve güncellik/);
-    assert.match(detail.body, /2026-10-23/);
-    assert.match(detail.body, /href="[^\"]*\/forum\//);
-    const schema = JSON.parse(detail.body.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
-    assert.ok(schema['@graph'].some(node => node['@type'] === 'BlogPosting'));
+    assert.ok(!hub.body.includes(item.url));
+    assert.equal((await request(handler, { slug: item.slug })).code, 503);
   }
-  assert.equal((await request(handler, { slug: 'missing-post' })).code, 404);
-  const head = await request(handler, {}, 'HEAD');
-  assert.equal(head.code, 200);
-  assert.equal(head.body, '');
+  assert.equal((await request(handler, {}, 'HEAD')).body, '');
   assert.equal((await request(handler, {}, 'POST')).code, 405);
 });
 
-test('veritabanı sorgusu hata verse de hazır rehberler erişilebilir', async () => {
+test('veritabanı sorgu hatası 503 ve no-store ile yanıtlanır', async () => {
   const handler = createBlogPageHandler({ connect: () => async () => { throw new Error('query failed'); }, env: {} });
   const res = await request(handler, { slug: EDITORIAL_POSTS[0].slug });
-  assert.equal(res.code, 200);
+  assert.equal(res.code, 503);
+  assert.equal(res.headers['Cache-Control'], 'no-store');
 });
 
 test('kaynaklar gövde temizliğinden etkilenmez ve doğrulanmamış alanlar HTML çalıştıramaz', () => {
@@ -90,45 +81,41 @@ test('kaynaklar gövde temizliğinden etkilenmez ve doğrulanmamış alanlar HTM
   assert.doesNotMatch(custom, /Kaynaklar ve güncellik/);
 });
 
-test('arama, kategori ve dil birlikte çalışır; boş sonuç ve HTML kaçışı güvenlidir', async () => {
-  const handler = createBlogPageHandler(offline);
-  const result = await request(handler, { q: 'FDA', kategori: 'Tedavi güvenliği' });
-  assert.ok(result.body.includes(EDITORIAL_POSTS[1].url));
-  assert.ok(!result.body.includes(EDITORIAL_POSTS[0].url + '">'));
-  const empty = await request(handler, { q: 'FDA', kategori: 'Test ve tanı' });
-  assert.match(empty.body, /Eşleşen yazı bulunamadı/);
-  const attack = renderBlogHub({ items: EDITORIAL_POSTS, search: '\"><script>alert(1)</script>', env: {} });
+test('arama, kategori ve dil birlikte çalışır; boş sonuç ve HTML kaçışı güvenlidir', () => {
+  const result = renderBlogHub({ items: EDITORIAL_POSTS, search: 'FDA', category: 'Tedavi güvenliği', env: {} });
+  assert.ok(result.includes(EDITORIAL_POSTS[1].url));
+  assert.ok(!result.includes(EDITORIAL_POSTS[0].url + '">'));
+  const empty = renderBlogHub({ items: EDITORIAL_POSTS, search: 'FDA', category: 'Test ve tanı', env: {} });
+  assert.match(empty, /Eşleşen yazı bulunamadı/);
+  const attack = renderBlogHub({ items: EDITORIAL_POSTS, search: '"><script>alert(1)</script>', env: {} });
   assert.doesNotMatch(attack, /<script>alert\(1\)<\/script>/);
-  const english = await request(handler, { q: 'fertility', lang: 'en' });
-  assert.match(english.body, /name="lang" value="en"/);
-  assert.ok(english.body.includes(`${EDITORIAL_POSTS[2].url}?lang=en`));
-  const detail = await request(handler, { slug: EDITORIAL_POSTS[0].slug, lang: 'en' });
-  assert.match(detail.body, /Sources and review date/);
-  assert.doesNotMatch(detail.body, /Kaynaklar ve güncellik|2026 rehberi/);
+  const english = renderBlogHub({ items: EDITORIAL_POSTS, search: 'fertility', lang: 'en', env: {} });
+  assert.match(english, /name="lang" value="en"/);
+  assert.ok(english.includes(`${EDITORIAL_POSTS[2].url}?lang=en`));
+  const detail = renderBlogPost({ item: EDITORIAL_POSTS[0], lang: 'en', env: {} });
+  assert.match(detail, /Sources and review date/);
+  assert.doesNotMatch(detail, /Kaynaklar ve güncellik|2026 rehberi/);
 });
 
-test('RSS ve sitemap veritabanı yokken de aynı rehberleri yayınlar', async () => {
+test('RSS ve sitemap veritabanı yokken hazır rehberleri tekrar yayınlamaz', async () => {
   const rss = await request(createBlogRssHandler(offline));
   const sitemap = await request(createSitemapHandler(offline));
   assert.equal(rss.code, 200);
   assert.equal(sitemap.code, 200);
   for (const post of EDITORIAL_POSTS) {
-    assert.ok(rss.body.includes(post.url));
-    assert.ok(sitemap.body.includes(post.url));
+    assert.ok(!rss.body.includes(post.url));
+    assert.ok(!sitemap.body.includes(post.url));
   }
   assert.match(sitemap.body, /<loc>[^<]+\/forum\/<\/loc>/);
 });
 
-test('rehberli herkese açık API DB yokken çalışır; yönetici listesine hazır içerik eklenmez', async () => {
+test('içerik API veritabanı yokken hazır rehberleri döndürmez', async () => {
   const old = process.env.DATABASE_URL;
   delete process.env.DATABASE_URL;
   try {
     const publicResult = await request(contentHandler, { guides: '1' });
-    assert.equal(publicResult.code, 200);
-    assert.equal(publicResult.body.length, 3);
-    const adminResult = await request(contentHandler);
-    assert.equal(adminResult.code, 500);
-    assert.ok(!Array.isArray(adminResult.body));
+    assert.equal(publicResult.code, 500);
+    assert.ok(!Array.isArray(publicResult.body));
     const writeResult = await request(contentHandler, { guides: '1' }, 'POST');
     assert.notEqual(writeResult.code, 200);
   } finally {

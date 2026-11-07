@@ -1,9 +1,23 @@
+// Tarayıcı depolaması kapalıysa dil tercihi sekme süresince bellekte tutulur.
+let volatileLanguage = 'tr';
+let useVolatileLanguage = false;
+function getStoredLanguage() {
+    if (useVolatileLanguage) return volatileLanguage;
+    try { return localStorage.getItem('testotavan_language') || volatileLanguage; }
+    catch { return volatileLanguage; }
+}
+function saveLanguage(lang) {
+    volatileLanguage = lang;
+    try { localStorage.setItem('testotavan_language', lang); useVolatileLanguage = false; }
+    catch { useVolatileLanguage = true; }
+}
+
 // Hakkımızda: yalnızca metin yerleştirilir; panel içeriği HTML olarak çalıştırılmaz.
 let aboutContent = null;
 let aboutRequest = null;
 function renderAboutContent() {
     if (!aboutContent) return;
-    const lang = localStorage.getItem('testotavan_language') || 'tr';
+    const lang = getStoredLanguage();
     document.querySelectorAll('[data-about-field]').forEach(el => {
         const key = el.dataset.aboutField;
         const base = aboutContent.tr?.[key];
@@ -50,7 +64,7 @@ function localizeDuration(text, lang){
  return units[lang].space?`${m[1]} ${units[lang][key]}`:`${m[1]}${units[lang][key]}`;
 }
 function localizedContent(item){
- const lang=localStorage.getItem('testotavan_language')||'tr';
+ const lang=getStoredLanguage();
  if(lang==='tr') return item;
  const t=item.translations?.[lang]||{};
  // Eksik çeviri Türkçeye değil İngilizceye düşer; Türkçe metin başka dilde asla gösterilmez.
@@ -71,7 +85,7 @@ function localizedContent(item){
 function getAllContent(){ return sharedContent.map(localizedContent).filter(Boolean); }
 async function loadSharedContent(){
     const list=document.getElementById('contentList');
-    const tr=(localStorage.getItem('testotavan_language')||'tr')==='tr';
+    const tr=(getStoredLanguage())==='tr';
     if(list&&!sharedContent.length) list.innerHTML=`<p role="status">${tr?'Yazılar yükleniyor…':'Loading posts…'}</p>`;
     try {
         const response=await fetch('/api/content?guides=1');
@@ -93,7 +107,7 @@ function ensureBlogData(){
     loadStats();
 }
 // Dinamik olarak basılan sabit metinleri doğrudan sözlükten çevirir (gözlemciyi beklemeden)
-function tLabel(text){ const lang=localStorage.getItem('testotavan_language')||'tr'; if(lang==='tr')return text; if(typeof i18n==='undefined')return text; return (i18n[lang]&&i18n[lang][text])||(i18n.en&&i18n.en[text])||text; }
+function tLabel(text){ const lang=getStoredLanguage(); if(lang==='tr')return text; if(typeof i18n==='undefined')return text; return (i18n[lang]&&i18n[lang][text])||(i18n.en&&i18n.en[text])||text; }
 function escapeHTML(value=''){ const d=document.createElement('div'); d.textContent=value; return d.innerHTML; }
 function setContentFilter(filter,button){ activeContentFilter=filter; document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active')); button.classList.add('active'); renderContent(); }
 // Her yazının kendi SEO sayfası vardır: /blog/<slug>/. Kartlar doğrudan o adrese
@@ -148,7 +162,7 @@ function updateRecipeNutritionCalculator(){
         return {...ingredient,grams:value};
     });
     const stats=nutritionApi.computeRecipeNutrition(items);
-    const lang=localStorage.getItem('testotavan_language')||'tr';
+    const lang=getStoredLanguage();
     const number=(value,digits=0)=>new Intl.NumberFormat(lang,{maximumFractionDigits:digits}).format(value);
     const set=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=value};
     set('recipeNutritionKcal',`${number(stats.kcal)} kcal`);
@@ -1796,8 +1810,8 @@ function langFromUrl(){
  }catch(e){ return null; }
 }
 const urlLang = langFromUrl();
-let currentLanguage = urlLang || localStorage.getItem('testotavan_language') || 'tr';
-if(urlLang) localStorage.setItem('testotavan_language', urlLang);
+let currentLanguage = urlLang || getStoredLanguage();
+if(urlLang) saveLanguage(urlLang);
 function translateUi(text){
  // Eksik çeviri asla Türkçe sızdırmaz: önce seçili dil, sonra İngilizce, en son kaynak metin.
  if(currentLanguage==='tr') return text;
@@ -1835,7 +1849,7 @@ function setLanguage(lang){
  const code=SUPPORTED_LANGUAGES.some(l=>l.code===lang)?lang:'tr';
  lang=code;
  currentLanguage=lang;
- localStorage.setItem('testotavan_language',lang);
+ saveLanguage(lang);
  syncLanguageUrl(lang);
  if(document.getElementById('blogPage').classList.contains('active')) renderContent();
  applyTranslations();

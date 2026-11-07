@@ -805,3 +805,33 @@ html[lang="bg"], html[lang="ru"] { --sans: Inter, "PT Sans", "Segoe UI", Roboto,
 html[lang="hi"] { --sans: Inter, "Noto Sans Devanagari", "Nirmala UI", "Mangal", system-ui, sans-serif; }
 html[lang="zh"] { --sans: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
 html[lang="ja"] { --sans: Inter, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; }
+
+/* Fırsatlar ve daha kolay takip edilen yanıt akışı */
+[hidden] { display: none !important; }
+.deals-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 14px; background: linear-gradient(110deg, rgba(46,230,197,.10), rgba(123,140,255,.06)); border-bottom: 1px solid var(--line); }
+.deals-banner strong { color: var(--accent); font-size: 13px; }
+.deals-banner p { color: var(--muted); margin: 3px 0 0; font-size: 12px; }
+.deals-banner .chip { flex: none; border-color: rgba(46,230,197,.35); color: var(--accent); }
+.deal-hint { color: var(--accent); font-size: 12px; padding: 10px 12px; border-left: 2px solid var(--accent); background: rgba(46,230,197,.06); }
+.body a { color: var(--accent); text-decoration: underline; overflow-wrap: anywhere; }
+.reply-action { color: var(--accent); border-color: rgba(46,230,197,.35); }
+.reply-empty { margin: 10px 0 16px; padding: 20px; border: 1px dashed #30414a; border-radius: var(--radius); color: var(--muted); }
+.reply-empty strong { color: var(--text); font-size: 14px; }
+.reply-empty p { margin: 4px 0 0; font-size: 13px; }
+.reply-form-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.reply-feedback { color: var(--accent); margin: 12px 0 0; }
+.reply-feedback:empty { display: none; }
+@media (max-width: 520px) { .deals-banner { align-items: flex-start; flex-direction: column; } }
+
+/* Her kullanıcıya ait, herkese açık profil. */
+.profile-avatar, .profile-preview { position: relative; overflow: hidden; }
+.profile-avatar img, .profile-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.author-note { color: var(--muted); font-size: 11.5px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.profile-panel { border-color: rgba(46,230,197,.3); }
+.profile-preview-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.profile-preview { width: 64px; height: 64px; flex: none; font-size: 18px; }
+.profile-preview-row > div { flex: 1; min-width: 0; }
+.profile-preview-row label { margin-top: 0; }
+.profile-preview-row input[type=file] { max-width: 480px; }
+#profile-form .secondary { margin-top: 8px; }
+@media (max-width:700px) { .author-note { flex-basis: 100%; } }

@@ -168,9 +168,10 @@ function changePage(pageId) {
     if (pageId === 'bloodPage') setStep(3);
 
     if (pageId === 'blogPage') {
-        loadOptionalFeatures().then(() => {
-            window.renderContent();
-            window.ensureBlogData();
+        loadOptionalFeatures().then(ready => {
+            if (!ready) return;
+            window.renderContent?.();
+            window.ensureBlogData?.();
         });
     }
     if (pageId === 'aboutPage') loadOptionalFeatures().then(() => window.loadAboutContent?.());
@@ -1619,13 +1620,13 @@ window.addEventListener('testo-language-change', () => {
 const OPTIONAL_FEATURES_URL = 'js/content.js';
 let optionalFeaturesPromise;
 function loadOptionalFeatures(){
-    if (window.__testoOptionalReady) return Promise.resolve();
+    if (window.__testoOptionalReady) return Promise.resolve(true);
     if (optionalFeaturesPromise) return optionalFeaturesPromise;
 
     optionalFeaturesPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = OPTIONAL_FEATURES_URL;
-        script.onload = () => resolve();
+        script.onload = () => resolve(true);
         script.onerror = () => reject(new Error('İsteğe bağlı içerik modülü yüklenemedi.'));
         document.head.appendChild(script);
     }).catch(error => {
@@ -1633,17 +1634,24 @@ function loadOptionalFeatures(){
         console.warn(error.message);
         const list = document.getElementById('contentList');
         if (list) list.innerHTML = '<div class="empty-state">İçerikler şu anda yüklenemedi. Lütfen tekrar deneyin.</div>';
+        return false;
     });
 
     return optionalFeaturesPromise;
 }
 
 function setLanguage(language){
-    loadOptionalFeatures().then(() => window.setLanguage(language));
+    loadOptionalFeatures().then(ready => { if (ready) window.setLanguage?.(language); });
 }
 
-if (localStorage.getItem('testotavan_language') && localStorage.getItem('testotavan_language') !== 'tr') {
-    loadOptionalFeatures();
+// URL tercihi ilk ziyaretlerde de uygulanır; depolama engelliyse uygulama açılmaya devam eder.
+try {
+    const requestedLanguage = new URLSearchParams(location.search).get('lang');
+    const savedLanguage = localStorage.getItem('testotavan_language');
+    if (requestedLanguage || (savedLanguage && savedLanguage !== 'tr')) loadOptionalFeatures();
+} catch {
+    // Depolama kapalı olsa da URL ile verilen dil işlenebilir.
+    try { if (new URLSearchParams(location.search).get('lang')) loadOptionalFeatures(); } catch {}
 }
 
 // ========================================

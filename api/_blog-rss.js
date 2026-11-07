@@ -1,4 +1,3 @@
-import { mergeEditorial } from './_editorial.js';
 /*
  * /blog/rss.xml — TestoTavan Dergi akışı.
  *
@@ -68,17 +67,17 @@ export function createBlogRssHandler(options = {}) {
     }
 
     const siteUrl = resolveSiteUrl(req.headers || {}, options.env || process.env);
-    let items = mergeEditorial();
+    let items = [];
     try {
       const sql = connect();
       await prepareContent(sql);
-      items = mergeEditorial(await listContent(sql));
+      items = await listContent(sql);
     } catch (error) {
       console.warn('[blog-rss] içerik okunamadı:', error?.message || error);
     }
 
     res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=30');
     return res.status(200).send(buildFeed({ siteUrl, env: options.env || process.env, items }));
   };
 }

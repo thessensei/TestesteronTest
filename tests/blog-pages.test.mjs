@@ -142,6 +142,7 @@ function fakeDb(rows) {
     if (/^(CREATE|ALTER)/.test(text)) return [];
     if (/INSERT|UPDATE|DELETE/.test(text)) return [];
     if (/FROM content/.test(text)) {
+      if (/WHERE slug=\? OR id=\?/.test(text)) return rows.filter(row => row.slug === values[0] || row.id === values[1]).slice(0, 1);
       if (/WHERE slug=\?/.test(text)) return rows.filter(row => row.slug === values[0]);
       if (/WHERE id=\?/.test(text)) return rows.filter(row => row.id === values[0]);
       return rows;
@@ -185,7 +186,7 @@ test('blog route arşivi, yazıyı ve 404 durumunu doğru yanıtlar', async () =
   assert.equal(method.code, 405);
 });
 
-test('veritabanı yokken blog arşivi yine de yayınlanabilir bir sayfa döner', async () => {
+test('veritabanı yokken blog arşivi hatayı gizlemez', async () => {
   const handler = createBlogPageHandler({
     connect: () => { throw new Error('offline'); },
     env: {}
@@ -196,8 +197,9 @@ test('veritabanı yokken blog arşivi yine de yayınlanabilir bir sayfa döner',
     send(body) { this.body = body; return this; }
   };
   await handler({ method: 'GET', query: {}, headers: { host: 'testosteron-test.vercel.app' } }, res);
-  assert.equal(res.code, 200);
-  assert.match(res.body, /testosteron-testi-2026-dogru-olcum/);
+  assert.equal(res.code, 503);
+  assert.doesNotMatch(res.body, /testosteron-testi-2026-dogru-olcum/);
+  assert.equal(res.headers['Cache-Control'], 'no-store');
 });
 
 test('site haritası yazıları için tarih ve öncelik taşır', () => {

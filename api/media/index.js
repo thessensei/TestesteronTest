@@ -13,15 +13,19 @@ function db() {
  * POST /api/media  { mime: 'image/png', data: '<base64>' }  →  { url: '/api/media/<id>' }
  * Görsel Neon veritabanında saklanır ve /api/media/<id> üzerinden herkese açık sunulur.
  */
-export default async function handler(req, res) {
+export function createMediaUploadHandler(connect = db) {
+ return async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!isAdmin(req)) return res.status(401).json({ error: 'Yetkisiz erişim.' });
+  if (req.headers?.['sec-fetch-site'] === 'cross-site') return res.status(403).json({ error: 'İstek reddedildi.' });
+  if (!/^application\/json(?:;|$)/i.test(req.headers?.['content-type'] || '')) return res.status(415).json({ error: 'JSON gerekli.' });
 
   const checked = validateImageUpload(req.body);
   if (!checked.ok) return res.status(400).json({ error: checked.error });
 
   try {
-    const sql = db();
+    const sql = connect();
     await sql`CREATE TABLE IF NOT EXISTS media (
       id TEXT PRIMARY KEY,
       mime TEXT NOT NULL,
@@ -36,3 +40,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Görsel yüklenemedi.' });
   }
 }
+
+}
+
+export default createMediaUploadHandler();

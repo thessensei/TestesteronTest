@@ -16,7 +16,8 @@
     "verify": "npm run check:assets && npm test"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "jsdom": "^26.1.0"
   },
   "engines": {
     "node": ">=22"

@@ -780,6 +780,17 @@ async function readJson(response) {
   }
 }
 
+async function googleCloudTranslateChunk(text, lang, fetchImpl, signal, apiKey) {
+  const response = await fetchImpl('https://translation.googleapis.com/language/translate/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey },
+    body: JSON.stringify({ q: text, source: 'tr', target: lang, format: 'text' }),
+    signal
+  });
+  if (!response?.ok) return '';
+  return decodeBasicEntities((await readJson(response))?.data?.translations?.[0]?.translatedText || '').trim();
+}
+
 async function googleTranslateChunk(text, lang, fetchImpl, signal) {
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`;
   const response = await fetchImpl(url, {
@@ -807,7 +818,12 @@ async function myMemoryTranslateChunk(text, lang, fetchImpl, signal) {
   return translated;
 }
 
-async function translateChunk(text, lang, fetchImpl, signal) {
+async function translateChunk(text, lang, fetchImpl, signal, options = {}) {
+  const apiKey = (options.env || process.env).GOOGLE_TRANSLATE_API_KEY;
+  if (apiKey) {
+    try { return await googleCloudTranslateChunk(text, lang, fetchImpl, signal, apiKey); }
+    catch { return ''; }
+  }
   try {
     const google = await googleTranslateChunk(text, lang, fetchImpl, signal);
     if (google) return google;
@@ -859,7 +875,7 @@ export async function machineTranslateText(text, lang, options = {}) {
       for (const piece of pieces) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
-        const translated = await translateChunk(piece, lang, fetchImpl, controller.signal);
+        const translated = await translateChunk(piece, lang, fetchImpl, controller.signal, options);
         clearTimeout(timer);
         if (!translated) return null;
         done.push(translated);
@@ -873,14 +889,17 @@ export async function machineTranslateText(text, lang, options = {}) {
 
 export async function machineTranslateFields(source, lang, options = {}) {
   const title = await machineTranslateText(source.title, lang, options);
+  if (!title || title.length > 100) return null;
   const summary = await machineTranslateText(source.summary, lang, options);
+  if (!summary || summary.length > 240) return null;
   const body = await machineTranslateText(source.body, lang, options);
+  if (!body || body.length > 20000) return null;
   const sourceIngredients = Array.isArray(source.ingredients) ? source.ingredients : [];
   const ingredientBlock = sourceIngredients.length
     ? await machineTranslateText(sourceIngredients.join('\n'), lang, options)
     : '';
   const ingredients = sourceIngredients.length ? String(ingredientBlock || '').split('\n').map(value => value.trim()) : [];
-  if (!title || !summary || !body || (sourceIngredients.length && (ingredients.length !== sourceIngredients.length || ingredients.some(value => !value)))) return null;
+  if (!title || !summary || !body || title.length > 100 || summary.length > 240 || body.length > 20000 || ingredients.some(value => value.length > 200) || (sourceIngredients.length && (ingredients.length !== sourceIngredients.length || ingredients.some(value => !value)))) return null;
   return repairTranslation({
     category: categoryFor(source.category, lang),
     title,

@@ -166,13 +166,20 @@ test('kâğıt başlığı tarih, rapor türü ve cihazda işleme notunu içerir
     const header = api.reportPrintHeader('blood');
     assert.match(header, /print-only print-head/);
     assert.match(header, /Kan Testi Değerlendirme Raporu/);
-    assert.match(header, /\d{1,2} \w+ \d{4}|\d{4}-\d{2}-\d{2}/, 'tarih damgası olmalı');
+    assert.match(header, /\d{1,2} \p{L}+ \d{4}|\d{4}-\d{2}-\d{2}/u, 'tarih damgası olmalı');
     assert.match(header, /sunucuya gönderilmedi/i, 'verinin cihazda kaldığı yazılmalı');
     assert.match(api.reportPrintHeader('physical'), /Semptom Tabanlı Ön Değerlendirme Raporu/);
 
     const footer = api.reportPrintFooter();
     assert.match(footer, /print-only print-foot/);
     assert.match(footer, /tanı veya reçete yerine geçmez/i, 'tıbbi sorumluluk reddi kâğıtta da görünmeli');
+});
+
+test('tarih denetimi Türkçe ay adlarındaki Unicode harfleri de kabul eder', () => {
+    const pattern = /\d{1,2} \p{L}+ \d{4}|\d{4}-\d{2}-\d{2}/u;
+    for (const month of ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']) {
+        assert.match(`05 ${month} 2026`, pattern);
+    }
 });
 
 /* ------------------------------------------------------------- stil kuralları */

@@ -1,4 +1,3 @@
-import { mergeEditorial } from './_editorial.js';
 import crypto from 'node:crypto';
 import { isAdmin } from './_auth.js';
 import { isSafeCoverUrl } from './_media.js';
@@ -25,7 +24,8 @@ function sanitizeTranslationBodies(translations) {
   return translations;
 }
 
-export default async function handler(req, res) {
+export function createContentHandler(connect = db) {
+ return async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
     res.setHeader('Allow', 'GET, POST, PUT, DELETE');
@@ -37,15 +37,14 @@ export default async function handler(req, res) {
     if (req.method !== 'DELETE' && !/^application\/json(?:;|$)/i.test(req.headers?.['content-type'] || '')) return res.status(415).json({ error: 'JSON gövdesi gerekli.' });
     if (req.method !== 'DELETE' && (!req.body || typeof req.body !== 'object' || Array.isArray(req.body))) return res.status(400).json({ error: 'Geçersiz içerik gövdesi.' });
   }
-  const includeGuides = req.method === 'GET' && req.query?.guides === '1';
   try {
-    const sql = db();
+    const sql = connect();
     await prepareContent(sql);
 
     if (req.method === 'GET') {
       const rows = await listContent(sql);
-      res.setHeader('Cache-Control', isAdmin(req) ? 'private, no-store' : 'public, s-maxage=30, stale-while-revalidate=300');
-      return res.status(200).json(includeGuides ? mergeEditorial(rows) : rows);
+      res.setHeader('Cache-Control', isAdmin(req) ? 'private, no-store' : 'public, s-maxage=30, stale-while-revalidate=30');
+      return res.status(200).json(rows);
     }
 
     if (req.method === 'POST') {
@@ -99,6 +98,12 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      if (req.query?.scope) {
+        if (req.query.scope !== 'blogs' || req.query.id) return res.status(400).json({ error: 'Geçersiz silme kapsamı.' });
+        // Tarifler korunur; tüm işlem veritabanında tek, atomik silmedir.
+        const deleted = await sql`DELETE FROM content WHERE type='blog' RETURNING id`;
+        return res.status(200).json({ deleted: deleted.length, scope: 'blogs' });
+      }
       const id = clean(req.query.id, 100);
       if (!id) return res.status(400).json({ error: 'İçerik kimliği gerekli.' });
       await sql`DELETE FROM content WHERE id = ${id}`;
@@ -108,10 +113,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error(error);
-    if (includeGuides) {
-      res.setHeader('Cache-Control', 'public, s-maxage=30');
-      return res.status(200).json(mergeEditorial());
-    }
     return res.status(500).json({ error: 'İçerik servisine ulaşılamadı.' });
   }
 }
+}
+
+export default createContentHandler();

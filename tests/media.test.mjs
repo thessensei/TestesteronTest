@@ -55,3 +55,19 @@ test('2 MB sınırı aşan görseller reddedilir', () => {
     assert.equal(r.ok, false);
     assert.match(r.error, /2 MB/);
 });
+
+test('dosya imzası bildirilen görsel türüyle uyuşmalıdır', () => {
+    const images = {
+        'image/png': '89504e470d0a1a0a',
+        'image/jpeg': 'ffd8ffe0',
+        'image/gif': Buffer.from('GIF89a').toString('hex'),
+        'image/webp': Buffer.from('RIFF0000WEBP').toString('hex')
+    };
+    for (const [mime, hex] of Object.entries(images)) {
+        const data = Buffer.from(hex, 'hex').toString('base64');
+        assert.equal(validateImageUpload({ mime, data }).ok, true, mime);
+        assert.equal(validateImageUpload({ mime, data: Buffer.from('<svg onload=alert(1)>').toString('base64') }).ok, false, mime);
+    }
+    assert.equal(validateImageUpload({ mime: 'image/png', data: 'data:image/jpeg;base64,iVBORw0KGgo=' }).ok, false);
+    assert.equal(validateImageUpload({ mime: 'image/jpeg', data: '/9j/4AAQ=' }).ok, false, 'geçersiz base64 dolgu reddedilir');
+});
