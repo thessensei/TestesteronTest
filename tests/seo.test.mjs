@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 import { buildSitemap } from '../api/_sitemap.js';
 import { buildFeed } from '../api/_blog-rss.js';
 
@@ -117,6 +118,27 @@ test('ana sayfada index izni, canonical, sosyal önizleme ve geçerli JSON-LD bu
   assert.ok(schema['@graph'].some(entry => entry['@type'] === 'WebApplication'));
 });
 
+test('ana sayfa SEO başlığı ve FAQ verisi görünür içerikle ve çalışma zamanı metaverisiyle uyumlu', () => {
+  for (const file of ['src/index.html', 'index.html']) {
+    const document = new JSDOM(read(file)).window.document;
+    const title = document.title;
+    const description = document.querySelector('meta[name="description"]').content;
+    assert.match(title, /Testosteron Test.*TestoTavan/);
+    assert.equal(document.querySelector('meta[property="og:title"]').content, title);
+    assert.ok(read('src/js/content.js').includes(`tr:{title:'${title}',description:'${description}'`));
+
+    const schema = JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent);
+    const faq = schema['@graph'].find(entry => entry['@type'] === 'FAQPage');
+    assert.ok(faq?.mainEntity.length > 0);
+    const answers = new Map([...document.querySelectorAll('#homePage details')].map(item => [
+      item.querySelector('summary')?.textContent.trim(), item.querySelector('p')?.textContent.trim()
+    ]));
+    for (const question of faq.mainEntity) {
+      assert.equal(answers.get(question.name), question.acceptedAnswer.text, `${file}: FAQ görünür metni yapılandırılmış veriyle eşleşmeli`);
+    }
+  }
+});
+
 test('Google Search Console doğrulaması yayında kalır (HTML etiketi + HTML dosyası)', () => {
   // Google sahipliği periyodik olarak yeniden denetler; bunlar silinirse mülk doğrulaması düşer.
   const tokens = ['ac-bJdohFXsUbq5bD8cVEip7Ryd_nEkaRhNenMmCi8M', '4SlBNFo5IoQK9Q3QIw99aX6nuEvpNMV2CRIrzGPMMqc'];
@@ -134,6 +156,8 @@ test('Google Search Console doğrulaması yayında kalır (HTML etiketi + HTML d
 test('forum sayfası ayrı canonical URL, arama açıklaması ve yapılandırılmış veriye sahip', () => {
   const html = read('forum/index.html');
   assert.ok(html.includes(`<link rel="canonical" href="${productionOrigin}/forum/">`));
+  assert.match(html, /<title>TestoTavan Meydan[^<]*<\/title>/);
+  assert.match(html, /<meta property="og:title" content="TestoTavan Meydan[^"]*">/);
   assert.match(html, /<meta name="description" content="[^"]+">/);
   assert.match(html, /<meta name="robots" content="index,follow">/);
   assert.match(html, /<meta property="og:url" content="https:\/\/testosteron-test\.vercel\.app\/forum\/">/);

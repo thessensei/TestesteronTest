@@ -1791,17 +1791,62 @@ for (const [lang, prefix] of Object.entries(examplePrefix)) {
  placeholderI18n[lang] = placeholderI18n[lang] || {};
  for (const source of ['Örn: 480 · 270–1.080','Örn: 95 · 47–244','Örn: 32 · 18–54','Örn: 4,2 · 1,5–9,3','Örn: 5,1 · 1,4–18,1','Örn: 28 · 11–62','Örn: 14 · 6–23','Örn: 120 · 24–336','Örn: 34 · 30–100','Örn: 420 · 200–900','Örn: 92 · 70–120','Örn: 2,1 · 1,7–2,4']) placeholderI18n[lang][source]=source.replace('Örn:',prefix);
 }
+// Yeni sağlık güvenliği metinleri: eksik diller İngilizceye düşer.
+Object.assign(i18n.en, {
+  "Özet": "Summary",
+  "Testosteron ölçümü için örnek genellikle sabah alınır; saat konusunda hekiminizin talimatlarını izleyin.": "A testosterone sample is usually taken in the morning; follow your clinician's instructions about timing.",
+  "Açlık gerekip gerekmediğini laboratuvarınıza veya hekiminize sorun.": "Ask your laboratory or clinician whether fasting is needed.",
+  "İlaçlarınızı ve biotin dahil takviyelerinizi hekiminize bildirin; kendi başınıza kesmeyin.": "Tell your clinician about medicines and supplements including biotin; do not stop them on your own.",
+  "Egzersiz ve diğer hazırlıklar için laboratuvarın talimatlarını izleyin.": "Follow your laboratory's instructions about exercise and preparation.",
+  "Hastalık durumunu hekiminize bildirin; testin zamanlamasını birlikte belirleyin.": "Tell your clinician if you are ill and discuss when to test.",
+  "Ölçüm koşulları sonuçların yorumunu etkileyebilir.": "Testing conditions can affect how results are interpreted.",
+  "Belirti özeti": "Symptom summary",
+  "Bu sonuç bir hormon ölçümü değildir": "This is not a hormone measurement",
+  "Belirtiler birçok farklı nedenle ortaya çıkabilir. Belirtilerden testosteron düzeyi, diğer hormon değerleri veya tanı güvenilir biçimde hesaplanamaz.": "Symptoms can have many causes. Testosterone levels, other hormone values and diagnoses cannot be reliably calculated from symptoms.",
+  "Seçtiğiniz belirtiler": "Symptoms you selected",
+  "18 yaş altında büyüme ve ergenlik konusunda bir çocuk hekimiyle görüşün; kendi kendinize hormon veya takviye kullanmayın.": "If you are under 18, discuss growth and puberty with a pediatrician; do not take hormones or supplements on your own.",
+  "Belirtileriniz sürüyorsa bir hekimle görüşün. Hekiminiz gerekli görürse kan testi isteyebilir.": "If symptoms persist, consult a clinician, who may order blood tests if needed.",
+  "KAN SONUÇLARIMI İNCELE": "REVIEW MY BLOOD RESULTS",
+  "Belirtilerimi değiştir": "Change my symptoms",
+  "Girdiğiniz kan sonuçları": "Blood results you entered",
+  "Referans aralıkları yalnızca örnektir": "Reference ranges are examples only",
+  "Örnek aralıklar erişkinlere yöneliktir ve laboratuvara, yönteme, yaşa ve cinsiyete göre değişebilir. Özellikle 18 yaş altında bunları kullanmayın. Kendi raporunuzdaki aralıkları ve sonuçları hekiminizle değerlendirin.": "Example ranges are for adults and may vary by laboratory, method, age and sex. Do not use them for people under 18. Review your own report and its reference ranges with a clinician.",
+  "Parametre": "Marker",
+  "Girdiğiniz değer": "Value you entered",
+  "Örnek erişkin aralığı": "Example adult range",
+  "Örnek erişkin aralığı:": "Example adult range:",
+  "Kendi laboratuvar raporunuzun aralığını esas alın.": "Use the range on your own laboratory report.",
+  "Yüklenen veya yapıştırılan tahlilden okunan değerleri ve birimleri orijinal raporla karşılaştırın; otomatik okuma hata yapabilir.": "Check extracted values and units against the original report; automatic extraction can make mistakes.",
+  "Girişleri kontrol edin": "Check your entries",
+  "Değer ve birimleri orijinal rapordan doğrulayın; endişe duyuyorsanız hekiminizle görüşün.": "Verify values and units against the original report; contact a clinician if concerned.",
+  "Sonraki adımlar": "Next steps",
+  "Tek bir değerle tanı konulmaz. Hekiminiz belirtilerinizi, ölçüm koşullarını ve gerekirse tekrar testlerini birlikte değerlendirebilir. Takviye veya tedaviye başlamadan önce hekiminize danışın.": "A single value does not establish a diagnosis. A clinician can consider symptoms, testing conditions and repeat tests if needed. Consult a clinician before starting supplements or treatment.",
+  "Belirtilerinizi gözden geçirin": "Review your symptoms",
+  "Ön değerlendirme bilgileri": "Preliminary information",
+  "18 yaş altında büyüme ve ergenlikle ilgili sorular için çocuk hekimine başvurun.": "For questions about growth and puberty under age 18, consult a pediatrician.",
+  "BELİRTİ ÖZETİNİ GÖSTER": "SHOW SYMPTOM SUMMARY",
+  "Kan Sonuçlarını İnceleme": "Review blood results",
+  "Girdiğiniz sonuçları gözden geçirin": "Review the results you entered",
+  "Belirtilerinizi özetleyin ve sonraki adımlar hakkında bilgi alın; hormon değeri hesaplanmaz.": "Summarize your symptoms and learn about next steps; no hormone level is calculated.",
+  "Elimde kan testi var, sonuçlarımı inceleyeyim": "I have a blood test; review my results",
+  "TestoTavan ile belirtilerinizi gözden geçirebilir ve kan testi sonuçlarınızı düzenleyebilirsiniz. Hormon düzeyi yalnızca belirtilerden belirlenemez.": "Use TestoTavan to review symptoms and organize blood test results. Hormone levels cannot be determined from symptoms alone.",
+  "Tahlil değerlerinizi girin ve örnek erişkin aralıklarını görün; kendi raporunuzu ve hekiminizi esas alın.": "Enter test values and see example adult ranges; rely on your own report and clinician.",
+  "Belirti özeti hazır — kan sonuçlarınızı da inceleyebilirsiniz": "Symptom summary ready — you can also review blood results",
+  "Henüz semptom seçmediniz; devam etmek için en az bir belirti seçin.": "No symptoms selected; select at least one to continue."
+});
+// Eksik çeviriler için İngilizce güvenlik metnini açıkça kullan.
+for (const lang of Object.keys(i18n)) for (const [key, value] of Object.entries(i18n.en)) if (!i18n[lang][key]) i18n[lang][key] = value;
 const pageMeta = {
- tr:{title:'Testosteron Seviyesi Ön Değerlendirme Aracı | TestoTavan',description:'Belirtilerinize göre testosteron seviyesi için ön tahmin alın ve kan testi değerlerinizi değerlendirin. Ücretsiz sağlık rehberi; tıbbi tanı yerine geçmez.',locale:'tr_TR'},
- en:{title:'Testosterone Level Estimator & Health Guide | TestoTavan',description:'Get a preliminary estimate based on symptoms or review blood test results. Free health information; not a medical diagnosis.',locale:'en_US'},
- de:{title:'Testosteron-Werteinschätzung & Gesundheitsratgeber | TestoTavan',description:'Erhalten Sie eine vorläufige Einschätzung anhand Ihrer Symptome oder prüfen Sie Blutwerte. Kostenlose Informationen, keine medizinische Diagnose.',locale:'de_DE'},
- ja:{title:'テストステロン値の推定・健康ガイド | TestoTavan',description:'症状に基づく目安を確認し、血液検査結果を見直せます。無料の健康情報であり、医学的診断ではありません。',locale:'ja_JP'},
- fr:{title:'Évaluation du taux de testostérone et guide santé | TestoTavan',description:'Obtenez une estimation préliminaire selon vos symptômes ou analysez vos résultats sanguins. Informations de santé gratuites ; ne remplace pas un diagnostic médical.',locale:'fr_FR'},
- es:{title:'Estimador del nivel de testosterona y guía de salud | TestoTavan',description:'Obtén una estimación preliminar según tus síntomas o revisa tus resultados de sangre. Información de salud gratuita; no sustituye un diagnóstico médico.',locale:'es_ES'},
- bg:{title:'Оценка на нивото на тестостерон и здравен наръчник | TestoTavan',description:'Получете предварителна оценка по симптомите си или прегледайте кръвните резултати. Безплатна здравна информация; не заменя медицинска диагноза.',locale:'bg_BG'},
- ru:{title:'Оценка уровня тестостерона и гид по здоровью | TestoTavan',description:'Получите предварительную оценку по симптомам или изучите результаты анализа крови. Бесплатная информация о здоровье; не заменяет медицинский диагноз.',locale:'ru_RU'},
- hi:{title:'टेस्टोस्टेरोन स्तर अनुमान और स्वास्थ्य मार्गदर्शिका | TestoTavan',description:'लक्षणों के आधार पर प्रारंभिक अनुमान लगाएँ या रक्त परीक्षण परिणाम देखें। मुफ़्त स्वास्थ्य जानकारी; चिकित्सकीय निदान नहीं।',locale:'hi_IN'},
- zh:{title:'睾酮水平评估与健康指南 | TestoTavan',description:'根据症状获得初步评估，或查看血液检查结果。免费健康信息，不能替代医学诊断。',locale:'zh_CN'},
+ tr:{title:'Testosteron Test | TestoTavan — Ücretsiz Ön Değerlendirme',description:'Ücretsiz testosteron test ön değerlendirmesi: belirtilerinizi gözden geçirin, kan testi değerlerinizi düzenleyin. Tıbbi tanı yerine geçmez.',locale:'tr_TR'},
+ en:{title:'Testosterone Symptoms & Blood Results | TestoTavan',description:'Review symptoms and organize blood test results. Free health information; not a medical diagnosis.',locale:'en_US'},
+ de:{title:'Testosteron: Symptome und Blutwerte | TestoTavan',description:'Symptome und Blutwerte ansehen. Kostenlose Gesundheitsinformation; keine medizinische Diagnose.',locale:'de_DE'},
+ ja:{title:'テストステロン：症状と血液検査 | TestoTavan',description:'症状と血液検査結果を確認します。医療診断に代わるものではありません。',locale:'ja_JP'},
+ fr:{title:'Testostérone : symptômes et analyses sanguines | TestoTavan',description:'Consultez vos symptômes et vos résultats sanguins. Ces informations ne remplacent pas un diagnostic médical.',locale:'fr_FR'},
+ es:{title:'Testosterona: síntomas y análisis de sangre | TestoTavan',description:'Revisa tus síntomas y resultados de sangre. Esta información no sustituye un diagnóstico médico.',locale:'es_ES'},
+ bg:{title:'Тестостерон: симптоми и кръвни резултати | TestoTavan',description:'Прегледайте симптомите и кръвните си резултати. Информацията не замества медицинска диагноза.',locale:'bg_BG'},
+ ru:{title:'Тестостерон: симптомы и анализ крови | TestoTavan',description:'Просмотрите симптомы и результаты анализов крови. Информация не заменяет медицинский диагноз.',locale:'ru_RU'},
+ hi:{title:'टेस्टोस्टेरोन: लक्षण और रक्त परीक्षण | TestoTavan',description:'लक्षण और रक्त परीक्षण के परिणाम देखें। यह जानकारी चिकित्सकीय निदान का विकल्प नहीं है।',locale:'hi_IN'},
+ zh:{title:'睾酮：症状与血液检查结果 | TestoTavan',description:'查看症状和血液检查结果。此信息不能替代医学诊断。',locale:'zh_CN'},
 };
 function langFromUrl(){
  try{

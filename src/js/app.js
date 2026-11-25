@@ -1,6 +1,6 @@
 // ========================================
 // TestoTavan — arayüz katmanı
-// Akış: Semptom -> Tahmin -> Doğrulama
+// Akış: Semptom -> Özet -> Kan sonuçları
 // ========================================
 const IC = id => `<svg class="ic" aria-hidden="true"><use href="#${id}"></use></svg>`;
 const V = () => window.TestoValidation;
@@ -13,6 +13,7 @@ const state = {
     progress: 10,
     progressNote: '',
     estimate: null,
+    bloodResult: null,
     measurement: 'baseline',
     consent: false,
     lastSource: 'manual'
@@ -23,7 +24,7 @@ const state = {
 // ========================================
 const STEPS = [
     { id: 1, label: 'Semptom' },
-    { id: 2, label: 'Tahmin' },
+    { id: 2, label: 'Özet' },
     { id: 3, label: 'Doğrulama' }
 ];
 
@@ -223,8 +224,8 @@ function onSymptomChange() {
     const info = document.getElementById('symptomCount');
     if (info) {
         info.textContent = count === 0
-            ? 'Henüz semptom seçmediniz — en az 1 seçim tahmini belirgin şekilde keskinleştirir.'
-            : `${count} semptom seçildi. Her kart seçtiğiniz semptomun adıyla açılacak.`;
+            ? 'Henüz semptom seçmediniz; devam etmek için en az bir belirti seçin.'
+            : `${count} semptom seçildi. Seçimleriniz özette gösterilecek.`;
     }
     setProgress(Math.min(60, 10 + count * 8 + 10));
 }
@@ -249,203 +250,58 @@ function fmt(value, decimals) {
 // FİZİKSEL (SEMPTOM) ANALİZİ
 // ========================================
 function analyzePhysical() {
-    const fields = V().PHYSICAL_FIELDS;
-    const result = V().validatePhysical(readFieldValues(fields));
-    if (!applyValidation(fields, result)) return;
+    const ageField = V().PHYSICAL_FIELDS.find(field => field.id === 'inputAge');
+    const ageResult = V().validateField(document.getElementById('inputAge')?.value, ageField);
+    if (!ageResult.ok) {
+        setFieldError('inputAge', ageResult.error);
+        document.getElementById('inputAge')?.focus();
+        showToast(IC('i-warning') + ' ' + ageResult.error, 'red');
+        return;
+    }
+    clearFieldError('inputAge');
 
     const symptoms = selectedSymptoms();
     if (!symptoms.length) {
-        showToast(IC('i-warning') + ' En az 1 semptom seçin — tahmin buna göre kişiselleşiyor.', 'red');
+        showToast(IC('i-warning') + ' Devam etmek için en az bir belirti seçin.', 'red');
         safeScroll(document.getElementById('symptomGrid'), { behavior: 'smooth', block: 'center' });
         return;
     }
 
-    const estimate = V().estimateFromSymptoms({
-        age: result.values.inputAge,
-        height: result.values.inputHeight,
-        weight: result.values.inputWeight,
-        activity: Number(document.getElementById('inputActivity')?.value || 3),
-        sleepHours: Number(document.getElementById('inputSleep')?.value || 7),
-        stress: Number(document.getElementById('inputStress')?.value || 2),
-        symptoms
-    });
-
-    state.estimate = estimate;
+    const summary = {
+        age: ageResult.value,
+        symptoms: symptoms.map(id => V().SYMPTOMS.find(item => item.id === id)).filter(Boolean)
+    };
+    state.estimate = summary;
     setStep(2);
-    setProgress(70, 'Analizin %70 tamamlandı — kalan adım: kan testiyle doğrulama');
-    renderEstimate(estimate);
-    showToast(IC('i-check') + ' Sonuç ve kişisel planınız hazır.', 'gold');
+    setProgress(70, 'Belirti özeti hazır — kan sonuçlarınızı da inceleyebilirsiniz');
+    renderEstimate(summary);
+    showToast(IC('i-check') + ' Belirti özeti hazır.', 'gold');
 }
 
-function renderEstimate(est) {
+function renderEstimate(summary, silent = false) {
     const panel = document.getElementById('physicalResult');
-    const plan = buildPlanFromEstimate(est);
-    const SCALE_MIN = 0;
-    const desiredMax = est.pediatric ? Math.max(est.ref[1], est.high) : 1200;
-    const magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(1, desiredMax / 4))));
-    const normalizedStep = desiredMax / 4 / magnitude;
-    const niceFactor = [1, 2, 3, 5, 10].find(factor => normalizedStep <= factor) || 10;
-    const scaleStep = niceFactor * magnitude;
-    const SCALE_MAX = Math.ceil(desiredMax / scaleStep) * scaleStep;
-    const scaleTicks = Array.from({ length: Math.round(SCALE_MAX / scaleStep) + 1 }, (_, index) => index * scaleStep);
-
-    const refLeft = scalePos(est.ref[0], SCALE_MIN, SCALE_MAX);
-    const refWidth = scalePos(est.ref[1], SCALE_MIN, SCALE_MAX) - refLeft;
-    const ciLeft = scalePos(est.low, SCALE_MIN, SCALE_MAX);
-    const ciWidth = scalePos(est.high, SCALE_MIN, SCALE_MAX) - ciLeft;
-    const pointPos = scalePos(est.point, SCALE_MIN, SCALE_MAX);
-
-    const driverCards = est.cards.map(card => {
-        const dec = card.marker.units[0].decimals;
-        const scaleMax = card.ref[1] * 1.6;
-        const cRefLeft = scalePos(card.ref[0], 0, scaleMax);
-        const cRefWidth = scalePos(card.ref[1], 0, scaleMax) - cRefLeft;
-        const cBandLeft = scalePos(card.low, 0, scaleMax);
-        const cBandWidth = scalePos(card.high, 0, scaleMax) - cBandLeft;
-        const cPoint = scalePos(card.value, 0, scaleMax);
-
-        return `
-        <article class="lab-card" style="--status:${card.status.color}">
-            <header class="lab-card-head">
-                <div>
-                    <h4 class="lab-card-title">${T(card.title)}</h4>
-                    <p class="lab-card-sub">${T('İlgili gösterge:')} ${T(card.marker.label)}</p>
-                </div>
-                <span class="badge ${card.status.badgeClass}">${T(card.status.label)}</span>
-            </header>
-            <div class="lab-card-value">
-                <strong>${fmt(card.value, dec)}</strong>
-                <span class="unit">${card.unit}</span>
-                <span class="lab-card-ci">tahmin aralığı ${fmt(card.low, dec)}–${fmt(card.high, dec)}</span>
-            </div>
-            <div class="ci-track slim">
-                <div class="ci-ref" style="left:${cRefLeft}%;width:${cRefWidth}%"></div>
-                <div class="ci-band" style="left:${cBandLeft}%;width:${cBandWidth}%"></div>
-                <div class="ci-point" style="left:${cPoint}%"></div>
-            </div>
-            <p class="lab-card-ref">${card.markerKey === 'totalT' && est.pediatric ? 'Yaşa göre geniş karşılaştırma aralığı' : 'Laboratuvar normal aralığı'}: <b>${card.refText}</b></p>
-            <p class="lab-card-explain">${T(card.explain)}</p>
-        </article>`;
-    }).join('');
-
+    const symptoms = summary.symptoms.map(item => `<li>${T(item.label)}</li>`).join('');
     panel.innerHTML = `
         ${reportPrintHeader('physical')}
         ${reportPrintActions('physical')}
-
-        <section class="estimate-card" style="--status:${est.status.color}">
-            <header class="estimate-head">
-                <div>
-                    <p class="eyebrow">${est.pediatric ? 'Yaşa göre kaba ön değerlendirme' : 'Belirti tabanlı tahmin'}</p>
-                    <h3 class="estimate-title">Total Testosteron</h3>
-                </div>
-                <span class="badge ${est.status.badgeClass}">${T(est.status.label)}</span>
-            </header>
-
-            <div class="estimate-value">${fmt(est.point)}<span class="unit">ng/dL</span></div>
-            <p class="estimate-ci">Tahmini belirsizlik aralığı <b>${fmt(est.low)}–${fmt(est.high)} ng/dL</b> · model güven puanı %${est.confidence}</p>
-
-            <div class="ci-track">
-                <div class="ci-ref" style="left:${refLeft}%;width:${refWidth}%"></div>
-                <div class="ci-band" style="left:${ciLeft}%;width:${ciWidth}%"></div>
-                <div class="ci-point" style="left:${pointPos}%"></div>
+        <section class="card">
+            <div class="card-header"><div class="card-icon icon-gold">${IC('i-info')}</div>
+                <div><h3 class="card-title">${T('Belirti özeti')}</h3><p class="card-subtitle">${T('Bu sonuç bir hormon ölçümü değildir')}</p></div>
             </div>
-            <div class="ci-scale">${scaleTicks.map(tick => `<span>${fmt(tick)}</span>`).join('')}</div>
-            <div class="ci-legend">
-                <span><i class="dot ref"></i> ${est.referenceLabel}: ${est.refText}</span>
-                <span><i class="dot band"></i> Sizin tahmin aralığınız</span>
-            </div>
-            <p class="estimate-note">${IC('i-info')} ${est.modelNote}</p>
+            <p class="muted">${T('Belirtiler birçok farklı nedenle ortaya çıkabilir. Belirtilerden testosteron düzeyi, diğer hormon değerleri veya tanı güvenilir biçimde hesaplanamaz.')}</p>
+            <h4>${T('Seçtiğiniz belirtiler')}</h4><ul class="plain-list">${symptoms}</ul>
+            <p class="muted">${summary.age < 18
+                ? T('18 yaş altında büyüme ve ergenlik konusunda bir çocuk hekimiyle görüşün; kendi kendinize hormon veya takviye kullanmayın.')
+                : T('Belirtileriniz sürüyorsa bir hekimle görüşün. Hekiminiz gerekli görürse kan testi isteyebilir.')}</p>
         </section>
-
-        <div class="section-title">
-            <h3>Semptomlarınıza göre öne çıkanlar</h3>
-            <p>${est.cards.length} kart · kritik olan üstte</p>
-        </div>
-        ${driverCards}
-
-        ${est.pediatric
-            ? renderSupplementCard(plan, 'Güvenli sonraki adımlar', `${plan.length} adım · uygulama sırasına göre`)
-            : renderSupplementCard(plan, 'Kişisel planınız', `${plan.length} adım · uygulama sırasına göre`)}
-        <p class="muted plan-note">${IC('i-info')} ${est.pediatric
-            ? '18 yaş altında bu ön değerlendirmeden takviye veya hormon dozu üretmeyiz; plan yalnızca güvenli yaşam alışkanlıkları ve uzman değerlendirmesini içerir.'
-            : 'Plan tahmini değerinize ve girdilerinize dayanır; kişisel dozlar kan testiyle kesinleşir. Tüm adımlar kilit olmadan yukarıda listelenmiştir.'}</p>
-
         <div class="cta-block">
-            <button class="btn-primary" onclick="goToVerification()">
-                ${IC('i-drop')} &nbsp;KAN TESTİ İLE DOĞRULA
-            </button>
-            <button class="btn-ghost" onclick="backToSymptoms()">${IC('i-user')} &nbsp;Tahmin girdilerini değiştir</button>
-            <p class="trust-line">${IC('i-clock')} Sonuç 5 dakikada · ${IC('i-check')} kayıt gerekmez · tek tıkla iptal</p>
+            <button class="btn-primary" onclick="goToVerification()">${IC('i-drop')} &nbsp;${T('KAN SONUÇLARIMI İNCELE')}</button>
+            <button class="btn-ghost" onclick="backToSymptoms()">${IC('i-user')} &nbsp;${T('Belirtilerimi değiştir')}</button>
         </div>
-
         ${reportPrintFooter()}
     `;
-
     panel.classList.add('show');
-    setTimeout(() => safeScroll(panel), 180);
-}
-
-// Kişisel plan doğrudan gösterilir: önce yaşam tarzı adımları, sonra takviyeler.
-// Bulanık/kilitli önizleme yok — kullanıcı sonucu bekletilmeden görür.
-function buildPlanFromEstimate(est) {
-    const readNumber = (id, fallback) => {
-        const input = document.getElementById(id);
-        const value = input ? V().parseNumber(input.value) : null;
-        return value === null ? fallback : value;
-    };
-
-    const sleep = readNumber('inputSleep', 7);
-    const stress = readNumber('inputStress', 2);
-    const activity = readNumber('inputActivity', 3);
-    const age = Number(est.age) || readNumber('inputAge', 35);
-    const pediatric = Boolean(est.pediatric || age < 18);
-    const sleepTarget = pediatric ? (age < 13 ? 9 : 8) : 7;
-    const items = [];
-
-    if (sleep < sleepTarget) {
-        items.push(sup(pediatric ? `Uykuyu ${sleepTarget} saate veya üzerine çıkarın` : 'Uykuyu 7–9 saate çıkarın',
-            `Şu an gecede ${fmt(sleep, sleep % 1 === 0 ? 0 : 1)} saat uyuyorsunuz. Yaşa göre yetersiz uyku hormon ritmini ve toparlanmayı etkileyebilir.`,
-            'Her gece aynı saatte yatın; yatmadan 1 saat önce ekranı bırakın',
-            sleep <= sleepTarget - 2 ? 'critical' : 'high'));
-    }
-    if (stress >= 3) {
-        items.push(sup('Stres yükünü düşürün',
-            'Yüksek stres, kortizol üzerinden hormon ritmini ve uyku kalitesini etkileyebilir.',
-            'Günde 10 dakika nefes egzersizi + haftada 2 uzun yürüyüş',
-            'high'));
-    }
-    if (activity <= 1) {
-        items.push(sup('Hareketi artırın',
-            pediatric
-                ? 'Düzenli ve yaşa uygun hareket; uyku, kemik ve kas gelişimini destekler.'
-                : 'Hareketsizlik yağ oranını yükseltir; yağ dokusu testosteronu estradiole çevirir.',
-            pediatric
-                ? 'Bir ebeveyn ve hekim önerisiyle her gün yaşa uygun hareket'
-                : 'Haftada 3 gün 30 dakika tempolu yürüyüş + 2 gün ağırlık çalışması',
-            'high'));
-    }
-
-    if (pediatric) {
-        items.push(sup(
-            est.growthLag > 0.15 ? 'Büyüme ve ergenlik değerlendirmesi' : 'Çocuk/ergen hekimi değerlendirmesi',
-            est.growthLag > 0.15
-                ? 'Boy ve kilo yaşa göre beklenen gelişimden belirgin ayrılabiliyor. Tek bir tahmin hormon eksikliğini göstermez; büyüme eğrisi ve ergenlik evresi birlikte incelenmelidir.'
-                : '18 yaş altında testosteron değeri ergenlik evresine göre büyük ölçüde değişir. Sonuç, çocuk veya ergen sağlığı konusunda uzman bir hekimle değerlendirilmelidir.',
-            'Ebeveyninizle çocuk endokrinolojisine başvurun; kendi kendinize hormon veya takviye kullanmayın',
-            'high'
-        ));
-        return items.sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank);
-    }
-
-    if (est.bmi >= 27) {
-        items.push(sup('Kilo yönetimi',
-            `Vücut kitle indeksiniz tahminen ${fmt(est.bmi, 1)}. Yağ oranı düştükçe serbest testosteron toparlanır.`,
-            'Günlük kalori açığı + protein ağırlıklı beslenme (hekim/diyetisyen desteğiyle)',
-            'high'));
-    }
-
-    const supplements = buildSupplements({ totalT: est.point });
-    return items.concat(supplements).sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank);
+    if (!silent) setTimeout(() => safeScroll(panel), 180);
 }
 
 function backToSymptoms() {
@@ -478,7 +334,7 @@ function refreshFieldMeta(markerId) {
     const accept = document.getElementById('accept-' + markerId);
 
     if (input) input.placeholder = V().placeholderFor(marker, unit);
-    if (hint) hint.innerHTML = `<b>${T('Lab normal aralığı:')} ${V().describeRange(marker, unit, 'ref')}</b> — ${T(marker.explain)}`;
+    if (hint) hint.textContent = T('Örnek erişkin aralığı:') + ' ' + V().describeRange(marker, unit, 'ref') + ' — ' + T('Kendi laboratuvar raporunuzun aralığını esas alın.');
     if (accept) accept.textContent = T('Geçerli giriş aralığı:') + ' ' + V().describeRange(marker, unit, 'accept');
 }
 
@@ -929,181 +785,44 @@ function analyzeBlood() {
     renderBloodReport(result);
 }
 
-function renderBloodReport(result) {
+function renderBloodReport(result, silent = false) {
+    state.bloodResult = result;
     const panel = document.getElementById('bloodResult');
-    const score = V().computeOverallScore(result.values);
-    const markers = V().MARKERS;
-
-    const rows = markers.filter(m => result.values[m.key] !== undefined).map(m => {
-        const value = result.values[m.key];
+    const markers = V().MARKERS.filter(m => result.values[m.key] !== undefined);
+    const rows = markers.map(m => {
         const unit = currentUnit(m.id);
-        const decimals = V().getUnit(m, unit).decimals;
-        const shown = V().fromCanonical(m, value, unit);
-        const status = V().classify(m, value);
-        return `
-            <tr style="--status:${status.color}">
-                <th scope="row">${m.short}</th>
-                <td class="num">${fmt(shown, decimals)} <span class="unit">${unit}</span></td>
-                <td class="num ref">${V().describeRange(m, unit, 'ref')}</td>
-                <td><span class="badge ${status.badgeClass}">${T(status.label)}</span></td>
-            </tr>`;
+        const shown = V().fromCanonical(m, result.values[m.key], unit);
+        return `<tr><th scope="row">${T(m.short)}</th><td class="num">${fmt(shown, V().getUnit(m, unit).decimals)} <span class="unit">${unit}</span></td><td class="num ref">${V().describeRange(m, unit, 'ref')}</td></tr>`;
     }).join('');
-
-    const flagged = markers
-        .filter(m => result.values[m.key] !== undefined)
-        .map(m => ({ marker: m, value: result.values[m.key], status: V().classify(m, result.values[m.key]) }))
-        .filter(item => item.status.key !== 'normal')
-        .sort((a, b) => a.status.rank - b.status.rank);
-
     const warningList = Object.keys(result.warnings).map(id => {
         const m = V().MARKER_BY_ID[id];
-        return `<li><b>${m.short}:</b> ${result.warnings[id]}</li>`;
+        return `<li><b>${T(m.short)}:</b> ${result.warnings[id]}</li>`;
     }).join('');
-
-    const estimateCompare = state.estimate ? `
-        <div class="compare-line">
-            ${IC('i-activity')} Semptom tahminimiz <b>${fmt(state.estimate.point)} ng/dL</b> idi;
-            ölçülen değer <b>${result.values.totalT !== undefined ? fmt(result.values.totalT) + ' ng/dL' : '—'}</b>.
-        </div>` : '';
-
-    const supplements = buildSupplements(result.values);
-    const microAlerts = V().evaluateMicronutrientAlerts ? V().evaluateMicronutrientAlerts(result.values) : [];
-
     panel.innerHTML = `
         ${reportPrintHeader('blood')}
         ${reportPrintActions('blood')}
-
-        <section class="score-card">
-            <header class="score-head">
-                <div>
-                    <p class="eyebrow">${state.measurement === 'baseline' ? 'Başlangıç ölçümü' : 'Kontrol (takip) ölçümü'}</p>
-                    <h3>Genel Değerlendirme</h3>
-                </div>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="scoreTooltip"
-                        onclick="toggleScoreTooltip(this)" aria-label="Skor nasıl hesaplanıyor?">${IC('i-info')}</button>
-            </header>
-            <div class="score-value">%${score.score}</div>
-            <div class="score-track"><div class="score-fill" style="width:${score.score}%"></div></div>
-            <p class="score-sub">Kapsama: girdiğiniz parametreler toplam ağırlığın %${score.coverage}’ini karşılıyor.</p>
-            <div class="tooltip-panel" id="scoreTooltip" hidden>
-                <p>${score.formula}</p>
-                <ul class="score-breakdown">
-                    ${score.breakdown.map(b => `
-                        <li>
-                            <span>${b.label} <small>(ağırlık %${b.weight})</small></span>
-                            <span class="badge ${b.status.badgeClass}">${b.points} puan</span>
-                        </li>`).join('')}
-                </ul>
-            </div>
-            ${estimateCompare}
-        </section>
-
-        ${renderMicronutrientAlertCards(microAlerts)}
-
         <section class="card">
-            <div class="card-header">
-                <div class="card-icon icon-blue">${IC('i-doc')}</div>
-                <div>
-                    <div class="card-title">Değerleriniz ve referans aralıkları</div>
-                    <div class="card-subtitle">${rows ? markers.filter(m => result.values[m.key] !== undefined).length : 0} parametre</div>
-                </div>
+            <div class="card-header"><div class="card-icon icon-blue">${IC('i-doc')}</div>
+                <div><h3 class="card-title">${T('Girdiğiniz kan sonuçları')}</h3><p class="card-subtitle">${T(state.measurement === 'baseline' ? 'Başlangıç ölçümü' : 'Kontrol (takip) ölçümü')} · ${T('Referans aralıkları yalnızca örnektir')}</p></div>
             </div>
-            <div class="table-wrap">
-                <table class="lab-table">
-                    <thead>
-                        <tr><th scope="col">Parametre</th><th scope="col">Sonucunuz</th><th scope="col">Lab normal aralığı</th><th scope="col">Durum</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>
+            <p class="muted">${T('Örnek aralıklar erişkinlere yöneliktir ve laboratuvara, yönteme, yaşa ve cinsiyete göre değişebilir. Özellikle 18 yaş altında bunları kullanmayın. Kendi raporunuzdaki aralıkları ve sonuçları hekiminizle değerlendirin.')}</p>
+            <div class="table-wrap"><table class="lab-table"><thead><tr>
+                <th scope="col">${T('Parametre')}</th><th scope="col">${T('Girdiğiniz değer')}</th><th scope="col">${T('Örnek erişkin aralığı')}</th>
+            </tr></thead><tbody>${rows}</tbody></table></div>
+            <p class="muted">${T('Yüklenen veya yapıştırılan tahlilden okunan değerleri ve birimleri orijinal raporla karşılaştırın; otomatik okuma hata yapabilir.')}</p>
         </section>
-
-        ${flagged.length ? `
-        <div class="section-title">
-            <h3>Öne çıkan bulgular</h3>
-            <p>${flagged.length} parametre aralık dışında · kritik olan üstte</p>
-        </div>
-        ${flagged.map(item => {
-            const unit = currentUnit(item.marker.id);
-            const decimals = V().getUnit(item.marker, unit).decimals;
-            const isLowVitDOrZinc = (item.marker.key === 'vitD' && item.value < 30) || (item.marker.key === 'zinc' && item.value < 70);
-            const dynamicExplain = isLowVitDOrZinc
-                ? `<b>${V().SYSTEM_MICRONUTRIENT_WARNING}.</b> ${T(item.marker.explain)}`
-                : T(item.marker.explain);
-            return `
-            <article class="lab-card" style="--status:${item.status.color}">
-                <header class="lab-card-head">
-                    <div>
-                        <h4 class="lab-card-title">${T(item.marker.label)}</h4>
-                        <p class="lab-card-sub">${state.measurement === 'baseline' ? 'Başlangıç ölçümü' : 'Kontrol ölçümü'}</p>
-                    </div>
-                    <span class="badge ${item.status.badgeClass}">${T(item.status.label)}</span>
-                </header>
-                <div class="lab-card-value">
-                    <strong>${fmt(V().fromCanonical(item.marker, item.value, unit), decimals)}</strong>
-                    <span class="unit">${unit}</span>
-                </div>
-                <p class="lab-card-ref">Laboratuvar normal aralığı: <b>${V().describeRange(item.marker, unit, 'ref')}</b></p>
-                <p class="lab-card-explain">${dynamicExplain}</p>
-            </article>`;
-        }).join('')}` : ''}
-
-        ${warningList ? `
-        <section class="card warn-card">
-            <div class="card-header">
-                <div class="card-icon icon-gold">${IC('i-warning')}</div>
-                <div>
-                    <div class="card-title">Alışılmadık değerler</div>
-                    <div class="card-subtitle">Reddetmedik — teyit edin</div>
-                </div>
-            </div>
-            <ul class="plain-list">${warningList}</ul>
-            <p class="muted">Bu değerler doğruysa sonucu bir endokrinoloji veya üroloji hekimiyle paylaşmanızı öneririz.</p>
-        </section>` : ''}
-
-        ${renderSupplementCard(supplements, 'Kişisel takviye planı', `${supplements.length} öneri · doz ve sıra önceliklendirildi`)}
-
-        <section class="card">
-            <div class="card-header">
-                <div class="card-icon icon-blue">${IC('i-calendar')}</div>
-                <div>
-                    <div class="card-title">Kontrol takvimi</div>
-                    <div class="card-subtitle">Ne zaman tekrar ölçmeli</div>
-                </div>
-            </div>
-            <ul class="plain-list">
-                <li>D vitamini ve ferritin: <b>8–12 hafta</b> sonra kontrol.</li>
-                <li>Total / serbest testosteron: <b>12 hafta</b> sonra, yine sabah 07:00–10:00 arasında.</li>
-                <li>Kontrol ölçümünü girerken yukarıdan <b>“Kontrol (takip) ölçümü”</b> seçeneğini işaretleyin.</li>
-            </ul>
-            <p class="muted">Takviyelerin etkisine dair sayısal iyileşme oranı paylaşmıyoruz; kişiden kişiye değişir ve yayımlanmış bir ortalamaya dayanmayan yüzdeler yanıltıcıdır.</p>
+        ${warningList ? `<section class="card warn-card"><h3>${T('Girişleri kontrol edin')}</h3><ul class="plain-list">${warningList}</ul><p class="muted">${T('Değer ve birimleri orijinal rapordan doğrulayın; endişe duyuyorsanız hekiminizle görüşün.')}</p></section>` : ''}
+        <section class="card"><h3>${T('Sonraki adımlar')}</h3>
+            <p class="muted">${T('Tek bir değerle tanı konulmaz. Hekiminiz belirtilerinizi, ölçüm koşullarını ve gerekirse tekrar testlerini birlikte değerlendirebilir. Takviye veya tedaviye başlamadan önce hekiminize danışın.')}</p>
         </section>
-
-        <section class="card danger-card">
-            <div class="card-header">
-                <div class="card-icon icon-red">${IC('i-warning')}</div>
-                <div>
-                    <div class="card-title">Önemli uyarılar</div>
-                    <div class="card-subtitle">Lütfen dikkatle okuyun</div>
-                </div>
-            </div>
-            <ul class="plain-list">
-                <li>Bu rapor bilgilendirme amaçlıdır; teşhis ya da tıbbi reçete yerine geçmez.</li>
-                <li>Takviyeye başlamadan önce hekiminize danışın; mevcut ilaçlarınızla etkileşim olabilir.</li>
-                <li>Tüm takviyeleri aynı anda başlatmayın — haftada 1–2 yeni ürün ekleyin.</li>
-            </ul>
-        </section>
-
-        <button class="btn-ghost" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top:14px">
-            ${IC('i-arrow-up')} &nbsp;Başa dön
-        </button>
-
+        <button class="btn-ghost" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="margin-top:14px">${IC('i-arrow-up')} &nbsp;${T('Başa dön')}</button>
         ${reportPrintFooter()}
     `;
-
     panel.classList.add('show');
-    setTimeout(() => safeScroll(panel), 180);
-    showToast(IC('i-check') + ' Rapor hazır.', 'green');
+    if (!silent) {
+        setTimeout(() => safeScroll(panel), 180);
+        showToast(IC('i-check') + ' Rapor hazır.', 'green');
+    }
 }
 
 function toggleScoreTooltip(button) {
@@ -1609,6 +1328,8 @@ window.addEventListener('testo-language-change', () => {
     onSymptomChange();
     setMeasurementType(state.measurement);
     V().MARKERS.forEach(marker => refreshFieldMeta(marker.id));
+    if (state.estimate) renderEstimate(state.estimate, true);
+    if (state.bloodResult) renderBloodReport(state.bloodResult, true);
     setProgress(state.progress, state.progressNote);
     renderSponsors();
 });
