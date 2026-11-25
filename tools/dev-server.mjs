@@ -56,10 +56,11 @@ const server = http.createServer(async (req, res) => {
       res.setHeader('Allow', 'GET, HEAD');
       return res.status(405).send('Method not allowed');
     }
-    let relative = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '');
-    if (relative === 'admin' || relative === 'admin/') relative = 'admin/index.html';
-    if (relative === 'forum' || relative === 'forum/') relative = 'forum/index.html';
-    if (!/^(index\.html|robots\.txt|google[\w]+\.html|(?:assets|js|admin|forum)\/[\w./-]+)$/.test(relative)) return res.status(404).send('Not found');
+    let relative = pathname === '/' ? 'index.html' : pathname.replace(/^\//, '').replace(/\/+$/, '');
+    if (relative === 'admin' || relative === 'forum') relative = `${relative}/index.html`;
+    // Klasör kökleri (örn. /testosteron-testi → testosteron-testi/index.html)
+    if (/^[\w-]+$/.test(relative)) relative = `${relative}/index.html`;
+    if (!/^(index\.html|robots\.txt|google[\w]+\.html|[\w-]+\/index\.html|(?:assets|js|admin|forum)\/[\w./-]+)$/.test(relative)) return res.status(404).send('Not found');
     const resolved = await fs.realpath(path.resolve(root, relative));
     if (!resolved.startsWith(root + path.sep) || relative.split('/').some(part => part.startsWith('.'))) return res.status(404).send('Not found');
     const data = await fs.readFile(resolved);

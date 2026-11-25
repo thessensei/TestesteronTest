@@ -37,6 +37,8 @@ test('site haritası geçerli namespace ve yalnızca gerçek canonical URL içer
   assert.ok(urls.includes(`${productionOrigin}/blog/derin-uyku-ve-hormon-dengesi/`), 'blog yazısı kendi adresinde listelenmeli');
   assert.ok(urls.includes(`${productionOrigin}/blog/tavuklu-bulgur/`), 'tarif de listelenmeli');
   assert.ok(urls.includes(`${productionOrigin}/forum/t/12345678-1234-4123-8123-123456789abc/`), 'onaylı konu listelenmeli');
+  assert.ok(urls.includes(`${productionOrigin}/testosteron-testi/`), 'TR rehber sayfası haritada olmalı');
+  assert.ok(urls.includes(`${productionOrigin}/testosterone-test/`), 'EN rehber sayfası haritada olmalı');
   for (const url of urls) assert.ok(url.startsWith(productionOrigin), `beklenmeyen site URLsi: ${url}`);
 
   // Çeviri varsa hreflang alternatifi eklenir.
@@ -56,6 +58,35 @@ test('site haritası alt alan adı (subdomain) yapılandırmasını onurlandır�
   assert.match(xml, /<loc>https:\/\/forum\.testotavan\.com\/<\/loc>/);
   assert.match(xml, /<loc>https:\/\/forum\.testotavan\.com\/t\/12345678-1234-4123-8123-123456789abc\/<\/loc>/);
   assert.doesNotMatch(xml, /<loc>https:\/\/testosteron-test\.vercel\.app\/blog\//);
+});
+
+test('statik rehber sayfaları canonical, hreflang ve zengin şema taşır', () => {
+  const tr = read('testosteron-testi/index.html');
+  const en = read('testosterone-test/index.html');
+
+  // Canonical adresler
+  assert.match(tr, /<link rel="canonical" href="https:\/\/testosteron-test\.vercel\.app\/testosteron-testi\/">/);
+  assert.match(en, /<link rel="canonical" href="https:\/\/testosteron-test\.vercel\.app\/testosterone-test\/">/);
+
+  // Çapraz hreflang çifti + x-default
+  assert.match(tr, /hreflang="en" href="https:\/\/testosteron-test\.vercel\.app\/testosterone-test\/"/);
+  assert.match(tr, /hreflang="x-default"/);
+  assert.match(en, /hreflang="tr" href="https:\/\/testosteron-test\.vercel\.app\/testosteron-testi\/"/);
+  assert.match(en, /hreflang="x-default"/);
+
+  for (const page of [tr, en]) {
+    const schema = JSON.parse(page.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'FAQPage'), 'FAQ şeması olmalı');
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'BreadcrumbList'), 'Breadcrumb şeması olmalı');
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'WebPage'), 'WebPage şeması olmalı');
+    assert.ok(page.length > 20000, 'rehber sayfası yeterli içerik derinliğine sahip olmalı');
+    assert.match(page, /href="\/blog\//, 'rehber sayfası bloga iç bağlantı vermeli');
+    assert.match(page, /href="\/#physicalPage"/, 'rehber sayfası araca iç bağlantı vermeli');
+  }
+
+  // Ana sayfa ve blog/forum şablonları rehberlere iç bağlantı vermelidir.
+  assert.match(read('src/index.html'), /href="\/testosteron-testi\/"/);
+  assert.match(read('api/_seo.js'), /testosteron-testi/);
 });
 
 test('RSS akışı yayınlanan yazıları canonical bağlantılarıyla listeler', () => {

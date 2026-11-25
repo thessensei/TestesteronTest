@@ -1837,7 +1837,7 @@ Object.assign(i18n.en, {
 // Eksik çeviriler için İngilizce güvenlik metnini açıkça kullan.
 for (const lang of Object.keys(i18n)) for (const [key, value] of Object.entries(i18n.en)) if (!i18n[lang][key]) i18n[lang][key] = value;
 const pageMeta = {
- tr:{title:'Testosteron Test | TestoTavan — Ücretsiz Ön Değerlendirme',description:'Ücretsiz testosteron test ön değerlendirmesi: belirtilerinizi gözden geçirin, kan testi değerlerinizi düzenleyin. Tıbbi tanı yerine geçmez.',locale:'tr_TR'},
+ tr:{title:'Testosteron Testi | TestoTavan — Ücretsiz Ön Değerlendirme ve Rehber',description:'Ücretsiz testosteron testi ön değerlendirmesi: belirtileri gözden geçir, kan sonuçlarını örnek erişkin aralıklarıyla karşılaştır. Testosteron testi nasıl yapılır, normal değerler ve SSS rehberleri.',locale:'tr_TR'},
  en:{title:'Testosterone Symptoms & Blood Results | TestoTavan',description:'Review symptoms and organize blood test results. Free health information; not a medical diagnosis.',locale:'en_US'},
  de:{title:'Testosteron: Symptome und Blutwerte | TestoTavan',description:'Symptome und Blutwerte ansehen. Kostenlose Gesundheitsinformation; keine medizinische Diagnose.',locale:'de_DE'},
  ja:{title:'テストステロン：症状と血液検査 | TestoTavan',description:'症状と血液検査結果を確認します。医療診断に代わるものではありません。',locale:'ja_JP'},

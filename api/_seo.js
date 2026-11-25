@@ -558,6 +558,8 @@ function navItems(siteUrl, section, lang) {
   const tr = lang === 'tr';
   const home = tr ? 'Ana Sayfa' : 'Home';
   const blog = 'Blog';
+  // Rehber: yalnızca TR ve EN sürümü var; diğer diller İngilizceye düşer.
+  const guideHref = tr ? `${siteUrl}/testosteron-testi/` : `${siteUrl}/testosterone-test/`;
   const analyzer = ({
     tr: 'Test Analizi', en: 'Test Analysis', de: 'Test-Analyse', ja: 'テスト分析',
     fr: 'Analyse du test', es: 'Análisis de la prueba', bg: 'Анализ на теста',
@@ -566,6 +568,7 @@ function navItems(siteUrl, section, lang) {
   const langQuery = lang === 'tr' ? '' : `?lang=${lang}`;
   return [
     { href: `${siteUrl}/${langQuery}`, label: home, key: 'home' },
+    { href: guideHref, label: tr ? 'Rehber' : 'Guide', key: 'guide' },
     { href: `${siteUrl}/blog/${langQuery}`, label: blog, key: 'blog' },
     { href: `${siteUrl}/forum/${langQuery}`, label: 'Forum', key: 'forum' },
     { href: `${siteUrl}/${langQuery}#physicalPage`, label: analyzer, key: 'analyze' }
@@ -640,6 +643,7 @@ ${body}
   <div class="wrap">
     <div class="foot-links">
       <a href="${siteUrl}/${langQuery}">${SITE_NAME}</a>
+      <a href="${lang === 'tr' ? `${siteUrl}/testosteron-testi/` : `${siteUrl}/testosterone-test/`}">${lang === 'tr' ? 'Testosteron Testi Rehberi' : 'Testosterone Test Guide'}</a>
       <a href="${siteUrl}/blog/${langQuery}">Blog</a>
       <a href="${siteUrl}/blog/rss.xml">RSS</a>
       <a href="${siteUrl}/forum/${langQuery}">Forum</a>
