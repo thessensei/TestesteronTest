@@ -1,5 +1,17 @@
 # 🧬 TestoTavan — Doğal Testosteron Optimizasyonu
 
+## Belirti ve kan sonuçları: güvenlik güncellemesi
+
+Aşağıdaki eski özellik açıklamaları tarihsel olabilir; bu bölüm sonuç akışı için geçerlidir:
+
+- Belirtilerden hormon düzeyi, güven yüzdesi, biyobelirteç durumu veya takviye dozu üretilmez. Yaş ve seçilen belirtilerle yalnızca bir özet ve hekime başvurma yönlendirmesi gösterilir. Boy, kilo ve yaşam tarzı artık istenmez.
+- Kan ekranı girilen değerleri ve **örnek erişkin** aralıklarını gösterir; bunlar kullanıcının laboratuvar aralığı veya tanı değildir ve 18 yaş altı için kullanılmamalıdır. Yaş, cinsiyet, yöntem ve laboratuvara göre aralıklar değişebilir. Kullanıcı orijinal raporunu ve sonuçlarını hekimiyle değerlendirmelidir.
+- Kan raporundan doğrulanmamış genel skor, otomatik kişisel takviye planı ve sabit kontrol takvimi çıkarıldı. Test hazırlığında hekim/laboratuvar talimatları esas alınır; OCR/PDF çıktısı orijinal raporla kontrol edilmelidir.
+- Eski hesaplama yardımcıları geriye dönük kod uyumluluğu için çekirdekte kalır; kullanıcı arayüzü bunları sonuç üretmek için kullanmaz. Bu çalışma klinik doğrulama, gerçek sonuçlara doğruluk garantisi veya tıbbi uzman incelemesi değildir.
+- Yeni güvenlik metinleri Türkçe ve İngilizcedir; diğer dillerde henüz çevrilmeyen yeni metinler İngilizce gösterilir. Değişiklikler `npm run verify` ile sınanır; gerçek hekim değerlendirmesinin yerini almaz.
+
+---
+
 ## Forum geri getirildi
 
 Forum bağımsız sosyal alan olarak eski arayüzüyle yeniden açıldı: üyelik/giriş (kullanıcı adı + şifre ve **Google ile Giriş / Kayıt Ol** OAuth 2.0 + PKCE S256 desteği), konu açma, yanıt, alıntı, beğeni ve moderasyon akışları korunur. Google ile giriş/kayıt için `.env.local` veya dağıtım ortamında `GOOGLE_CLIENT_ID` ve `GOOGLE_CLIENT_SECRET` tanımlanır; Google Cloud Console'da yetkili yönlendirme adresi (Authorized redirect URI) olarak `<SITE_URL>/api/forum-auth` eklenir. Blog ve tarif güncellemeleri geri alınmadı. Veritabanı olmadan arayüz önizlenebilir; gerçek üyelik ve mesaj işlemleri için mevcut `DATABASE_URL` ve forum oturum ayarları gerekir. Canlıda önceden önbelleğe alınan kalıcı yönlendirmeyi görürseniz dağıtımdan sonra tarayıcı/site önbelleğini temizleyin veya gizli pencereyle deneyin.

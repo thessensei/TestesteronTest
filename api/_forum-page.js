@@ -227,7 +227,7 @@ export function renderForumThread({ thread, replies = [], related = [], authorPo
 
   return renderPage({
     lang, siteUrl, section: 'forum', theme: 'community',
-    title: `${oneLine(thread.title, 90)} | ${SITE_NAME} Forum`,
+    title: `${oneLine(thread.title, 90)} | ${SITE_NAME} Meydan`,
     description,
     canonical,
     ogType: 'article',

@@ -49,11 +49,17 @@ test('ana sayfa URL dili, engelli depolama, analiz ve gezinme akışları çalı
   await until(() => d.documentElement.lang === 'de');
   d.querySelector('[aria-controls="physicalPage"]').click();
   assert.ok(d.querySelector('#physicalPage').classList.contains('active'));
-  for (const [id, value] of Object.entries({ inputAge: '30', inputHeight: '175', inputWeight: '75' })) d.getElementById(id).value = value;
+  d.getElementById('inputAge').value = '30';
   await until(() => d.querySelector('#symptomGrid input'));
   d.querySelector('#symptomGrid input').click();
   d.querySelector('[onclick="analyzePhysical()"]').click();
   assert.ok(d.querySelector('#physicalResult').classList.contains('show'));
+  assert.doesNotMatch(d.querySelector('#physicalResult').textContent, /ng\/dL|%82|mg\/day/);
+  assert.match(d.querySelector('#physicalResult').textContent, /not a hormone measurement/i);
+  d.querySelector('#languageSelect').value = 'tr';
+  d.querySelector('#languageSelect').dispatchEvent(new window.Event('change', { bubbles: true }));
+  await until(() => d.documentElement.lang === 'tr');
+  assert.match(d.querySelector('#physicalResult').textContent, /Bu sonuç bir hormon ölçümü değildir/);
   d.querySelector('[aria-controls="bloodPage"]').click();
   assert.ok(d.querySelector('#bloodPage').classList.contains('active'));
   d.querySelector('#inputTesto').value = '480';
@@ -62,6 +68,13 @@ test('ana sayfa URL dili, engelli depolama, analiz ve gezinme akışları çalı
   d.querySelector('#consentCheck').click();
   d.querySelector('[onclick="analyzeBlood()"]').click();
   assert.equal(d.querySelector('#bloodResult').classList.contains('show'), true);
+  assert.match(d.querySelector('#bloodResult').textContent, /480/);
+  assert.match(d.querySelector('#bloodResult').textContent, /18 yaş altında/);
+  assert.doesNotMatch(d.querySelector('#bloodResult').textContent, /Kişisel takviye planı|Semptom tahminimiz/);
+  d.querySelector('#languageSelect').value = 'en';
+  d.querySelector('#languageSelect').dispatchEvent(new window.Event('change', { bubbles: true }));
+  await until(() => d.documentElement.lang === 'en');
+  assert.match(d.querySelector('#bloodResult').textContent, /Do not use them for people under 18/);
   await wait(100); // bekleyen çeviri ve sayaç işlerini kapatmadan tamamla
   assert.deepEqual(errors, []);
 });

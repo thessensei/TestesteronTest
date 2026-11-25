@@ -217,6 +217,7 @@ test('konu sayfası üreticisi yazar rütbesini ve beğeni sayısını işler', 
     siteUrl: ORIGIN,
     env: {}
   });
+  assert.match(html, /<title>Başlık \| TestoTavan Meydan<\/title>/);
   assert.match(html, /Kıdemli üye|Veteran/);
   assert.match(html, /4/, 'beğeni sayısı görünmeli');
   assert.match(html, /Sabit konu|Pinned/);

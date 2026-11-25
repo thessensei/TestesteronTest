@@ -6,11 +6,11 @@
         </button>
         <div>
             <h2 style="font-size: 20px; font-weight: 900">Semptom Analizi</h2>
-            <p style="font-size: 11px; color: var(--text-secondary)">Tahmini hormon değerleriniz</p>
+            <p style="font-size: 11px; color: var(--text-secondary)">Belirtilerinizi gözden geçirin</p>
         </div>
     </div>
 
-    <!-- Adım göstergesi: Semptom → Tahmin → Doğrulama -->
+    <!-- Adım göstergesi: Semptom → Özet → Kan sonuçları -->
     <div class="stepper" data-stepper aria-label="Analiz adımları"></div>
     <div class="progress-wrap" data-progress role="status" aria-live="polite"></div>
 
@@ -21,58 +21,16 @@
             </div>
             <div>
                 <div class="card-title">Temel Bilgiler</div>
-                <div class="card-subtitle">Tahmin modelinin girdileri</div>
+                <div class="card-subtitle">Ön değerlendirme bilgileri</div>
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputAge">Yaş</label>
-                <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="7" max="100" inputmode="decimal">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="inputHeight">Boy (cm)</label>
-                <input type="number" class="form-input" id="inputHeight" placeholder="Örn: 175" min="90" max="240" inputmode="decimal">
-            </div>
+        <div class="form-group">
+            <label class="form-label" for="inputAge">Yaş</label>
+            <input type="number" class="form-input" id="inputAge" placeholder="Örn: 25" min="7" max="100" inputmode="decimal">
         </div>
-        <p class="hint-line">7–17 yaşta ergenlik evresi bilinmediği için sonuç daha geniş bir aralıkla gösterilir.</p>
+        <p class="hint-line">18 yaş altında büyüme ve ergenlikle ilgili sorular için çocuk hekimine başvurun.</p>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputWeight">Kilo (kg)</label>
-                <input type="number" class="form-input" id="inputWeight" placeholder="Örn: 70" min="15" max="300" inputmode="decimal">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="inputActivity">Aktivite Seviyesi</label>
-                <select class="form-input" id="inputActivity">
-                    <option value="1">Hareketsiz</option>
-                    <option value="2">Haftada 1-2 gün</option>
-                    <option value="3" selected>Haftada 3-5 gün</option>
-                    <option value="4">Haftada 6-7 gün</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" for="inputSleep">Ortalama Uyku</label>
-                <select class="form-input" id="inputSleep">
-                    <option value="5">5 saat ve altı</option>
-                    <option value="6">6 saat</option>
-                    <option value="7" selected>7 saat</option>
-                    <option value="8">8 saat</option>
-                    <option value="9">9 saat ve üzeri</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="inputStress">Stres Düzeyi</label>
-                <select class="form-input" id="inputStress">
-                    <option value="1">Düşük</option>
-                    <option value="2" selected>Orta</option>
-                    <option value="3">Yüksek</option>
-                </select>
-            </div>
-        </div>
     </div>
 
     <div class="card">
@@ -90,7 +48,7 @@
     </div>
 
     <button class="btn-primary" onclick="analyzePhysical()">
-        <svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg> &nbsp;TAHMİNİ HESAPLA
+        <svg class="ic" aria-hidden="true"><use href="#i-gear"></use></svg> &nbsp;BELİRTİ ÖZETİNİ GÖSTER
     </button>
 
     <div class="result-panel" id="physicalResult"></div>
@@ -103,8 +61,8 @@
             <svg class="ic" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
         </button>
         <div>
-            <h2 style="font-size: 20px; font-weight: 900">Kan Testi ile Doğrulama</h2>
-            <p style="font-size: 11px; color: var(--text-secondary)">Gerçek değerlerinizle kesin rapor</p>
+            <h2 style="font-size: 20px; font-weight: 900">Kan Sonuçlarını İnceleme</h2>
+            <p style="font-size: 11px; color: var(--text-secondary)">Girdiğiniz sonuçları gözden geçirin</p>
         </div>
     </div>
 
@@ -134,13 +92,13 @@
         <details class="info-accordion" open>
             <summary><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg> Kan vermeden önce: numune koşulları</summary>
             <ul class="plain-list">
-                <li>Kan <b>sabah 07:00–10:00</b> arasında verilmelidir; testosteron gün içinde %30’a kadar düşer.</li>
-                <li><b>8–12 saat açlık</b>; yalnızca su içebilirsiniz.</li>
-                <li><b>Biotin (B7)</b> içeren takviyeleri ölçümden en az <b>72 saat</b> önce bırakın — hormon sonuçlarını yanlış gösterir.</li>
-                <li>Son <b>48 saatte</b> ağır antrenman ve alkol olmasın.</li>
-                <li>Ateş/enfeksiyon gibi akut hastalık döneminde ölçümü erteleyin.</li>
+                <li>Testosteron ölçümü için örnek genellikle sabah alınır; saat konusunda hekiminizin talimatlarını izleyin.</li>
+                <li>Açlık gerekip gerekmediğini laboratuvarınıza veya hekiminize sorun.</li>
+                <li>İlaçlarınızı ve biotin dahil takviyelerinizi hekiminize bildirin; kendi başınıza kesmeyin.</li>
+                <li>Egzersiz ve diğer hazırlıklar için laboratuvarın talimatlarını izleyin.</li>
+                <li>Hastalık durumunu hekiminize bildirin; testin zamanlamasını birlikte belirleyin.</li>
             </ul>
-            <p class="muted">Bu koşullar sağlanmadan verilen kan, düşük çıkan bir sonucu yanlış yorumlamamıza yol açar.</p>
+            <p class="muted">Ölçüm koşulları sonuçların yorumunu etkileyebilir.</p>
         </details>
     </div>
 
@@ -256,7 +214,7 @@
             <li><b>Nerede:</b> Herhangi bir özel laboratuvar veya devlet hastanesi; randevu dışında özel bir sevk gerekmez.</li>
             <li><b>Ücret:</b> Laboratuvarın işlem ücreti size aittir. TestoTavan hiçbir ücret almaz ve laboratuvarlarla iş ortaklığı yoktur.</li>
             <li><b>Sonuç süresi:</b> Çoğu laboratuvarda aynı gün – 2 iş günü.</li>
-            <li><b>SGK:</b> Hekim istemi varsa devlet hastanesinde SGK kapsamındadır.</li>
+            <li><b>SGK:</b> Kapsam koşullarını sağlık kuruluşunuza danışın.</li>
         </ul>
         <p class="muted">Güncel ücret ve randevu koşulları laboratuvardan laboratuvara değişir; işlem öncesi kurumdan teyit edin.</p>
     </div>

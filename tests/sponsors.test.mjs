@@ -22,6 +22,7 @@ function loadAppModule() {
     const context = vm.createContext({
         window: { addEventListener: () => {} },
         document: {
+            documentElement: { lang: 'tr' },
             addEventListener: () => {},
             querySelectorAll: () => [],
             getElementById: () => null,
@@ -254,42 +255,30 @@ test('sponsor metinleri dört dilde çevrilebilir', () => {
     assert.equal(api.i18n.ja['Sponsor ol'], 'スポンサーになる');
 });
 
-// ------------------------------------------------- kilitli önizleme kaldırıldı
+// ------------------------------------------------- güvenli sonuç özeti
 
-test('kilitli/bulanık plan önizlemesi kaldırıldı, plan doğrudan gösterilir', () => {
-    for (const [name, source] of [['src/index.html', srcHtml], ['index.html', desktopIndexHtml], ['src/js/app.js', appSource]]) {
-        assert.ok(!/preview-lock|preview-blur|preview-overlay|renderPlanPreview/.test(source), `${name}: kilitli önizleme kalıntısı var`);
+test('belirti özeti ölçülmemiş sayısal hormon değerleri ve dozlar göstermez', () => {
+    const context = loadAppModule();
+    const panel = { innerHTML: '', classList: { add() {} } };
+    context.document.getElementById = id => id === 'physicalResult' ? panel : null;
+    const symptom = context.window.TestoValidation.SYMPTOMS[0];
+    for (const age of [16, 42]) {
+        context.renderEstimate({ age, symptoms: [symptom] });
+        assert.match(panel.innerHTML, /Bu sonuç bir hormon ölçümü değildir/);
+        assert.ok(panel.innerHTML.includes(symptom.label));
+        assert.doesNotMatch(panel.innerHTML, /ng\/dL|güven puanı|Kişisel takviye planı|estimate-value/);
+        if (age < 18) assert.match(panel.innerHTML, /çocuk hekimi/);
     }
-    assert.ok(!/Doğrulamadan sonra dozlar kişiselleşir/.test(appSource), 'dozlar doğrulamaya kilitlenmemeli');
-    assert.ok(!/showPlanTeaser|planTeaser/.test(appSource), 'önizleme butonu kaldırılmalı');
-
-    // Plan, tahmin ekranında takviye kartıyla doğrudan basılır
-    assert.match(appSource, /function renderEstimate\(est\) \{[\s\S]*?const plan = buildPlanFromEstimate\(est\);/);
-    assert.match(appSource, /renderSupplementCard\(plan, 'Kişisel planınız'/);
-    assert.match(appSource, /function buildPlanFromEstimate\(est\)/);
-    assert.match(appSource, /function backToSymptoms\(\)/);
 });
 
-test('plan adımları yaşam tarzı ve takviyeleri öncelik sırasına göre birleştirir', () => {
+test('kan raporu girilen değerleri gösterir, puan veya doz üretmez', () => {
     const context = loadAppModule();
-    const values = { inputSleep: '5', inputStress: '4', inputActivity: '1' };
-    context.document.getElementById = id => (id in values ? { value: values[id] } : null);
-
-    const estimate = context.window.TestoValidation.estimateFromSymptoms({
-        age: 42, height: 175, weight: 95, activity: 1, sleepHours: 5, stress: 4,
-        symptoms: ['fatigue', 'libido']
-    });
-    const plan = context.buildPlanFromEstimate(estimate);
-
-    assert.ok(plan.length >= 4, 'yaşam tarzı adımları ve takviyeler birlikte listelenmeli');
-    assert.match(plan.map(item => item.name).join(' | '), /Uykuyu 7–9 saate çıkarın/);
-    assert.match(plan.map(item => item.name).join(' | '), /Stres yükünü düşürün/);
-    assert.match(plan.map(item => item.name).join(' | '), /Hareketi artırın/);
-    assert.match(plan.map(item => item.name).join(' | '), /Kilo yönetimi/);
-    for (const item of plan) {
-        assert.ok(item.dose && !/doğrulama/i.test(item.dose), `${item.name}: doz doğrudan yazılmalı`);
-    }
-    // Array.from: vm bağlamında üretilen diziyi ana bağlama kopyalar (deepEqual prototipi karşılaştırır)
-    const ranks = Array.from(plan, item => ({ critical: 0, high: 1, support: 2, base: 3 }[item.priority]));
-    assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), 'adımlar öncelik sırasına göre dizilmeli');
+    const panel = { innerHTML: '', classList: { add() {} } };
+    context.document.getElementById = id => id === 'bloodResult' ? panel : null;
+    context.showToast = () => {};
+    context.renderBloodReport({ values: { totalT: 480 }, warnings: {} });
+    assert.match(panel.innerHTML, /480/);
+    assert.match(panel.innerHTML, /18 yaş altında/);
+    assert.match(panel.innerHTML, /Örnek erişkin aralığı/);
+    assert.doesNotMatch(panel.innerHTML, /score-value|Kişisel takviye planı|Semptom tahminimiz/);
 });

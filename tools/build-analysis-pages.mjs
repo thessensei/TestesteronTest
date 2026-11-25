@@ -38,7 +38,7 @@ ${indent}               placeholder="${escape(V.placeholderFor(marker, unit))}" 
 ${indent}        <select class="form-input unit-select" id="unit-${marker.id}" aria-label="${escape(marker.label)} birimi"
 ${indent}                onchange="onUnitChange('${marker.id}')">${units}</select>
 ${indent}    </div>
-${indent}    <div class="lab-hint" id="hint-${marker.id}"><b>Lab normal aralığı: ${escape(V.describeRange(marker, unit, 'ref'))}</b> — ${escape(marker.explain)}</div>
+${indent}    <div class="lab-hint" id="hint-${marker.id}"><b>Örnek erişkin aralığı: ${escape(V.describeRange(marker, unit, 'ref'))}</b> — Kendi laboratuvar raporunuzun aralığını esas alın.</div>
 ${indent}    <div class="form-error" id="error-${marker.id}" role="alert"></div>
 ${indent}    <div class="form-warning" id="warn-${marker.id}" role="status"></div>
 ${indent}</div>`;

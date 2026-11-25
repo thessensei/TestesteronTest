@@ -336,7 +336,7 @@ test('index.html hata/uyarı stillerini ve scriptleri içerir', () => {
 });
 
 test('fiziksel alanlar min/max ve inputmode özniteliklerine sahip', () => {
-    for (const field of V.PHYSICAL_FIELDS) {
+    for (const field of V.PHYSICAL_FIELDS.filter(field => field.id === 'inputAge')) {
         const re = new RegExp(`<input type="number"[^>]*id="${field.id}"[^>]*>`, 's');
         const match = html.match(re);
         assert.ok(match, `${field.id} bulunamadı`);
@@ -344,7 +344,7 @@ test('fiziksel alanlar min/max ve inputmode özniteliklerine sahip', () => {
         assert.match(match[0], /inputmode="decimal"/, `${field.id} inputmode özniteliğine sahip olmalı`);
     }
     assert.match(html, /id="inputAge"[^>]*min="7"/, 'yaş alanı 7 yaştan başlamalı');
-    assert.match(html, /7–17 yaşta ergenlik evresi/, 'ergen sonuçlarının geniş aralıklı olduğu açıklanmalı');
+    assert.match(html, /18 yaş altında büyüme ve ergenlikle ilgili sorular için çocuk hekimine başvurun/, 'ergenler için hekim yönlendirmesi olmalı');
 });
 
 // Lab alanları type="text": tarayıcı "2,1" girdisini silmesin, virgül/nokta ayrımını biz yönetelim
@@ -378,9 +378,9 @@ test('kan testi ekranında KVKK açık rızası boş başlar', () => {
 });
 
 test('numune koşulları, lojistik ve ölçüm tipi ekranda var', () => {
-    assert.match(html, /07:00–10:00/);
+    assert.match(html, /genellikle sabah alınır/);
     assert.match(html, /[Bb]iotin/);
-    assert.match(html, /açlık/);
+    assert.match(html, /[Aa]çlık/);
     assert.match(html, /SGK/);
     assert.match(html, /Sonuç süresi|iş günü/);
     assert.match(html, /data-measure="baseline"/);
@@ -395,11 +395,10 @@ test('adım göstergesi ve ilerleme yüzdesi mevcut', () => {
     assert.match(app, /Analizin %\$\{percent\} tamamlandı/);
 });
 
-test('ana CTA ve gölge buton birlikte, güven satırıyla sunulur', () => {
-    assert.match(app, /KAN TESTİ İLE DOĞRULA/);
+test('sonuç özetinde kan sonucu inceleme ve belirti düzenleme bağlantıları var', () => {
+    assert.match(app, /KAN SONUÇLARIMI İNCELE/);
+    assert.match(app, /Belirtilerimi değiştir/);
     assert.match(app, /btn-ghost/);
-    assert.match(app, /trust-line/);
-    assert.match(app, /Sonuç 5 dakikada/);
 });
 
 test('tahlil yükleme ana aksiyon, elle giriş ikincil bağlantıdır', () => {
@@ -411,15 +410,15 @@ test('tahlil yükleme ana aksiyon, elle giriş ikincil bağlantıdır', () => {
     assert.match(html, /id="manualEntry" hidden/);
 });
 
-test('skor tooltip’i ve kaynaksız etki yüzdesi yasağı', () => {
-    assert.match(app, /toggleScoreTooltip/);
-    assert.match(app, /tooltip-panel/);
+test('kaynaksız etki yüzdesi ve doğrulanmamış skor gösterilmez', () => {
+    const report = app.slice(app.indexOf('function renderBloodReport('), app.indexOf('function toggleScoreTooltip('));
+    assert.doesNotMatch(report, /score-value|computeOverallScore/);
     assert.ok(!/%\d+\s*·\s*12 hafta/.test(app), 'kaynaksız etki yüzdesi gösterilmemeli');
     assert.ok(!/%\d+\s*·\s*12 hafta/.test(html), 'kaynaksız etki yüzdesi gösterilmemeli');
 });
 
 test('analiz fonksiyonları doğrulama başarısızsa erken çıkar', () => {
-    assert.match(app, /function analyzePhysical\(\)[\s\S]{0,400}if \(!applyValidation\(fields, result\)\) return;/);
+    assert.match(app, /function analyzePhysical\(\)[\s\S]{0,400}if \(!ageResult.ok\) \{/);
     assert.match(app, /function analyzeBlood\(\)[\s\S]{0,1400}if \(!result\.ok\) \{/);
     assert.match(app, /if \(!state\.consent\)/);
 });
