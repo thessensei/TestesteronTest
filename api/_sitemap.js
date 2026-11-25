@@ -45,6 +45,16 @@ export function buildSitemap({ siteUrl = DEFAULT_SITE_URL, env = process.env, co
 
   const add = (loc, options = {}) => entries.push({ loc, lastmod: options.lastmod || lastmod, changefreq: options.changefreq || 'weekly', priority: options.priority ?? 0.7, alternates: options.alternates || [] });
 
+  // Statik rehber sayfaları: "testosteron testi" (TR) ve "testosterone test" (EN)
+  // para kelime çiftine özel sunucudan servis edilen içerik sayfaları.
+  const guideAlternates = [
+    { lang: 'tr', href: `${root}/testosteron-testi/` },
+    { lang: 'en', href: `${root}/testosterone-test/` },
+    { lang: 'x-default', href: `${root}/testosteron-testi/` }
+  ];
+  add(`${root}/testosteron-testi/`, { changefreq: 'weekly', priority: 0.9, alternates: guideAlternates });
+  add(`${root}/testosterone-test/`, { changefreq: 'weekly', priority: 0.9, alternates: guideAlternates });
+
   add(`${root}/`, { changefreq: 'weekly', priority: 1 });
   add(blog.standalone ? `${blog.base}/` : `${root}/blog/`, { changefreq: 'daily', priority: 0.9 });
   add(forum.standalone ? `${forum.base}/` : `${root}/forum/`, { changefreq: 'daily', priority: 0.9 });

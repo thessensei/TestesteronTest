@@ -231,7 +231,15 @@ test('site haritası tüm çeviri dillerini xhtml:link ile bildirir', () => {
     assert.match(xml, new RegExp(`hreflang="${lang}"`), `${lang} site haritasında yok`);
   }
   assert.match(xml, /hreflang="x-default"/);
-  assert.equal((xml.match(/<xhtml:link/g) || []).length, 11, 'her URL için 10 dil + x-default olmalı');
+  // Blog yazısı çevirisi: 10 dil + x-default. Rehber sayfaları (testosteron-testi,
+  // testosterone-test) kendi tr/en/x-default çiftlerini ayrıca taşır.
+  const blogEntry = xml.split('<url>').find(part => part.includes('/uyku-ve-testosteron/'));
+  assert.equal((blogEntry.match(/<xhtml:link/g) || []).length, 11, 'blog URLsi için 10 dil + x-default olmalı');
+  for (const guide of ['/testosteron-testi/', '/testosterone-test/']) {
+    const guideEntry = xml.split('<url>').find(part => part.includes(guide));
+    assert.ok(guideEntry, `${guide} site haritasında olmalı`);
+    assert.equal((guideEntry.match(/<xhtml:link/g) || []).length, 3, `${guide} için tr/en/x-default olmalı`);
+  }
 });
 
 test('forum konu sayfası yeni dillerde yazılı metinlere sahip', () => {
