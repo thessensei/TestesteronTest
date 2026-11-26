@@ -55,6 +55,11 @@ export function buildSitemap({ siteUrl = DEFAULT_SITE_URL, env = process.env, co
   add(`${root}/testosteron-testi/`, { changefreq: 'weekly', priority: 0.9, alternates: guideAlternates });
   add(`${root}/testosterone-test/`, { changefreq: 'weekly', priority: 0.9, alternates: guideAlternates });
 
+  // Marker rehberleri: uzun kuyruk arama kelimelerine özel statik içerik sayfaları.
+  for (const markerSlug of ['testosteron-kac-olmali', 'serbest-testosteron', 'shbg-nedir', 'd-vitamini-testosteron', 'kortizol-testosteron']) {
+    add(`${root}/${markerSlug}/`, { changefreq: 'weekly', priority: 0.8 });
+  }
+
   add(`${root}/`, { changefreq: 'weekly', priority: 1 });
   add(blog.standalone ? `${blog.base}/` : `${root}/blog/`, { changefreq: 'daily', priority: 0.9 });
   add(forum.standalone ? `${forum.base}/` : `${root}/forum/`, { changefreq: 'daily', priority: 0.9 });
