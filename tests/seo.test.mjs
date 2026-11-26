@@ -39,6 +39,9 @@ test('site haritası geçerli namespace ve yalnızca gerçek canonical URL içer
   assert.ok(urls.includes(`${productionOrigin}/forum/t/12345678-1234-4123-8123-123456789abc/`), 'onaylı konu listelenmeli');
   assert.ok(urls.includes(`${productionOrigin}/testosteron-testi/`), 'TR rehber sayfası haritada olmalı');
   assert.ok(urls.includes(`${productionOrigin}/testosterone-test/`), 'EN rehber sayfası haritada olmalı');
+  for (const marker of ['testosteron-kac-olmali', 'serbest-testosteron', 'shbg-nedir', 'd-vitamini-testosteron', 'kortizol-testosteron']) {
+    assert.ok(urls.includes(`${productionOrigin}/${marker}/`), `marker rehberi ${marker} haritada olmalı`);
+  }
   for (const url of urls) assert.ok(url.startsWith(productionOrigin), `beklenmeyen site URLsi: ${url}`);
 
   // Çeviri varsa hreflang alternatifi eklenir.
@@ -87,6 +90,45 @@ test('statik rehber sayfaları canonical, hreflang ve zengin şema taşır', () 
   // Ana sayfa ve blog/forum şablonları rehberlere iç bağlantı vermelidir.
   assert.match(read('src/index.html'), /href="\/testosteron-testi\/"/);
   assert.match(read('api/_seo.js'), /testosteron-testi/);
+});
+
+test('marker rehber sayfaları canonical, şema ve iç bağlantı taşıır', () => {
+  const markers = {
+    'testosteron-kac-olmali': 'Testosteron Kaç Olmalı?',
+    'serbest-testosteron': 'Serbest Testosteron',
+    'shbg-nedir': 'SHBG',
+    'd-vitamini-testosteron': 'D Vitamini',
+    'kortizol-testosteron': 'Kortizol'
+  };
+  for (const [slug, keyword] of Object.entries(markers)) {
+    const html = read(`${slug}/index.html`);
+    assert.match(html, new RegExp(`<link rel="canonical" href="https://testosteron-test\\.vercel\\.app/${slug}/">`), `${slug} canonical`);
+    assert.ok(html.includes(keyword), `${slug} başlıkta anahtar kelime olmalı`);
+    assert.ok(html.length > 20000, `${slug} yeterli içerik derinliğine sahip olmalı`);
+
+    const schema = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'FAQPage'), `${slug} FAQ şeması`);
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'WebPage'), `${slug} WebPage şeması`);
+    assert.ok(schema['@graph'].some(entry => entry['@type'] === 'BreadcrumbList'), `${slug} breadcrumb şeması`);
+
+    // FAQ şemasındaki her soru görünür <details> metniyle eşleşmelidir.
+    const faq = schema['@graph'].find(entry => entry['@type'] === 'FAQPage');
+    const answers = new Map([...html.matchAll(/<summary>([^<]+)<\/summary>\s*<p>([\s\S]*?)<\/p>/g)]
+      .map(([, summary, p]) => [summary.trim(), p.replace(/<[^>]+>/g, '').trim()]));
+    for (const question of faq.mainEntity) {
+      assert.equal(answers.get(question.name), question.acceptedAnswer.text, `${slug}: FAQ görünür metni şemayla eşleşmeli`);
+    }
+
+    // İç bağlantı ağı: ana araca ve diğer rehberlere bağlantı olmalı.
+    assert.match(html, /href="\/#physicalPage"/, `${slug} araca bağlanmalı`);
+    assert.match(html, /href="\/testosteron-testi\/"/, `${slug} ana rehbere bağlanmalı`);
+  }
+
+  // Ana sayfa tüm marker rehberlerine görünen bağlantı vermelidir.
+  const home = read('src/index.html');
+  for (const slug of Object.keys(markers)) {
+    assert.match(home, new RegExp(`href="/${slug}/"`), `ana sayfa ${slug} sayfasına bağlanmalı`);
+  }
 });
 
 test('RSS akışı yayınlanan yazıları canonical bağlantılarıyla listeler', () => {
